@@ -1,4 +1,4 @@
-"""Welcome to Reflex! This file outlines the steps to create a basic app."""
+from plataforma_clara.model.schemas import Usuario
 
 import reflex as rx
 
