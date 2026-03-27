@@ -2,3 +2,4 @@ reflex~=0.8.28.post1
 pandas~=3.0.1
 supabase~=2.28.3
 python-dotenv~=1.2.2
+psycpg2-binary~=2.9.11
