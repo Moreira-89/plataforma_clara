@@ -7,12 +7,12 @@ class CadastroUsuarioState(rx.State):
     """Estado responsável por gerenciar o fluxo de cadastro de novos usuários."""
     
     # Define as variáveis de estado que serão vinculadas aos componentes da UI
-    tipo_usuario: str = ""  # Armazena se é 'gestora' ou 'investidor'
-    nome_usuario: str = ""  # Nome completo do usuário
-    email_usuario: str = ""  # E-mail para contato e login
-    identificador_usuario: str = ""  # CPF ou CNPJ (bruto ou limpo)
-    senha_hash_usuario: str = ""  # Senha em texto plano (antes do hash)
-    mensagem_para_usuario: str = ""  # Feedback visual para o front-end
+    tipo_usuario: str = ""
+    nome_usuario: str = ""
+    email_usuario: str = ""
+    identificador_usuario: str = "" 
+    senha_hash_usuario: str = ""
+    mensagem_para_usuario: str = "" 
 
 
     async def identificar_tipo_usuario(self, tipo_pagina: str):

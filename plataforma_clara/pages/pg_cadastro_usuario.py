@@ -3,7 +3,7 @@ from plataforma_clara.states.cadastro_usuario_state import CadastroUsuarioState
 
 def formulario_cadastro(tipo_pagina: str) -> rx.Component:
     return rx.vstack(
-        rx.heading(f"Cadastro de {tipo_pagina}", size="lg"),#type: ignore
+        rx.heading(f"Cadastro de {tipo_pagina}", size="1"),#type: ignore
         rx.input(
             placeholder="Insira seu nome",
             value=CadastroUsuarioState.nome_usuario,

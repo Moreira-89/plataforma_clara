@@ -1,36 +1,16 @@
-from plataforma_clara.model.schemas import tb_usuario
+from plataforma_clara.pages.pg_cadastro_usuario import formulario_cadastro_gestora, formulario_cadastro_investidor
+from plataforma_clara.pages.pg_ingestao_dados import ingestao_dados
+from plataforma_clara.pages.pg_login import formulario_login
+from plataforma_clara.pages.pg_dashboard_gestora import dashboard_gestora
+from plataforma_clara.pages.pg_dashboard_investidor import dashboard_investidor
 
 import reflex as rx
 
-from rxconfig import config
-
-
-class State(rx.State):
-    """The app state."""
-
-
-def index() -> rx.Component:
-    # Welcome Page (Index)
-    return rx.container(
-        rx.color_mode.button(position="top-right"),
-        rx.vstack(
-            rx.heading("Welcome to Reflex!", size="9"),
-            rx.text(
-                "Get started by editing ",
-                rx.code(f"{config.app_name}/{config.app_name}.py"),
-                size="5",
-            ),
-            rx.link(
-                rx.button("Check out our docs!"),
-                href="https://reflex.dev/docs/getting-started/introduction/",
-                is_external=True,
-            ),
-            spacing="5",
-            justify="center",
-            min_height="85vh",
-        ),
-    )
-
 
 app = rx.App()
-app.add_page(index)
+app.add_page(formulario_login, route="/login", title="Login")
+app.add_page(formulario_cadastro_gestora, route="/cadastro-gestora", title="Cadastro de Gestora")
+app.add_page(formulario_cadastro_investidor, route="/cadastro-investidor", title="Cadastro de Investidor")
+app.add_page(ingestao_dados, route="/ingestao-dados", title="Ingestão de Dados")
+app.add_page(dashboard_gestora, route="/dashboard-gestora", title="Dashboard da Gestora")
+app.add_page(dashboard_investidor, route="/dashboard-investidor", title="Dashboard do Investidor")
