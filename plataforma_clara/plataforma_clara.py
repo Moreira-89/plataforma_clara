@@ -1,4 +1,4 @@
-from plataforma_clara.model.schemas import Usuario
+from plataforma_clara.model.schemas import tb_usuario
 
 import reflex as rx
 
