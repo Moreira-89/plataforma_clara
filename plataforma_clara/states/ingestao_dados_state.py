@@ -10,8 +10,13 @@ class IngestaoDadosState(rx.State):
     async def lidar_com_upload_de_arquivo(self, arquivos: list[rx.UploadFile]):
         # Evento assíncrono: o componente de upload entrega uma lista de UploadFile do Starlette/FastAPI
         self.mensagem_para_usuario = ""  # Limpa mensagem anterior antes de tentar de novo
+        caminho_temporario = None
 
         try:
+            if not arquivos:
+                self.mensagem_para_usuario = "Nenhum arquivo foi enviado."
+                return
+
             dados_arquivos = await arquivos[0].read()  # Lê o conteúdo binário do primeiro arquivo enviado
 
             # Pasta de upload do Reflex + nome original; Path evita path manual incorreto
@@ -38,9 +43,15 @@ class IngestaoDadosState(rx.State):
                     session.add(aporte)  # Enfileira o INSERT na sessão (ainda não grava no disco)
 
                 session.commit()  # Persiste todas as linhas de uma vez; em erro, nada é salvo parcialmente (transação)
-                os.remove(caminho_temporario)  # Remove o CSV temporário para não encher a pasta de uploads
 
             self.mensagem_para_usuario = "Sucesso! CSV validado e pronto."  # Feedback positivo para o usuário
 
         except ValueError as e:  # processar_arquivo_csv levanta ValueError quando o CSV é inválido
             self.mensagem_para_usuario = str(e)  # Mostra a mensagem de validação sem quebrar a página
+        except Exception:
+            # Captura falhas inesperadas (tipagem, banco, I/O) e evita quebra de tela para o usuário.
+            self.mensagem_para_usuario = "Erro ao processar o arquivo. Revise o CSV e tente novamente."
+        finally:
+            # Sempre tenta remover o arquivo temporário quando ele foi criado.
+            if caminho_temporario and os.path.exists(caminho_temporario):
+                os.remove(caminho_temporario)

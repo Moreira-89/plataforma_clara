@@ -24,6 +24,8 @@ class CadastroUsuarioState(rx.State):
         """
         # Limpa mensagem anterior antes de nova validação.
         self.mensagem_para_usuario = ""
+        self.email_usuario = (self.email_usuario or "").strip().lower()
+        self.nome_usuario = (self.nome_usuario or "").strip()
 
         # Se a página indica cadastro de gestora, fixa o tipo no estado.
         if tipo_pagina == "gestora":
@@ -34,6 +36,11 @@ class CadastroUsuarioState(rx.State):
         # Qualquer outro valor de rota não é aceito.
         else:
             self.mensagem_para_usuario = "Tipo de usuário inválido"
+            return
+
+        # Validação mínima para evitar persistência de dados vazios e mensagens pouco claras.
+        if not self.nome_usuario or not self.email_usuario or not self.identificador_usuario or not self.senha_hash_usuario:
+            self.mensagem_para_usuario = "Preencha todos os campos obrigatórios."
             return
 
         # Normaliza o documento e descobre se é CPF ou CNPJ pelas regras abaixo.
@@ -49,6 +56,10 @@ class CadastroUsuarioState(rx.State):
             self.mensagem_para_usuario = f"{tipo_doc} validado com sucesso!"
             # Prossegue para a persistência dos dados.
             self.salvar_informacao_banco()
+
+            # Quando houver erro de persistência, interrompe o fluxo sem redirecionar.
+            if self.mensagem_para_usuario != "Usuário cadastrado com sucesso!":
+                return
 
             self.mensagem_para_usuario = ""
 
@@ -118,23 +129,29 @@ class CadastroUsuarioState(rx.State):
         senha_hash = self.gerar_hash_senha(self.senha_hash_usuario)
 
         # Abre uma sessão com o banco de dados (SQLAlchemy/Reflex)
-        with rx.session() as session:
-            # Instancia o modelo da tabela de usuários com os dados do estado
-            novo_usuario = tb_usuario(
-                tipo_usuario=self.tipo_usuario,
-                nome_usuario=self.nome_usuario,
-                email_usuario=self.email_usuario,
-                identificador_usuario=self.identificador_usuario,
-                senha_hash_usuario=senha_hash
-            )
-            # Adiciona o objeto à sessão
-            session.add(novo_usuario)
-            # Confirma a transação no banco de dados
-            session.commit()
-            # Atualiza a interface com mensagem de sucesso
-            self.mensagem_para_usuario = "Usuário cadastrado com sucesso!"
-            self.tipo_usuario = ""
-            self.nome_usuario = ""
-            self.email_usuario = ""
-            self.identificador_usuario = ""
-            self.senha_hash_usuario = ""
+        try:
+            with rx.session() as session:
+                # Instancia o modelo da tabela de usuários com os dados do estado
+                novo_usuario = tb_usuario(
+                    tipo_usuario=self.tipo_usuario,
+                    nome_usuario=self.nome_usuario,
+                    email_usuario=self.email_usuario,
+                    identificador_usuario=self.identificador_usuario,
+                    senha_hash_usuario=senha_hash
+                )
+                # Adiciona o objeto à sessão
+                session.add(novo_usuario)
+                # Confirma a transação no banco de dados
+                session.commit()
+        except Exception:
+            # Mantém mensagem genérica para evitar exposição de detalhes internos do banco.
+            self.mensagem_para_usuario = "Não foi possível concluir o cadastro. Tente novamente."
+            return
+
+        # Atualiza a interface com mensagem de sucesso
+        self.mensagem_para_usuario = "Usuário cadastrado com sucesso!"
+        self.tipo_usuario = ""
+        self.nome_usuario = ""
+        self.email_usuario = ""
+        self.identificador_usuario = ""
+        self.senha_hash_usuario = ""
