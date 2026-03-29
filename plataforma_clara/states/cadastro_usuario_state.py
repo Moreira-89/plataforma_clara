@@ -50,6 +50,10 @@ class CadastroUsuarioState(rx.State):
             # Prossegue para a persistência dos dados.
             self.salvar_informacao_banco()
 
+            self.mensagem_para_usuario = ""
+
+            return rx.redirect("/login-usuario")
+
         
 
     def identificar_e_limpar_documento(self, doc_bruto):
@@ -129,3 +133,8 @@ class CadastroUsuarioState(rx.State):
             session.commit()
             # Atualiza a interface com mensagem de sucesso
             self.mensagem_para_usuario = "Usuário cadastrado com sucesso!"
+            self.tipo_usuario = ""
+            self.nome_usuario = ""
+            self.email_usuario = ""
+            self.identificador_usuario = ""
+            self.senha_hash_usuario = ""

@@ -8,7 +8,7 @@ import reflex as rx
 
 
 app = rx.App()
-app.add_page(formulario_login, route="/login", title="Login")
+app.add_page(formulario_login, route="/login-usuario", title="Login")
 app.add_page(formulario_cadastro_gestora, route="/cadastro-gestora", title="Cadastro de Gestora")
 app.add_page(formulario_cadastro_investidor, route="/cadastro-investidor", title="Cadastro de Investidor")
 app.add_page(ingestao_dados, route="/ingestao-dados", title="Ingestão de Dados")
