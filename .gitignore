@@ -3,6 +3,8 @@ assets/external/
 .web
 .states
 *.db
+plataforma-clara-0eafb2cacca9.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
