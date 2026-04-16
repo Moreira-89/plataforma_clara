@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 # Campos do modelo tb_aporte que devem ser enviados ao BigQuery (exclui 'id' do SQLModel)
 _CAMPOS_APORTE: list[str] = [
     "id_aporte_uuid",
+    "investidor_id",
+    "nome_investidor",
+    "documento_investidor_cpf_cnpj",
+    "email_investidor",
     "fundo_origem_id",
     "nome_fundo_investidor",
     "empresa_sacada_nome",
@@ -75,6 +79,10 @@ class IngestaoDadosState(rx.State):
 
                     aporte = tb_aporte(
                         id_aporte_uuid=novo_uuid,
+                        investidor_id=registro.get("investidor_id"),
+                        nome_investidor=registro.get("nome_investidor"),
+                        documento_investidor_cpf_cnpj=registro.get("documento_investidor_cpf_cnpj"),
+                        email_investidor=registro.get("email_investidor"),
                         fundo_origem_id=registro.get("fundo_origem_id"),
                         nome_fundo_investidor=registro.get("nome_fundo_investidor"),
                         empresa_sacada_nome=registro.get("empresa_sacada_nome"),
@@ -145,6 +153,10 @@ class IngestaoDadosState(rx.State):
             job_config = bigquery.LoadJobConfig(
                 schema=[
                     bigquery.SchemaField("id_aporte_uuid", "STRING"),
+                    bigquery.SchemaField("investidor_id", "STRING"),
+                    bigquery.SchemaField("nome_investidor", "STRING"),
+                    bigquery.SchemaField("documento_investidor_cpf_cnpj", "STRING"),
+                    bigquery.SchemaField("email_investidor", "STRING"),
                     bigquery.SchemaField("fundo_origem_id", "STRING"),
                     bigquery.SchemaField("nome_fundo_investidor", "STRING"),
                     bigquery.SchemaField("empresa_sacada_nome", "STRING"),

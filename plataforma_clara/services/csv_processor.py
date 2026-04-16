@@ -5,6 +5,10 @@ logger = logging.getLogger(__name__)
 
 # Nomes exatos das colunas que o sistema espera no arquivo (cabeçalho do CSV)
 COLUNAS_OBRIGATORIAS: list[str] = [
+    "investidor_id",
+    "nome_investidor",
+    "documento_investidor_cpf_cnpj",
+    "email_investidor",
     "fundo_origem_id",
     "nome_fundo_investidor",
     "empresa_sacada_nome",
@@ -24,7 +28,7 @@ COLUNAS_OBRIGATORIAS: list[str] = [
 ]
 
 # Colunas cuja ausência de valor torna a linha inutilizável
-_COLUNAS_CRITICAS: list[str] = ["cnpj_sacado_limpo", "valor_aporte_compra"]
+_COLUNAS_CRITICAS: list[str] = ["cnpj_sacado_limpo", "valor_aporte_compra", "documento_investidor_cpf_cnpj"]
 
 
 def processar_arquivo_csv(caminho_arquivo: str | object) -> pd.DataFrame:

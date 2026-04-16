@@ -13,7 +13,7 @@ _cache_timestamp: float = 0.0
 _CACHE_TTL_SEGUNDOS: float = 300.0  # 5 minutos
 
 
-def buscar_metricas_blocos_liquidez(*, force_refresh: bool = False) -> list[dict[str, Any]]:
+def buscar_metricas_blocos_liquidez(*, force_refresh: bool = False, investidor_id: str) -> list[dict[str, Any]]:
     """
     Conecta no BigQuery e retorna um resumo financeiro e de risco
     agrupado por Bloco de Liquidez para alimentar os gráficos do Dashboard.
@@ -21,8 +21,11 @@ def buscar_metricas_blocos_liquidez(*, force_refresh: bool = False) -> list[dict
     Utiliza cache em memória com TTL de 5 minutos para evitar queries
     repetidas ao BigQuery a cada carregamento de página.
 
+    Filtra investidos pelo id do investidor
+
     Args:
         force_refresh: Se True, ignora o cache e busca dados frescos.
+        investidor_id: ID do investidor para filtrar os dados.
 
     Returns:
         Lista de dicts com as métricas por bloco de liquidez.
@@ -40,29 +43,31 @@ def buscar_metricas_blocos_liquidez(*, force_refresh: bool = False) -> list[dict
         query = """
             SELECT 
                 bloco_liquidez_setorial,
-                SUM(valor_mercado_atual) AS total_alocado,
-                AVG(score_risco_interno) AS score_medio_reputacao,
-                COUNT(id_aporte_uuid) AS quantidade_aportes
-            FROM `plataforma-clara.dados_fidc.tb_aporte`
+                SUM(valor_mercado_atual) as total_alocado,
+                AVG(score_risco_interno) as score_medio_reputacao,
+                COUNT(id_aporte_uuid) as quantidade_aportes
+            FROM `seu-projeto.seu_dataset.tb_aporte`
             WHERE bloco_liquidez_setorial IS NOT NULL
+              AND investidor_id = @investidor_id
             GROUP BY bloco_liquidez_setorial
             ORDER BY total_alocado DESC
         """
 
-        dataframe: pd.DataFrame = client.query(query).to_dataframe()
-
-        # Preenche possíveis valores nulos com zero para não quebrar os gráficos
-        dataframe = dataframe.fillna(0)
-
-        dados_dashboard: list[dict[str, Any]] = dataframe.to_dict(orient="records")
-
-        # Atualiza o cache
-        _cache_dados = dados_dashboard
-        _cache_timestamp = agora
-
-        logger.info("Dados BigQuery carregados: %d blocos de liquidez.", len(dados_dashboard))
+        # 3. Configuração do parâmetro do BigQuery ligando a variável Python ao SQL
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("investidor_id", "STRING", investidor_id)
+            ]
+        )
+        
+        # 4. Execução da query injetando a configuração
+        dataframe = client.query(query, job_config=job_config).to_dataframe()
+        
+        dataframe.fillna(0, inplace=True)
+        dados_dashboard = dataframe.to_dict(orient="records")
+        
         return dados_dashboard
-
+        
     except Exception as e:
-        logger.error("Erro ao buscar métricas no BigQuery: %s", e, exc_info=True)
+        print(f"Erro ao buscar métricas no BigQuery para o ID {investidor_id}: {e}")
         return []

@@ -18,9 +18,11 @@ class tb_usuario(rx.Model, table=True):
 
 
 class tb_aporte(rx.Model, table=True):
-    """Tabela de aportes do FIDC."""
-
     id_aporte_uuid: str
+    investidor_id: Optional[str] = None
+    nome_investidor: Optional[str] = None
+    documento_investidor_cpf_cnpj: Optional[str] = None
+    email_investidor: Optional[str] = None
     fundo_origem_id: Optional[str] = None
     nome_fundo_investidor: Optional[str] = None
     empresa_sacada_nome: Optional[str] = None
