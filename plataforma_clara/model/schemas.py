@@ -1,17 +1,25 @@
-import reflex as rx
 import datetime
 from typing import Optional
 
+import reflex as rx
+import sqlalchemy as sa
+
 
 class tb_usuario(rx.Model, table=True):
+    """Tabela de usuários da plataforma (gestoras e investidores)."""
+
     tipo_usuario: str  # Esperado: "gestora" ou "investidor"
     nome_usuario: str
-    email_usuario: str
+    email_usuario: str = sa.Column(  # type: ignore[assignment]
+        sa.String, unique=True, index=True, nullable=False
+    )
     identificador_usuario: str
     senha_hash_usuario: str
 
 
 class tb_aporte(rx.Model, table=True):
+    """Tabela de aportes do FIDC."""
+
     id_aporte_uuid: str
     fundo_origem_id: Optional[str] = None
     nome_fundo_investidor: Optional[str] = None
