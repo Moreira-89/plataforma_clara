@@ -4,7 +4,6 @@ from plataforma_clara.pages.pg_login import formulario_login
 from plataforma_clara.pages.pg_dashboard_gestora import dashboard_gestora
 from plataforma_clara.pages.pg_dashboard_investidor import dashboard_investidor
 from plataforma_clara.pages.pg_home import home_page
-from plataforma_clara.states.dashboard_state import DashboardState
 
 import reflex as rx
 
@@ -15,5 +14,5 @@ app.add_page(formulario_login, route="/login-usuario", title="Login")
 app.add_page(formulario_cadastro_gestora, route="/cadastro-gestora", title="Cadastro de Gestora")
 app.add_page(formulario_cadastro_investidor, route="/cadastro-investidor", title="Cadastro de Investidor")
 app.add_page(ingestao_dados, route="/ingestao-dados", title="Ingestão de Dados")
-app.add_page(dashboard_gestora, route="/dashboard-gestora", title="Dashboard da Gestora", on_load=DashboardState.carregar_dados_dashboard)
-app.add_page(dashboard_investidor, route="/dashboard-investidor", title="Dashboard do Investidor", on_load=DashboardState.carregar_dados_dashboard)
+app.add_page(dashboard_gestora, route="/dashboard-gestora", title="Dashboard da Gestora")
+app.add_page(dashboard_investidor, route="/dashboard-investidor", title="Dashboard do Investidor")

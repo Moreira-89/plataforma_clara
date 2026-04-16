@@ -44,18 +44,24 @@ class IngestaoDadosState(rx.State):
     mensagem_para_usuario: str = ""
     processamento_ativo: bool = False
 
-    async def lidar_com_upload_de_arquivo(self, arquivos: list[rx.UploadFile]):
-        """Recebe arquivo CSV via upload, processa e persiste no Supabase + BigQuery."""
+    @rx.event
+    async def lidar_com_upload_de_arquivo(self, files: list[rx.UploadFile]):
+        """
+        Recebe arquivo CSV via upload, processa e persiste no Supabase + BigQuery.
+
+        O Reflex envia os arquivos selecionados como keyword argument ``files``.
+        O parâmetro DEVE se chamar ``files`` para casar com o contrato do framework.
+        """
         self.mensagem_para_usuario = ""
         caminho_temporario = None
 
         try:
-            if not arquivos:
+            if not files:
                 self.mensagem_para_usuario = "Nenhum arquivo foi enviado."
                 return
 
-            dados_arquivos = await arquivos[0].read()
-            caminho_temporario = rx.get_upload_dir() / arquivos[0].filename
+            dados_arquivos = await files[0].read()
+            caminho_temporario = rx.get_upload_dir() / files[0].filename
 
             with open(caminho_temporario, "wb") as f:
                 f.write(dados_arquivos)

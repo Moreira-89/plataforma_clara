@@ -16,8 +16,8 @@ class AutenticacaoState(rx.State):
     mensagem_para_usuario: str = ""
     documento_usuario_logado: str = ""
 
-    def _limpar_estado(self) -> None:
-        """Reseta todos os campos de formulário para o valor padrão."""
+    def _limpar_formulario(self) -> None:
+        """Reseta apenas os campos do formulário de login (preserva dados de sessão)."""
         self.email_usuario = ""
         self.senha_hash_usuario = ""
         self.mensagem_para_usuario = ""
@@ -62,18 +62,25 @@ class AutenticacaoState(rx.State):
                 self.senha_hash_usuario = ""
                 return
 
-            # Login bem-sucedido
+            # Login bem-sucedido — salva o documento ANTES de limpar o formulário
             logger.info("Login bem-sucedido para: %s (tipo: %s)", email_normalizado, usuario.tipo_usuario)
+            self.documento_usuario_logado = usuario.identificador_usuario
 
             destino = {
                 "investidor": "/dashboard-investidor",
                 "gestora": "/dashboard-gestora",
             }.get(usuario.tipo_usuario)
-            self.documento_usuario_logado = usuario.identificador_usuario
 
             if destino:
-                self._limpar_estado()
+                self._limpar_formulario()
                 return rx.redirect(destino)
 
             # Tipo inesperado não pode passar silenciosamente sem direcionamento.
             self.mensagem_para_usuario = "Tipo de usuário não reconhecido."
+
+    @rx.event
+    def fazer_logout(self):
+        """Encerra a sessão do usuário e redireciona para a home."""
+        self.documento_usuario_logado = ""
+        self._limpar_formulario()
+        return rx.redirect("/")
