@@ -13,7 +13,7 @@ _cache_timestamp: float = 0.0
 _CACHE_TTL_SEGUNDOS: float = 300.0  # 5 minutos
 
 
-def buscar_metricas_blocos_liquidez(*, force_refresh: bool = False, investidor_id: str) -> list[dict[str, Any]]:
+def buscar_metricas_blocos_liquidez(*, force_refresh: bool = False, cpf_investidor: str) -> list[dict[str, Any]]:
     """
     Conecta no BigQuery e retorna um resumo financeiro e de risco
     agrupado por Bloco de Liquidez para alimentar os gráficos do Dashboard.
@@ -48,19 +48,17 @@ def buscar_metricas_blocos_liquidez(*, force_refresh: bool = False, investidor_i
                 COUNT(id_aporte_uuid) as quantidade_aportes
             FROM `seu-projeto.seu_dataset.tb_aporte`
             WHERE bloco_liquidez_setorial IS NOT NULL
-              AND investidor_id = @investidor_id
+              AND documento_investidor_cpf_cnpj = @cpf_investidor
             GROUP BY bloco_liquidez_setorial
             ORDER BY total_alocado DESC
         """
 
-        # 3. Configuração do parâmetro do BigQuery ligando a variável Python ao SQL
         job_config = bigquery.QueryJobConfig(
             query_parameters=[
-                bigquery.ScalarQueryParameter("investidor_id", "STRING", investidor_id)
+                bigquery.ScalarQueryParameter("cpf_investidor", "STRING", cpf_investidor)
             ]
         )
-        
-        # 4. Execução da query injetando a configuração
+
         dataframe = client.query(query, job_config=job_config).to_dataframe()
         
         dataframe.fillna(0, inplace=True)
@@ -69,5 +67,28 @@ def buscar_metricas_blocos_liquidez(*, force_refresh: bool = False, investidor_i
         return dados_dashboard
         
     except Exception as e:
-        print(f"Erro ao buscar métricas no BigQuery para o ID {investidor_id}: {e}")
+        print(f"Erro ao buscar métricas no BigQuery para o ID {cpf_investidor}: {e}")
+        return []
+
+def buscar_metricas_gerais_gestora() -> list[dict]:
+    """Busca todos os dados agregados dos blocos, sem filtro de CPF (Visão Gestora)."""
+    try:
+        client = bigquery.Client()
+        query = """
+            SELECT 
+                bloco_liquidez_setorial,
+                SUM(valor_mercado_atual) as total_alocado,
+                AVG(score_risco_interno) as score_medio_reputacao,
+                COUNT(id_aporte_uuid) as quantidade_aportes
+            FROM `seu-projeto.seu_dataset.tb_aporte`
+            WHERE bloco_liquidez_setorial IS NOT NULL
+            GROUP BY bloco_liquidez_setorial
+            ORDER BY total_alocado DESC
+        """
+        dataframe = client.query(query).to_dataframe()
+        dataframe.fillna(0, inplace=True)
+        return dataframe.to_dict(orient="records")
+        
+    except Exception as e:
+        print(f"Erro ao buscar BigQuery para a Gestora: {e}")
         return []

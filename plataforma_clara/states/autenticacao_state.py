@@ -14,6 +14,7 @@ class AutenticacaoState(rx.State):
     email_usuario: str = ""
     senha_hash_usuario: str = ""
     mensagem_para_usuario: str = ""
+    documento_usuario_logado: str = ""
 
     def _limpar_estado(self) -> None:
         """Reseta todos os campos de formulário para o valor padrão."""
@@ -68,6 +69,7 @@ class AutenticacaoState(rx.State):
                 "investidor": "/dashboard-investidor",
                 "gestora": "/dashboard-gestora",
             }.get(usuario.tipo_usuario)
+            self.documento_usuario_logado = usuario.identificador_usuario
 
             if destino:
                 self._limpar_estado()
