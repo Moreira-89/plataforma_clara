@@ -2,13 +2,22 @@ import pandas as pd
 
 # Nomes exatos das colunas que o sistema espera no arquivo (cabeçalho do CSV)
 COLUNAS_OBRIGATORIAS = [
-    "cnpj",
-    "nome_empresa",
-    "valor_aporte",
-    "categoria",
-    "prazo",
-    "taxa",
-    "status_pagamento"
+    "fundo_origem_id",
+    "nome_fundo_investidor",
+    "empresa_sacada_nome",
+    "cnpj_sacado_limpo",
+    "valor_aporte_compra",
+    "valor_mercado_atual",
+    "taxa_retorno_pre_fixada",
+    "prazo_vencimento_dias",
+    "quantidade_papeis_adquiridos",
+    "score_risco_interno",
+    "status_prazo_vencimento",
+    "bloco_liquidez_setorial",
+    "categoria_tecnica_ativo",
+    "codigo_identificacao_isin",
+    "codigo_identificacao_selic",
+    "data_referencia_competencia"
 ]
 
 
