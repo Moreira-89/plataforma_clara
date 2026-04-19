@@ -56,7 +56,7 @@ def buscar_metricas_blocos_liquidez(
                 COUNT(id_aporte_uuid) AS quantidade_aportes
             FROM `{_TABLE_ID}`
             WHERE bloco_liquidez_setorial IS NOT NULL
-              AND documento_investidor_cpf_cnpj = @cpf_investidor
+              AND REGEXP_REPLACE(documento_investidor_cpf_cnpj, r'[^0-9]', '') = @cpf_investidor
             GROUP BY bloco_liquidez_setorial
             ORDER BY total_alocado DESC
         """
