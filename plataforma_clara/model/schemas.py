@@ -28,8 +28,8 @@ class tb_aporte(rx.Model, table=True):
     valor_aporte_compra: float
     valor_mercado_atual: float
     quantidade_papeis_adquiridos: float
-    data_vencimento: str
-    data_referencia_competencia: str
+    data_vencimento: datetime.date
+    data_referencia_competencia: datetime.date
     prazo_vencimento_dias: int
     status_prazo_vencimento: str
     taxa_retorno_pre_fixada: float

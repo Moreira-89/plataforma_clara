@@ -2,6 +2,7 @@ import logging
 import os
 import uuid
 from typing import Any
+import datetime
 
 import pandas as pd
 import reflex as rx
@@ -107,9 +108,14 @@ class IngestaoDadosState(rx.State):
                     objetos_aporte.append(aporte)
 
                     # Monta dict para BigQuery usando a lista explícita de campos
-                    dados_para_envio_bq.append(
-                        {campo: getattr(aporte, campo) for campo in _CAMPOS_APORTE}
-                    )
+                    d = {campo: getattr(aporte, campo) for campo in _CAMPOS_APORTE}
+                    
+                    if isinstance(d.get("data_vencimento"), datetime.date):
+                        d["data_vencimento"] = d["data_vencimento"].isoformat()
+                    if isinstance(d.get("data_referencia_competencia"), datetime.date):
+                        d["data_referencia_competencia"] = d["data_referencia_competencia"].isoformat()
+                        
+                    dados_para_envio_bq.append(d)
 
                 # Inserção em lote — mais eficiente que add() dentro do loop
                 session.add_all(objetos_aporte)
