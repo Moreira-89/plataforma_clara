@@ -4,6 +4,7 @@ assets/external/
 .states
 *.db
 plataforma-clara-0eafb2cacca9.json
+telas/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
