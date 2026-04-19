@@ -41,7 +41,7 @@ class IngestaoDadosState(rx.State):
     """Estado responsável pelo fluxo de upload e processamento de CSVs."""
 
     mensagem_para_usuario: str = ""
-    processamento_ativo: bool = False
+
 
     @rx.event
     async def lidar_com_upload_de_arquivo(self, files: list[rx.UploadFile]):
@@ -65,8 +65,7 @@ class IngestaoDadosState(rx.State):
             with open(caminho_temporario, "wb") as f:
                 f.write(dados_arquivos)
 
-            self.processamento_ativo = True
-            yield
+
 
             dataframe = processar_arquivo_csv(caminho_temporario)
 
@@ -123,7 +122,7 @@ class IngestaoDadosState(rx.State):
                 "%d aportes salvos no Supabase com sucesso.", len(objetos_aporte)
             )
 
-            self.processamento_ativo = False
+
             self.mensagem_para_usuario = (
                 "Sucesso! CSV processado no Supabase e enviado para a nuvem."
             )
@@ -132,11 +131,11 @@ class IngestaoDadosState(rx.State):
             yield IngestaoDadosState.enviar_dados_bigquery(dados_para_envio_bq)
 
         except ValueError as e:
-            self.processamento_ativo = False
+
             self.mensagem_para_usuario = str(e)
         except Exception as e:
             logger.exception("Erro inesperado no processamento do CSV.")
-            self.processamento_ativo = False
+
             self.mensagem_para_usuario = f"Erro no processamento: {str(e)}"
         finally:
             # Garante remoção do arquivo temporário mesmo em caso de exceção
