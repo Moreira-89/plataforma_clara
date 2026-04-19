@@ -32,7 +32,6 @@ _CAMPOS_APORTE: list[str] = [
     "bloco_liquidez_setorial",
     "categoria_tecnica_ativo",
     "codigo_identificacao_isin",
-    "codigo_identificacao_selic",
     "score_risco_interno",
     "flag_outlier_valor"
 ]
@@ -101,7 +100,6 @@ class IngestaoDadosState(rx.State):
                         bloco_liquidez_setorial=registro.get("bloco_liquidez_setorial"),
                         categoria_tecnica_ativo=registro.get("categoria_tecnica_ativo"),
                         codigo_identificacao_isin=registro.get("codigo_identificacao_isin"),
-                        codigo_identificacao_selic=registro.get("codigo_identificacao_selic"),
                         score_risco_interno=registro.get("score_risco_interno"),
                         flag_outlier_valor=registro.get("flag_outlier_valor"),
                     )
@@ -179,7 +177,6 @@ class IngestaoDadosState(rx.State):
                     bigquery.SchemaField("bloco_liquidez_setorial", "STRING"),
                     bigquery.SchemaField("categoria_tecnica_ativo", "STRING"),
                     bigquery.SchemaField("codigo_identificacao_isin", "STRING"),
-                    bigquery.SchemaField("codigo_identificacao_selic", "STRING"),
                     bigquery.SchemaField("score_risco_interno", "FLOAT"),
                     bigquery.SchemaField("flag_outlier_valor", "STRING"),
                 ],

@@ -36,7 +36,6 @@ class tb_aporte(rx.Model, table=True):
     bloco_liquidez_setorial: str
     categoria_tecnica_ativo: str
     codigo_identificacao_isin: Optional[str] = None
-    codigo_identificacao_selic: Optional[str] = None
     score_risco_interno: float
     flag_outlier_valor: str
 

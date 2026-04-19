@@ -22,7 +22,6 @@ COLUNAS_OBRIGATORIAS: list[str] = [
     "bloco_liquidez_setorial",
     "categoria_tecnica_ativo",
     "codigo_identificacao_isin",
-    "codigo_identificacao_selic",
     "score_risco_interno",
     "flag_outlier_valor"
 ]
@@ -57,7 +56,6 @@ def processar_arquivo_csv(caminho_arquivo: str | object) -> pd.DataFrame:
             "bloco_liquidez_setorial": str,
             "categoria_tecnica_ativo": str,
             "codigo_identificacao_isin": str,
-            "codigo_identificacao_selic": str,
             "flag_outlier_valor": str
         }
         dataframe = pd.read_csv(caminho_arquivo, dtype=dtypes)
