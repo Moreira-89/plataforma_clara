@@ -120,6 +120,66 @@ def dashboard_gestora() -> rx.Component:
                 mb="8",
             ),
             
+            # Gráficos Analíticos (Recharts)
+            rx.grid(
+                rx.card(
+                    rx.heading("Evolução do Volume Total (em Milhões de R$)", size="4", mb="4", color="#111827"),
+                    rx.recharts.line_chart(
+                        rx.recharts.line(
+                            data_key="volume", stroke="#10B981", type_="monotone"
+                        ),
+                        rx.recharts.x_axis(data_key="name"),
+                        rx.recharts.y_axis(),
+                        rx.recharts.cartesian_grid(stroke_dasharray="3 3"),
+                        rx.recharts.graphing_tooltip(),
+                        data=DashboardState.dados_evolucao_aum,
+                        height=250,
+                    ),
+                    width="100%",
+                    variant="surface",
+                ),
+                rx.card(
+                    rx.heading("Distribuição de Aportes (em Milhões de R$)", size="4", mb="4", color="#111827"),
+                    rx.recharts.bar_chart(
+                        rx.recharts.bar(
+                            data_key="alocado", fill="#3B82F6"
+                        ),
+                        rx.recharts.x_axis(data_key="name"),
+                        rx.recharts.y_axis(),
+                        rx.recharts.cartesian_grid(stroke_dasharray="3 3"),
+                        rx.recharts.graphing_tooltip(),
+                        data=DashboardState.dados_distribuicao_aportes,
+                        height=250,
+                    ),
+                    width="100%",
+                    variant="surface",
+                ),
+                rx.card(
+                    rx.heading("Alocação por Bloco (em Milhões de R$)", size="4", mb="4", color="#111827"),
+                    rx.recharts.pie_chart(
+                        rx.recharts.pie(
+                            data=DashboardState.dados_grafico_pizza,
+                            data_key="value",
+                            name_key="name",
+                            cx="50%",
+                            cy="50%",
+                            inner_radius="60%", # Gráfico Donut
+                            outer_radius="80%",
+                            fill="#8B5CF6",
+                            label=True,
+                        ),
+                        rx.recharts.graphing_tooltip(),
+                        height=250,
+                    ),
+                    width="100%",
+                    variant="surface",
+                ),
+                columns=rx.breakpoints(initial="1", lg="3"),
+                spacing="4",
+                width="100%",
+                mb="8",
+            ),
+            
             # Tabela de Alocações Recentes — Dados reais do BigQuery
             rx.card(
                 rx.hstack(
@@ -134,11 +194,11 @@ def dashboard_gestora() -> rx.Component:
                 rx.table.root(
                     rx.table.header(
                         rx.table.row(
-                            rx.table.column_header_cell("Empresa Sacada"),
-                            rx.table.column_header_cell("Valor Alocado (R$)"),
-                            rx.table.column_header_cell("Score Nuclea (ML)"),
-                            rx.table.column_header_cell("Status Atual"),
-                            rx.table.column_header_cell("Ações"),
+                            rx.table.column_header_cell("Empresa Sacada", color="#111827"),
+                            rx.table.column_header_cell("Valor Alocado (R$)", color="#111827"),
+                            rx.table.column_header_cell("Score Nuclea (ML)", color="#111827"),
+                            rx.table.column_header_cell("Status Atual", color="#111827"),
+                            rx.table.column_header_cell("Ações", color="#111827"),
                         ),
                     ),
                     rx.table.body(
@@ -153,11 +213,11 @@ def dashboard_gestora() -> rx.Component:
                                         spacing="0",
                                     )
                                 ),
-                                rx.table.cell(rx.text(item["valor"], weight="medium")),
+                                rx.table.cell(rx.text(item["valor"], weight="medium", color="#111827")),
                                 rx.table.cell(rx.badge(item["risco"], variant="soft")),
                                 rx.table.cell(rx.badge(item["status"], variant="solid")),
                                 rx.table.cell(
-                                    rx.button("Detalhes", size="1", variant="outline", color_scheme="gray")
+                                    rx.button("Detalhes", size="1", variant="outline", color_scheme="gray", color="#111827")
                                 ),
                             ),
                         ),

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any
 
@@ -94,7 +95,9 @@ class DashboardState(rx.State):
         if not cpf_logado:
             return rx.redirect("/")
 
-        self.dados_blocos = buscar_metricas_blocos_liquidez(cpf_investidor=cpf_logado)
+        self.dados_blocos = await asyncio.to_thread(
+            buscar_metricas_blocos_liquidez, cpf_investidor=cpf_logado
+        )
 
         if not self.dados_blocos:
             self.mensagem_erro = "Nenhum dado encontrado para exibir."
@@ -103,13 +106,15 @@ class DashboardState(rx.State):
 
         self._calcular_metricas(self.dados_blocos)
 
-        # Gera o insight inicial (usando o Mock do LangChain)
-        self.insight_ia = gerar_insight_relatorio_langchain(self.dados_blocos[0])
+        # Gera o insight inicial (usando o Mock do LangChain) - também pode ser pesado
+        self.insight_ia = await asyncio.to_thread(
+            gerar_insight_relatorio_langchain, self.dados_blocos[0]
+        )
 
         # ── Tabela de Transparência via Supabase ─────────────────────────────
-        try:
+        def fetch_transparencia():
             with rx.session() as session:
-                registros = (
+                return (
                     session.query(
                         tb_aporte.empresa_sacada_nome,
                         tb_aporte.bloco_liquidez_setorial,
@@ -130,15 +135,19 @@ class DashboardState(rx.State):
                     .order_by(func.avg(tb_aporte.score_risco_interno).desc())
                     .all()
                 )
-                self.tabela_transparencia_investidor = [
-                    {
-                        "empresa": r.empresa_sacada_nome,
-                        "bloco": r.bloco_liquidez_setorial or "N/A",
-                        "score": round(float(r.score_medio or 0), 2),
-                        "valor": f"R$ {float(r.valor_total or 0):,.2f}",
-                    }
-                    for r in registros
-                ]
+
+        try:
+            registros = await asyncio.to_thread(fetch_transparencia)
+            self.tabela_transparencia_investidor = []
+            for r in registros:
+                v = float(r.valor_total or 0)
+                v_str = f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                self.tabela_transparencia_investidor.append({
+                    "empresa": r.empresa_sacada_nome,
+                    "bloco": r.bloco_liquidez_setorial or "N/A",
+                    "score": round(float(r.score_medio or 0), 2),
+                    "valor": f"R$ {v_str}",
+                })
         except Exception:
             logger.exception("Erro ao buscar tabela de transparência do investidor.")
 
@@ -151,12 +160,12 @@ class DashboardState(rx.State):
     # ── Gestora ──────────────────────────────────────────────────────────────
 
     @rx.event
-    def carregar_dados_gestora(self):
+    async def carregar_dados_gestora(self):
         """Busca a visão global do FIDC para a Gestora (BigQuery + Supabase)."""
         self.mensagem_erro = ""
 
         # ── 1. Dados via BigQuery (gráficos e filtro por bloco) ──────────────
-        self.dados_blocos_gestora = buscar_metricas_gerais_gestora()
+        self.dados_blocos_gestora = await asyncio.to_thread(buscar_metricas_gerais_gestora)
 
         if not self.dados_blocos_gestora:
             self.mensagem_erro = "Nenhum dado encontrado para exibir."
@@ -164,7 +173,7 @@ class DashboardState(rx.State):
             return
 
         # ── 1b. Tabela de aportes por empresa (BigQuery) ──────────────────────
-        self.tabela_aportes_gestora = buscar_tabela_aportes_gestora()
+        self.tabela_aportes_gestora = await asyncio.to_thread(buscar_tabela_aportes_gestora)
 
         # Cria a lista de opções do menu dinamicamente
         nomes = [item["bloco_liquidez_setorial"] for item in self.dados_blocos_gestora]
@@ -173,17 +182,18 @@ class DashboardState(rx.State):
         # Calcula os KPIs com todos os blocos e gera insight
         self._aplicar_filtro_bloco("Todos")
 
-        self.insight_ia = gerar_insight_relatorio_langchain(self.dados_blocos_gestora[0])
+        self.insight_ia = await asyncio.to_thread(
+            gerar_insight_relatorio_langchain, self.dados_blocos_gestora[0]
+        )
 
         # ── 2. Dados via Supabase (patrimônio + score + ranking) ──────────────
-        try:
+        def fetch_gestora_supabase():
             with rx.session() as session:
                 # Soma TUDO (sem filtro de CPF)
                 total = session.query(
                     func.sum(tb_aporte.valor_mercado_atual)
                 ).scalar()
-                self.patrimonio_total_gestora = float(total) if total else 0.0
-
+                
                 # Média de Score por Bloco
                 resultados = session.query(
                     tb_aporte.bloco_liquidez_setorial,
@@ -191,12 +201,6 @@ class DashboardState(rx.State):
                 ).group_by(
                     tb_aporte.bloco_liquidez_setorial
                 ).all()
-
-                self.score_medio_blocos = [
-                    {"bloco": bloco, "score_medio": round(float(score), 2)}
-                    for bloco, score in resultados
-                    if bloco is not None
-                ]
 
                 # Ranking de reputação geral (todas as empresas)
                 registros_ranking = (
@@ -215,15 +219,27 @@ class DashboardState(rx.State):
                     .limit(50)
                     .all()
                 )
-                self.ranking_empresas_gestora = [
-                    {
-                        "empresa": r.empresa_sacada_nome,
-                        "bloco": r.bloco_liquidez_setorial or "N/A",
-                        "score_medio": round(float(r.score_medio or 0), 2),
-                        "volume": f"R$ {float(r.volume_total or 0):,.2f}",
-                    }
-                    for r in registros_ranking
-                ]
+                return total, resultados, registros_ranking
+
+        try:
+            total, resultados, registros_ranking = await asyncio.to_thread(fetch_gestora_supabase)
+            
+            self.patrimonio_total_gestora = float(total) if total else 0.0
+            self.score_medio_blocos = [
+                {"bloco": bloco, "score_medio": round(float(score), 2)}
+                for bloco, score in resultados
+                if bloco is not None
+            ]
+            self.ranking_empresas_gestora = []
+            for r in registros_ranking:
+                v = float(r.volume_total or 0)
+                v_str = f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                self.ranking_empresas_gestora.append({
+                    "empresa": r.empresa_sacada_nome,
+                    "bloco": r.bloco_liquidez_setorial or "N/A",
+                    "score_medio": round(float(r.score_medio or 0), 2),
+                    "volume": f"R$ {v_str}",
+                })
         except Exception:
             logger.exception("Erro ao buscar métricas da gestora no Supabase.")
 
@@ -260,27 +276,29 @@ class DashboardState(rx.State):
     def dados_grafico_pizza(self) -> list[dict[str, Any]]:
         """Propriedade computada que formata os dados para o gráfico de pizza."""
         return [
-            {"name": item["bloco_liquidez_setorial"], "value": item["total_alocado"]}
+            {"name": item["bloco_liquidez_setorial"], "value": round(float(item["total_alocado"]) / 1_000_000, 2)}
             for item in self.dados_blocos
         ]
 
     @rx.var
     def patrimonio_total_investidor(self) -> str:
         """Patrimônio total do investidor logado, formatado em R$."""
-        return f"R$ {self.total_alocado_geral:,.2f}"
+        texto = f"{self.total_alocado_geral:,.2f}"
+        return "R$ " + texto.replace(",", "X").replace(".", ",").replace("X", ".")
 
     @rx.var
     def alocacao_blocos_investidor(self) -> list[dict[str, Any]]:
         """Dados de alocação por bloco formatados para gráfico de pizza do investidor."""
         return [
-            {"name": item["bloco_liquidez_setorial"], "value": item["total_alocado"]}
+            {"name": item["bloco_liquidez_setorial"], "value": round(float(item["total_alocado"]) / 1_000_000, 2)}
             for item in self.dados_blocos
         ]
 
     @rx.var
     def patrimonio_total_gestora_formatado(self) -> str:
         """Patrimônio total do FIDC formatado em R$."""
-        return f"R$ {self.patrimonio_total_gestora:,.2f}"
+        texto = f"{self.patrimonio_total_gestora:,.2f}"
+        return "R$ " + texto.replace(",", "X").replace(".", ",").replace("X", ".")
 
     @rx.var
     def qtd_blocos_ativos(self) -> str:
@@ -315,3 +333,38 @@ class DashboardState(rx.State):
         baixos = sum(1 for b in self.dados_blocos_gestora if b.get("score_medio_reputacao", 0) < 50)
         pct = round((baixos / total) * 100, 1) if total else 0
         return f"{pct}%"
+
+    @rx.var
+    def dados_evolucao_aum(self) -> list[dict[str, Any]]:
+        """Simulação de dados de Evolução de AUM (6 meses) baseado no valor atual."""
+        import random
+        meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"]
+        base = self.patrimonio_total_gestora * 0.8
+        dados = []
+        for mes in meses:
+            base += self.patrimonio_total_gestora * random.uniform(0.01, 0.05)
+            dados.append({"name": mes, "volume": round(base / 1_000_000, 2)})
+        # O último mês é o valor exato atual
+        if dados:
+            dados[-1]["volume"] = round(self.patrimonio_total_gestora / 1_000_000, 2)
+        return dados
+
+    @rx.var
+    def dados_distribuicao_aportes(self) -> list[dict[str, Any]]:
+        """Dados agregados por setor ou bloco para o BarChart."""
+        return [
+            {"name": b.get("bloco_liquidez_setorial", "N/A"), "alocado": round(float(b.get("total_alocado", 0)) / 1_000_000, 2)}
+            for b in self.dados_blocos_gestora[:5]
+        ]
+
+    @rx.var
+    def dados_rendimento_projetado(self) -> list[dict[str, Any]]:
+        """Simulação de curva de rendimento projetado para o investidor."""
+        meses = ["Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+        base = self.total_alocado_geral
+        dados = []
+        for mes in meses:
+            # Simulando crescimento médio de 1% a.m.
+            base *= 1.01
+            dados.append({"name": mes, "rendimento": round((base - self.total_alocado_geral) / 1_000_000, 2)})
+        return dados

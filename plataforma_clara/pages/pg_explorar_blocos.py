@@ -1,5 +1,6 @@
 import reflex as rx
-from plataforma_clara.states.dashboard_state import DashboardState # Para ligar aos dados reais no futuro
+from plataforma_clara.states.dashboard_state import DashboardState
+from plataforma_clara.states.explorar_blocos_state import ExplorarBlocosState
 
 def sidebar_investidor() -> rx.Component:
     """Componente de Menu Lateral para o Investidor (Reutilizado)."""
@@ -68,34 +69,36 @@ def sidebar_investidor() -> rx.Component:
         top="0",
     )
 
-def criar_card_bloco(nome: str, setor: str, volume: str, score_medio: str, rentabilidade: str) -> rx.Component:
-    """Componente para renderizar o resumo de um Bloco de Liquidez."""
+def criar_card_bloco_dinamico(bloco: dict) -> rx.Component:
+    """Componente para renderizar o resumo dinâmico de um Bloco de Liquidez."""
     
-    # Lógica simples de cores baseada no score
-    cor_score = "green" if "A" in score_medio else ("yellow" if "B" in score_medio else "red")
+    cor_score = rx.cond(
+        bloco["score_literal"].to(str).contains("A"), "green",
+        rx.cond(bloco["score_literal"].to(str).contains("B"), "yellow", "red")
+    )
     
     return rx.card(
         rx.vstack(
             rx.hstack(
-                rx.badge(setor, color_scheme="blue", variant="soft"),
+                rx.badge(bloco["setor"], color_scheme="blue", variant="soft"),
                 rx.spacer(),
-                rx.badge(f"Score: {score_medio}", color_scheme=cor_score, variant="solid"),
+                rx.badge("Score: ", bloco["score_literal"], color_scheme=cor_score, variant="solid"),
                 width="100%",
             ),
-            rx.heading(nome, size="5", color="#111827", mt="2"),
+            rx.heading(bloco["nome"], size="5", color="#111827", mt="2"),
             rx.divider(margin_y="2"),
             
             rx.hstack(
                 rx.vstack(
                     rx.text("Volume Total", size="1", color="#6B7280"),
-                    rx.text(volume, size="3", weight="bold", color="#374151"),
+                    rx.text(bloco["volume"], size="3", weight="bold", color="#374151"),
                     align_items="start",
                     spacing="0"
                 ),
                 rx.spacer(),
                 rx.vstack(
                     rx.text("Rent. Alvo (a.a.)", size="1", color="#6B7280"),
-                    rx.text(rentabilidade, size="3", weight="bold", color="#10B981"),
+                    rx.text(bloco["rentabilidade"], size="3", weight="bold", color="#10B981"),
                     align_items="end",
                     spacing="0"
                 ),
@@ -108,7 +111,7 @@ def criar_card_bloco(nome: str, setor: str, volume: str, score_medio: str, renta
                 mt="4", 
                 variant="outline", 
                 color_scheme="gray",
-                # on_click=lambda: rx.redirect(f"/detalhes-bloco/{id_bloco}") # Para navegação futura
+                on_click=rx.redirect(f"/detalhes-bloco/{bloco['id_bloco']}")
             ),
             align_items="start",
             width="100%",
@@ -117,7 +120,7 @@ def criar_card_bloco(nome: str, setor: str, volume: str, score_medio: str, renta
         variant="surface",
         border="1px solid #E5E7EB",
         box_shadow="0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-        _hover={"box_shadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1)", "border_color": "#CBD5E1"}, # Efeito de hover
+        _hover={"box_shadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1)", "border_color": "#CBD5E1"},
     )
 
 def explorar_blocos() -> rx.Component:
@@ -143,44 +146,42 @@ def explorar_blocos() -> rx.Component:
             rx.card(
                 rx.hstack(
                     rx.input(
-                        placeholder="Buscar por nome do bloco ou setor...", 
+                        placeholder="Buscar por nome do bloco...", 
                         width=["100%", "400px"],
                         size="3",
-                        # on_change=DashboardState.set_termo_busca
+                        on_change=ExplorarBlocosState.set_termo_busca
                     ),
                     rx.select(
-                        ["Todos os Setores", "Tecnologia", "Varejo", "Agronegócio", "Indústria"],
+                        ["Todos os Setores", "Tecnologia", "Varejo", "Agronegócio", "Indústria", "Saúde"],
                         placeholder="Setor",
                         size="3",
-                        # on_change=DashboardState.set_filtro_setor
+                        on_change=ExplorarBlocosState.set_filtro_setor
                     ),
                     rx.select(
                         ["Qualquer Score", "A+ a A-", "B+ a B-", "C+ ou menor"],
                         placeholder="Score Mínimo",
                         size="3",
+                        on_change=ExplorarBlocosState.set_filtro_score
                     ),
                     rx.spacer(),
                     rx.button(rx.icon("filter", size=16), "Filtrar", size="3", variant="surface"),
                     width="100%",
-                    wrap="wrap", # Permite que os elementos quebrem a linha em telas menores
+                    wrap="wrap",
                     spacing="4",
                 ),
                 width="100%",
-                variant="ghost", # Sem borda, apenas agrupa os filtros
+                variant="ghost",
                 mb="6",
                 padding="0"
             ),
             
-            # Grid de Blocos
+            # Grid de Blocos Dinâmico
             rx.grid(
-                # Dados Mockados para visualização do design.
-                criar_card_bloco("Bloco Safira - Tech", "Tecnologia", "R$ 12.5M", "A+", "14.5%"),
-                criar_card_bloco("FIDC Master Varejo", "Varejo", "R$ 35.0M", "A-", "15.2%"),
-                criar_card_bloco("Agro Exportação Q3", "Agronegócio", "R$ 8.2M", "B+", "16.0%"),
-                criar_card_bloco("Indústria Pesada Sul", "Indústria", "R$ 22.1M", "B-", "17.5%"),
-                criar_card_bloco("Serviços Logísticos Ex", "Logística", "R$ 5.5M", "A", "14.8%"),
-                criar_card_bloco("Saúde & Pharma BR", "Saúde", "R$ 18.0M", "A+", "13.9%"),
-                columns=rx.breakpoints(initial="1", sm="2", lg="3"), # 1 coluna (mobile), 2 (tablet), 3 (desktop)
+                rx.foreach(
+                    ExplorarBlocosState.blocos_filtrados,
+                    criar_card_bloco_dinamico
+                ),
+                columns=rx.breakpoints(initial="1", sm="2", lg="3"),
                 spacing="6",
                 width="100%",
             ),

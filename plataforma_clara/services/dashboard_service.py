@@ -4,12 +4,10 @@ import time
 from typing import Any
 
 import pandas as pd
-from google.cloud import bigquery
+import sqlalchemy as sa
+import reflex as rx
 
 logger = logging.getLogger(__name__)
-
-# ── Constantes ───────────────────────────────────────────────────────────────
-_TABLE_ID = os.getenv("TB_APORTE_ID", "plataforma-clara.dados_fidc.tb_aporte")
 
 # ── Cache simples em memória com TTL ─────────────────────────────────────────
 _cache_investidor: dict[str, tuple[float, list[dict[str, Any]]]] = {}
@@ -46,30 +44,23 @@ def buscar_metricas_blocos_liquidez(
             return dados
 
     try:
-        client = bigquery.Client()
-
-        query = f"""
+        query = sa.text("""
             SELECT 
                 bloco_liquidez_setorial,
                 SUM(valor_mercado_atual) AS total_alocado,
                 AVG(score_risco_interno) AS score_medio_reputacao,
                 COUNT(id_aporte_uuid) AS quantidade_aportes
-            FROM `{_TABLE_ID}`
+            FROM tb_aporte
             WHERE bloco_liquidez_setorial IS NOT NULL
-              AND REGEXP_REPLACE(documento_investidor_cpf_cnpj, r'[^0-9]', '') = @cpf_investidor
+              AND REGEXP_REPLACE(documento_investidor_cpf_cnpj, '[^0-9]', '', 'g') = :cpf_investidor
             GROUP BY bloco_liquidez_setorial
             ORDER BY total_alocado DESC
-        """
+        """)
 
-        job_config = bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ScalarQueryParameter("cpf_investidor", "STRING", cpf_investidor)
-            ]
-        )
-
-        dataframe: pd.DataFrame = client.query(query, job_config=job_config).to_dataframe()
-        dataframe = dataframe.fillna(0)
-        dados_dashboard: list[dict[str, Any]] = dataframe.to_dict(orient="records")
+        with rx.session() as session:
+            result = session.execute(query, {"cpf_investidor": cpf_investidor}).mappings().fetchall()
+            
+        dados_dashboard: list[dict[str, Any]] = [dict(row) for row in result]
 
         # Atualiza cache deste investidor
         _cache_investidor[cpf_investidor] = (agora, dados_dashboard)
@@ -106,23 +97,22 @@ def buscar_metricas_gerais_gestora(*, force_refresh: bool = False) -> list[dict[
         return _cache_gestora
 
     try:
-        client = bigquery.Client()
-
-        query = f"""
+        query = sa.text("""
             SELECT 
                 bloco_liquidez_setorial,
                 SUM(valor_mercado_atual) AS total_alocado,
                 AVG(score_risco_interno) AS score_medio_reputacao,
                 COUNT(id_aporte_uuid) AS quantidade_aportes
-            FROM `{_TABLE_ID}`
+            FROM tb_aporte
             WHERE bloco_liquidez_setorial IS NOT NULL
             GROUP BY bloco_liquidez_setorial
             ORDER BY total_alocado DESC
-        """
+        """)
 
-        dataframe: pd.DataFrame = client.query(query).to_dataframe()
-        dataframe = dataframe.fillna(0)
-        dados_dashboard: list[dict[str, Any]] = dataframe.to_dict(orient="records")
+        with rx.session() as session:
+            result = session.execute(query).mappings().fetchall()
+            
+        dados_dashboard: list[dict[str, Any]] = [dict(row) for row in result]
 
         _cache_gestora = dados_dashboard
         _cache_gestora_timestamp = agora
@@ -157,9 +147,7 @@ def buscar_tabela_aportes_gestora(*, force_refresh: bool = False) -> list[dict[s
         return _cache_tabela_aportes
 
     try:
-        client = bigquery.Client()
-
-        query = f"""
+        query = sa.text("""
             SELECT
                 empresa_sacada_nome,
                 cnpj_sacado_limpo,
@@ -178,15 +166,17 @@ def buscar_tabela_aportes_gestora(*, force_refresh: bool = False) -> list[dict[s
                     WHEN AVG(score_risco_interno) >= 40 THEN 'Atenção'
                     ELSE 'Inadimplente'
                 END AS status_atual
-            FROM `{_TABLE_ID}`
+            FROM tb_aporte
             WHERE empresa_sacada_nome IS NOT NULL
             GROUP BY empresa_sacada_nome, cnpj_sacado_limpo
             ORDER BY valor_total_alocado DESC
             LIMIT 50
-        """
+        """)
 
-        dataframe: pd.DataFrame = client.query(query).to_dataframe()
-        dataframe = dataframe.fillna(0)
+        with rx.session() as session:
+            result = session.execute(query).mappings().fetchall()
+            
+        dados_tabela = [dict(row) for row in result]
 
         # Formata o CNPJ para exibição (XX.XXX.XXX/XXXX-XX)
         def formatar_cnpj(cnpj: str) -> str:
@@ -196,11 +186,13 @@ def buscar_tabela_aportes_gestora(*, force_refresh: bool = False) -> list[dict[s
             return cnpj
 
         dados: list[dict[str, Any]] = []
-        for _, row in dataframe.iterrows():
+        for row in dados_tabela:
+            v = float(row['valor_total_alocado']) if row['valor_total_alocado'] else 0.0
+            v_str = f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
             dados.append({
                 "empresa": str(row["empresa_sacada_nome"]),
                 "cnpj": formatar_cnpj(str(row["cnpj_sacado_limpo"])),
-                "valor": f"R$ {float(row['valor_total_alocado']):,.2f}",
+                "valor": f"R$ {v_str}",
                 "risco": str(row["classificacao_risco"]),
                 "status": str(row["status_atual"]),
             })

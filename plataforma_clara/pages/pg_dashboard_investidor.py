@@ -90,23 +90,23 @@ def card_metrica_investidor(titulo: str, valor: str, subtitulo: str, icone: str,
         box_shadow="0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
     )
 
-def criar_linha_bloco_investidor(nome: str, setor: str, capital: str, rentabilidade: str, score: str, status: str) -> rx.Component:
-    """Função auxiliar para renderizar cada linha do portfólio do investidor."""
-    
-    # Cores dinâmicas para o Score Nuclea
-    cor_score = "green" if "A" in score else ("yellow" if "B" in score else "red")
-    cor_status = "green" if status == "Ativo" else "yellow"
+def criar_linha_transparencia_investidor(item: dict) -> rx.Component:
+    """Função auxiliar para renderizar cada linha de transparência (empresa) do investidor."""
+    # A variável 'score' é um número no backend, precisamos converter para string e usar lógica simples para cor
+    score_val = item["score"].to(float)
+    cor_score = rx.cond(score_val >= 80, "green", rx.cond(score_val >= 50, "yellow", "red"))
+    score_txt = rx.cond(score_val >= 80, "A+", rx.cond(score_val >= 50, "B+", "C-"))
 
     return rx.table.row(
-        rx.table.cell(rx.text(nome, weight="bold", color="#111827")),
-        rx.table.cell(rx.badge(setor, color_scheme="blue", variant="soft")),
-        rx.table.cell(rx.text(capital, weight="medium")),
-        rx.table.cell(rx.text(rentabilidade, color="#10B981", weight="bold")), # Verde para rentabilidade
-        rx.table.cell(rx.badge(score, color_scheme=cor_score, variant="solid")),
-        rx.table.cell(rx.badge(status, color_scheme=cor_status, variant="soft")),
+        rx.table.cell(rx.text(item["empresa"], weight="bold", color="#111827")),
+        rx.table.cell(rx.badge(item["bloco"], color_scheme="blue", variant="soft")),
+        rx.table.cell(rx.text(item["valor"], weight="medium", color="#111827")),
+        rx.table.cell(rx.text("+10.0% a.a.", color="#10B981", weight="bold")), # Simulando rentabilidade
+        rx.table.cell(rx.badge(score_txt, color_scheme=cor_score, variant="solid")),
+        rx.table.cell(rx.badge("Ativo", color_scheme="green", variant="soft")),
         rx.table.cell(
-            rx.button("Análise Completa", size="1", variant="outline", color_scheme="gray", 
-                      on_click=rx.redirect("/relatorios")) # Direciona para a aba de relatórios Insight AI
+            rx.button("Análise Completa", size="1", variant="outline", color_scheme="gray", color="#111827",
+                      on_click=rx.redirect("/relatorios"))
         ),
     )
 
@@ -141,11 +141,55 @@ def dashboard_investidor() -> rx.Component:
             
             # Grid de Métricas (KPIs)
             rx.grid(
-                card_metrica_investidor("Capital Investido", "R$ 1.500.000", "Referência: Hoje", "wallet", "#3B82F6"),
-                card_metrica_investidor("Rendimento Projetado", "R$ 142.000", "+9.4% a.a.", "trending-up", "#10B981"),
-                card_metrica_investidor("Blocos Alocados", "3 Blocos", "Diversificação OK", "pie-chart", "#8B5CF6"),
-                card_metrica_investidor("Score Médio de Reputação", "Alto (AA)", "Risco Nuclea", "shield-check", "#F59E0B"),
+                card_metrica_investidor("Capital Investido", DashboardState.patrimonio_total_investidor, "Referência: Hoje", "wallet", "#3B82F6"),
+                card_metrica_investidor("Total Aportes", DashboardState.quantidade_total_aportes.to_string(), "Histórico Ativo", "layers", "#10B981"),
+                card_metrica_investidor("Blocos Alocados", DashboardState.dados_blocos.length().to_string(), "Diversificação OK", "pie-chart", "#8B5CF6"),
+                card_metrica_investidor("Score Médio", DashboardState.score_medio_geral.to_string(), "Risco Nuclea", "shield-check", "#F59E0B"),
                 columns=rx.breakpoints(initial="1", sm="2", lg="4"), 
+                spacing="4",
+                width="100%",
+                mb="8",
+            ),
+            
+            # Gráficos Analíticos (Recharts)
+            rx.grid(
+                rx.card(
+                    rx.heading("Rendimento Projetado (em Milhões de R$)", size="4", mb="4", color="#111827"),
+                    rx.recharts.line_chart(
+                        rx.recharts.line(
+                            data_key="rendimento", stroke="#10B981", type_="monotone"
+                        ),
+                        rx.recharts.x_axis(data_key="name"),
+                        rx.recharts.y_axis(),
+                        rx.recharts.cartesian_grid(stroke_dasharray="3 3"),
+                        rx.recharts.graphing_tooltip(),
+                        data=DashboardState.dados_rendimento_projetado,
+                        height=250,
+                    ),
+                    width="100%",
+                    variant="surface",
+                ),
+                rx.card(
+                    rx.heading("Diversificação do Portfólio (em Milhões de R$)", size="4", mb="4", color="#111827"),
+                    rx.recharts.pie_chart(
+                        rx.recharts.pie(
+                            data=DashboardState.alocacao_blocos_investidor,
+                            data_key="value",
+                            name_key="name",
+                            cx="50%",
+                            cy="50%",
+                            inner_radius="0%",
+                            outer_radius="80%",
+                            fill="#8B5CF6",
+                            label=True,
+                        ),
+                        rx.recharts.graphing_tooltip(),
+                        height=250,
+                    ),
+                    width="100%",
+                    variant="surface",
+                ),
+                columns=rx.breakpoints(initial="1", md="2"),
                 spacing="4",
                 width="100%",
                 mb="8",
@@ -154,9 +198,9 @@ def dashboard_investidor() -> rx.Component:
             # Tabela de Portfólio Substituindo o Placeholder
             rx.card(
                 rx.hstack(
-                    rx.heading("Meus Blocos de Liquidez", size="5", color="#111827"),
+                    rx.heading("Transparência do Portfólio (Empresas Sacadas)", size="5", color="#111827"),
                     rx.spacer(),
-                    rx.input(placeholder="Buscar bloco...", size="2", width="250px"),
+                    rx.input(placeholder="Buscar empresa...", size="2", width="250px"),
                     width="100%",
                     mb="4",
                     align_items="center"
@@ -167,20 +211,20 @@ def dashboard_investidor() -> rx.Component:
                 rx.table.root(
                     rx.table.header(
                         rx.table.row(
-                            rx.table.column_header_cell("Nome do Bloco"),
-                            rx.table.column_header_cell("Setor"),
-                            rx.table.column_header_cell("Capital Alocado (R$)"),
-                            rx.table.column_header_cell("Rentabilidade"),
-                            rx.table.column_header_cell("Score Nuclea (ML)"),
-                            rx.table.column_header_cell("Status"),
-                            rx.table.column_header_cell("Ações"),
+                            rx.table.column_header_cell("Empresa Sacada", color="#111827"),
+                            rx.table.column_header_cell("Bloco / Setor", color="#111827"),
+                            rx.table.column_header_cell("Capital Alocado (R$)", color="#111827"),
+                            rx.table.column_header_cell("Rentabilidade", color="#111827"),
+                            rx.table.column_header_cell("Score Nuclea (ML)", color="#111827"),
+                            rx.table.column_header_cell("Status", color="#111827"),
+                            rx.table.column_header_cell("Ações", color="#111827"),
                         ),
                     ),
                     rx.table.body(
-                        # Mock de dados simulando a carteira do investidor
-                        criar_linha_bloco_investidor("Bloco Safira - Tech", "Tecnologia", "R$ 500.000,00", "+14.5% a.a.", "A+", "Ativo"),
-                        criar_linha_bloco_investidor("FIDC Master Varejo", "Varejo", "R$ 750.000,00", "+15.2% a.a.", "A-", "Ativo"),
-                        criar_linha_bloco_investidor("Agro Exportação Q3", "Agronegócio", "R$ 250.000,00", "+16.0% a.a.", "B+", "Alocando"),
+                        rx.foreach(
+                            DashboardState.tabela_transparencia_investidor,
+                            criar_linha_transparencia_investidor
+                        )
                     ),
                     width="100%",
                     variant="surface",

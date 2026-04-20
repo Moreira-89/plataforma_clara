@@ -1,4 +1,5 @@
 import reflex as rx
+from plataforma_clara.states.detalhes_bloco_state import DetalhesBlocoState
 
 def sidebar_investidor() -> rx.Component:
     """Componente de Menu Lateral (Reutilizado para manter a navegação visual)."""
@@ -80,22 +81,25 @@ def card_metrica_detalhe(titulo: str, valor: str, icone: str, cor_icone: str) ->
         box_shadow="0 1px 2px 0 rgba(0, 0, 0, 0.05)",
     )
 
-def criar_linha_empresa_detalhe(nome: str, cnpj: str, peso: str, valor: str, score: str) -> rx.Component:
-    """Renderiza uma empresa (sacada) dentro da tabela do bloco."""
-    cor_score = "green" if "A" in score else ("yellow" if "B" in score else "red")
+def criar_linha_empresa_dinamica(empresa: dict) -> rx.Component:
+    """Renderiza uma empresa (sacada) dinamicamente dentro da tabela do bloco."""
+    cor_score = rx.cond(
+        empresa["score"].to(str).contains("A"), "green",
+        rx.cond(empresa["score"].to(str).contains("B"), "yellow", "red")
+    )
 
     return rx.table.row(
         rx.table.cell(
             rx.vstack(
-                rx.text(nome, weight="bold", color="#111827"),
-                rx.text(cnpj, size="1", color="#6B7280"),
+                rx.text(empresa["nome"], weight="bold", color="#111827"),
+                rx.text(empresa["cnpj"], size="1", color="#6B7280"),
                 align_items="start",
                 spacing="0"
             )
         ),
-        rx.table.cell(rx.text(peso, weight="medium")),
-        rx.table.cell(rx.text(valor, color="#4B5563")),
-        rx.table.cell(rx.badge(score, color_scheme=cor_score, variant="solid")),
+        rx.table.cell(rx.text(empresa["peso"], weight="medium")),
+        rx.table.cell(rx.text(empresa["valor"], color="#4B5563")),
+        rx.table.cell(rx.badge(empresa["score"], color_scheme=cor_score, variant="solid")),
         rx.table.cell(
             rx.button(rx.icon("search", size=14), size="1", variant="ghost", color_scheme="gray")
         ),
@@ -103,6 +107,8 @@ def criar_linha_empresa_detalhe(nome: str, cnpj: str, peso: str, valor: str, sco
 
 def pg_detalhes_bloco() -> rx.Component:
     """Página de Detalhes de um Bloco de Liquidez Específico."""
+    
+    bloco_id = rx.State.router.page.params.get("bloco_id", "")
     
     return rx.flex(
         sidebar_investidor(),
@@ -121,12 +127,12 @@ def pg_detalhes_bloco() -> rx.Component:
             rx.hstack(
                 rx.vstack(
                     rx.hstack(
-                        rx.heading("Bloco Safira - Tech", size="8", weight="bold", color="#111827"),
+                        rx.heading("Bloco ", DetalhesBlocoState.nome_bloco, size="8", weight="bold", color="#111827"),
                         rx.badge("Ativo", color_scheme="green", variant="soft", size="2"),
                         align="center",
                         spacing="3"
                     ),
-                    rx.text("Fundo Master Varejo e Tecnologia • ID: BLK-8829-TECH", size="3", color="#4B5563"),
+                    rx.text("ID: ", bloco_id, size="3", color="#4B5563"),
                     align_items="flex-start",
                 ),
                 rx.spacer(),
@@ -142,10 +148,10 @@ def pg_detalhes_bloco() -> rx.Component:
             
             # Grid de KPIs do Bloco
             rx.grid(
-                card_metrica_detalhe("Volume do Bloco", "R$ 12.500.000", "database", "#3B82F6"),
-                card_metrica_detalhe("Rentabilidade Alvo", "14.5% a.a.", "trending-up", "#10B981"),
-                card_metrica_detalhe("Score Nuclea Médio", "A+ (Baixo Risco)", "shield-check", "#8B5CF6"),
-                card_metrica_detalhe("Prazo Médio (Duration)", "124 Dias", "clock", "#F59E0B"),
+                card_metrica_detalhe("Volume do Bloco", DetalhesBlocoState.volume_total, "database", "#3B82F6"),
+                card_metrica_detalhe("Rentabilidade Alvo", DetalhesBlocoState.rentabilidade_alvo, "trending-up", "#10B981"),
+                card_metrica_detalhe("Score Nuclea Médio", DetalhesBlocoState.score_medio, "shield-check", "#8B5CF6"),
+                card_metrica_detalhe("Prazo Médio (Duration)", DetalhesBlocoState.prazo_medio, "clock", "#F59E0B"),
                 columns=rx.breakpoints(initial="1", sm="2", lg="4"), 
                 spacing="4",
                 width="100%",
@@ -181,9 +187,9 @@ def pg_detalhes_bloco() -> rx.Component:
                         mb="4"
                     ),
                     rx.text(
-                        "O bloco possui excelente qualidade de crédito, concentrado no setor de tecnologia SaaS. "
-                        "A Inadimplência projetada é de apenas 0.8%. 85% do capital está alocado em empresas com score A+ ou A. "
-                        "Recomenda-se acompanhamento da exposição cambial em 12% da carteira.",
+                        "O bloco possui excelente qualidade de crédito, concentrado no setor selecionado. "
+                        "A Inadimplência projetada é baixa e a carteira apresenta estabilidade no prazo médio das operações. "
+                        "Recomenda-se acompanhamento contínuo da alocação das empresas principais.",
                         size="2",
                         color="#4B5563",
                         line_height="1.6"
@@ -191,7 +197,7 @@ def pg_detalhes_bloco() -> rx.Component:
                     rx.link("Ver relatório completo", href="/relatorios", color="#2563EB", size="2", mt="4", weight="bold"),
                     width=["100%", "100%", "50%"],
                     variant="surface",
-                    bg="#F8FAFF", # Fundo levemente azulado para destacar a IA
+                    bg="#F8FAFF",
                     border="1px solid #BFDBFE"
                 ),
                 direction=rx.breakpoints(initial="column", md="row"),
@@ -214,19 +220,18 @@ def pg_detalhes_bloco() -> rx.Component:
                 rx.table.root(
                     rx.table.header(
                         rx.table.row(
-                            rx.table.column_header_cell("Empresa Sacada"),
-                            rx.table.column_header_cell("Peso (%)"),
-                            rx.table.column_header_cell("Valor Alocado (R$)"),
-                            rx.table.column_header_cell("Score Nuclea (ML)"),
-                            rx.table.column_header_cell("Ações"),
+                            rx.table.column_header_cell(rx.text("Empresa Sacada", color="#111827")),
+                            rx.table.column_header_cell(rx.text("Peso (%)", color="#111827")),
+                            rx.table.column_header_cell(rx.text("Valor Alocado (R$)", color="#111827")),
+                            rx.table.column_header_cell(rx.text("Score Nuclea (ML)", color="#111827")),
+                            rx.table.column_header_cell(rx.text("Ações", color="#111827")),
                         ),
                     ),
                     rx.table.body(
-                        criar_linha_empresa_detalhe("Tech Solutions S.A.", "12.345.678/0001-99", "15%", "R$ 1.875.000", "A+"),
-                        criar_linha_empresa_detalhe("CloudData Brasil", "98.765.432/0001-11", "12%", "R$ 1.500.000", "A"),
-                        criar_linha_empresa_detalhe("E-commerce Fast", "45.678.901/0001-22", "8%", "R$ 1.000.000", "A-"),
-                        criar_linha_empresa_detalhe("Logística API Ltda", "33.444.555/0001-88", "5%", "R$ 625.000", "B+"),
-                        criar_linha_empresa_detalhe("CyberSec Systems", "11.222.333/0001-44", "2%", "R$ 250.000", "A+"),
+                        rx.foreach(
+                            DetalhesBlocoState.empresas_bloco,
+                            criar_linha_empresa_dinamica
+                        )
                     ),
                     width="100%",
                     variant="surface",
