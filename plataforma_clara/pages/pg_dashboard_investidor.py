@@ -145,7 +145,7 @@ def dashboard_investidor() -> rx.Component:
                 card_metrica_investidor("Rendimento Projetado", "R$ 142.000", "+9.4% a.a.", "trending-up", "#10B981"),
                 card_metrica_investidor("Blocos Alocados", "3 Blocos", "Diversificação OK", "pie-chart", "#8B5CF6"),
                 card_metrica_investidor("Score Médio de Reputação", "Alto (AA)", "Risco Nuclea", "shield-check", "#F59E0B"),
-                columns=["1", "2", "4"], 
+                columns=rx.breakpoints(initial="1", sm="2", lg="4"), 
                 spacing="4",
                 width="100%",
                 mb="8",
@@ -196,7 +196,7 @@ def dashboard_investidor() -> rx.Component:
             align_items="flex-start",
         ),
         
-        direction=["column", "row"],
+        direction=rx.breakpoints(initial="column", sm="row"),
         width="100vw",
         min_height="100vh",
         bg="#F9FAFB",
