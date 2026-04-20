@@ -9,6 +9,7 @@ from plataforma_clara.services.assistente_ia import gerar_insight_relatorio_lang
 from plataforma_clara.services.dashboard_service import (
     buscar_metricas_blocos_liquidez,
     buscar_metricas_gerais_gestora,
+    buscar_tabela_aportes_gestora,
 )
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ class DashboardState(rx.State):
     patrimonio_total_gestora: float = 0.0
     score_medio_blocos: list[dict[str, Any]] = []
     ranking_empresas_gestora: list[dict[str, Any]] = []
+    tabela_aportes_gestora: list[dict[str, Any]] = []
 
     # ── Investidor: tabela de transparência ───────────────────────────────────
     tabela_transparencia_investidor: list[dict[str, Any]] = []
@@ -161,6 +163,9 @@ class DashboardState(rx.State):
             logger.warning("Dashboard gestora carregado sem dados.")
             return
 
+        # ── 1b. Tabela de aportes por empresa (BigQuery) ──────────────────────
+        self.tabela_aportes_gestora = buscar_tabela_aportes_gestora()
+
         # Cria a lista de opções do menu dinamicamente
         nomes = [item["bloco_liquidez_setorial"] for item in self.dados_blocos_gestora]
         self.lista_nomes_blocos = ["Todos"] + nomes
@@ -276,3 +281,37 @@ class DashboardState(rx.State):
     def patrimonio_total_gestora_formatado(self) -> str:
         """Patrimônio total do FIDC formatado em R$."""
         return f"R$ {self.patrimonio_total_gestora:,.2f}"
+
+    @rx.var
+    def qtd_blocos_ativos(self) -> str:
+        """Quantidade de blocos de liquidez ativos."""
+        qtd = len(self.dados_blocos_gestora)
+        return f"{qtd} Blocos" if qtd != 1 else "1 Bloco"
+
+    @rx.var
+    def classificacao_risco_medio(self) -> str:
+        """Classificação de risco média da carteira baseada no score médio."""
+        if not self.score_medio_geral:
+            return "N/A"
+        s = self.score_medio_geral
+        if s >= 80:
+            return "Baixo (A+)"
+        if s >= 70:
+            return "Baixo (A)"
+        if s >= 60:
+            return "Moderado (A-)"
+        if s >= 50:
+            return "Médio (B+)"
+        if s >= 40:
+            return "Alto (B)"
+        return "Crítico (C-)"
+
+    @rx.var
+    def inadimplencia_projetada(self) -> str:
+        """Percentual estimado de inadimplência baseado nos scores baixos."""
+        if not self.dados_blocos_gestora:
+            return "0.0%"
+        total = len(self.dados_blocos_gestora)
+        baixos = sum(1 for b in self.dados_blocos_gestora if b.get("score_medio_reputacao", 0) < 50)
+        pct = round((baixos / total) * 100, 1) if total else 0
+        return f"{pct}%"

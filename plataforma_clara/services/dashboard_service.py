@@ -133,3 +133,84 @@ def buscar_metricas_gerais_gestora(*, force_refresh: bool = False) -> list[dict[
     except Exception as e:
         logger.error("Erro ao buscar métricas BigQuery para gestora: %s", e, exc_info=True)
         return []
+
+
+# ── Cache para tabela de aportes da gestora ──────────────────────────────────
+_cache_tabela_aportes: list[dict[str, Any]] = []
+_cache_tabela_aportes_timestamp: float = 0.0
+
+
+def buscar_tabela_aportes_gestora(*, force_refresh: bool = False) -> list[dict[str, Any]]:
+    """
+    Busca dados agregados por empresa sacada para a tabela de aportes da Gestora.
+
+    Retorna empresa, CNPJ, valor alocado, classificação de risco (derivada do
+    score ML) e status de adimplência (derivado do prazo de vencimento).
+
+    Utiliza cache em memória com TTL de 5 minutos.
+    """
+    global _cache_tabela_aportes, _cache_tabela_aportes_timestamp
+
+    agora = time.monotonic()
+    if not force_refresh and _cache_tabela_aportes and (agora - _cache_tabela_aportes_timestamp) < _CACHE_TTL_SEGUNDOS:
+        logger.debug("Cache hit para tabela aportes gestora (idade: %.1fs).", agora - _cache_tabela_aportes_timestamp)
+        return _cache_tabela_aportes
+
+    try:
+        client = bigquery.Client()
+
+        query = f"""
+            SELECT
+                empresa_sacada_nome,
+                cnpj_sacado_limpo,
+                SUM(valor_mercado_atual) AS valor_total_alocado,
+                AVG(score_risco_interno) AS score_medio,
+                CASE
+                    WHEN AVG(score_risco_interno) >= 80 THEN 'A+'
+                    WHEN AVG(score_risco_interno) >= 70 THEN 'A'
+                    WHEN AVG(score_risco_interno) >= 60 THEN 'A-'
+                    WHEN AVG(score_risco_interno) >= 50 THEN 'B+'
+                    WHEN AVG(score_risco_interno) >= 40 THEN 'B'
+                    ELSE 'C-'
+                END AS classificacao_risco,
+                CASE
+                    WHEN AVG(score_risco_interno) >= 60 THEN 'Adimplente'
+                    WHEN AVG(score_risco_interno) >= 40 THEN 'Atenção'
+                    ELSE 'Inadimplente'
+                END AS status_atual
+            FROM `{_TABLE_ID}`
+            WHERE empresa_sacada_nome IS NOT NULL
+            GROUP BY empresa_sacada_nome, cnpj_sacado_limpo
+            ORDER BY valor_total_alocado DESC
+            LIMIT 50
+        """
+
+        dataframe: pd.DataFrame = client.query(query).to_dataframe()
+        dataframe = dataframe.fillna(0)
+
+        # Formata o CNPJ para exibição (XX.XXX.XXX/XXXX-XX)
+        def formatar_cnpj(cnpj: str) -> str:
+            cnpj = str(cnpj).zfill(14)
+            if len(cnpj) == 14 and cnpj.isdigit():
+                return f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:]}"
+            return cnpj
+
+        dados: list[dict[str, Any]] = []
+        for _, row in dataframe.iterrows():
+            dados.append({
+                "empresa": str(row["empresa_sacada_nome"]),
+                "cnpj": formatar_cnpj(str(row["cnpj_sacado_limpo"])),
+                "valor": f"R$ {float(row['valor_total_alocado']):,.2f}",
+                "risco": str(row["classificacao_risco"]),
+                "status": str(row["status_atual"]),
+            })
+
+        _cache_tabela_aportes = dados
+        _cache_tabela_aportes_timestamp = agora
+
+        logger.info("Tabela aportes gestora carregada: %d registros.", len(dados))
+        return dados
+
+    except Exception as e:
+        logger.error("Erro ao buscar tabela de aportes para gestora: %s", e, exc_info=True)
+        return []

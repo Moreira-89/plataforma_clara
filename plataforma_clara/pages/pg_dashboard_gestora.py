@@ -2,171 +2,183 @@ import reflex as rx
 from plataforma_clara.states.dashboard_state import DashboardState
 
 
-def card_kpi(titulo: str, valor: rx.Var, icone: str) -> rx.Component:
+def sidebar_gestora() -> rx.Component:
+    """Componente de Menu Lateral para a Gestora."""
+    return rx.vstack(
+        # Logótipo / Branding
+        rx.vstack(
+            rx.heading("Clara", size="7", weight="bold", color="white"),
+            rx.text("Portal da Gestora", size="2", color="#94A3B8"),
+            align_items="flex-start",
+            mb="6",
+            width="100%",
+        ),
+        
+        # Links de Navegação
+        rx.vstack(
+            rx.link(
+                rx.hstack(rx.icon("layout-dashboard", size=20), rx.text("Visão Geral", size="3"), align="center", spacing="2"), 
+                href="/dashboard-gestora", 
+                color="white", 
+                p="2", 
+                bg="#1E293B",
+                border_radius="md", 
+                width="100%",
+                _hover={"text_decoration": "none"}
+            ),
+            rx.link(
+                rx.hstack(rx.icon("upload", size=20), rx.text("Ingestão de Dados", size="3"), align="center", spacing="2"), 
+                href="/ingestao-dados", 
+                color="#94A3B8", 
+                p="2", 
+                border_radius="md", 
+                width="100%",
+                _hover={"bg": "#1E293B", "color": "white", "text_decoration": "none"}
+            ),
+            spacing="2",
+            width="100%",
+        ),
+        
+        rx.spacer(),
+        
+        # Botão de Logout
+        rx.link(
+            rx.hstack(rx.icon("log-out", size=20), rx.text("Sair", size="3"), align="center", spacing="2"), 
+            href="/", 
+            color="#EF4444",
+            p="2", 
+            border_radius="md", 
+            width="100%",
+            _hover={"bg": "#FEF2F2", "text_decoration": "none"}
+        ),
+        
+        bg="#0F172A",
+        width=["100%", "250px"],
+        height="100vh",
+        padding="1.5rem",
+        position=["relative", "sticky"],
+        top="0",
+    )
+
+def card_metrica(titulo: str, valor: str, icone: str, cor_icone: str) -> rx.Component:
+    """Componente reutilizável para os cartões de KPIs."""
     return rx.card(
         rx.hstack(
-            rx.icon(tag=icone, size=30, color=rx.color("blue", 9)),
             rx.vstack(
-                rx.text(titulo, size="3", weight="bold", color="gray"),
-                rx.heading(valor, size="6"),
+                rx.text(titulo, size="2", color="#64748B", weight="medium"),
+                rx.heading(valor, size="6", color="#0F172A", weight="bold"),
                 align_items="start",
+                spacing="1",
             ),
-            spacing="4",
+            rx.icon(icone, size=32, color=cor_icone),
+            justify="between",
+            width="100%",
         ),
+        variant="surface",
         width="100%",
-        box_shadow="sm",
+        border="1px solid #E5E7EB",
+        box_shadow="0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
     )
 
 
 @rx.page(route="/dashboard-gestora", on_load=DashboardState.carregar_dados_gestora)
 def dashboard_gestora() -> rx.Component:
-    return rx.container(
+    """Página principal do Dashboard da Gestora."""
+    
+    return rx.flex(
+        sidebar_gestora(),
+        
         rx.vstack(
-            # ── Header com filtro ────────────────────────────────────────────
+            # Cabeçalho da Página
             rx.hstack(
-                rx.heading("Painel da Gestora", size="8"),
+                rx.vstack(
+                    rx.heading("Visão Geral do FIDC", size="8", weight="bold", color="#111827"),
+                    rx.text("Acompanhe a liquidez, alocações e o risco da sua carteira.", size="3", color="#4B5563"),
+                    align_items="flex-start",
+                ),
                 rx.spacer(),
                 rx.button(
-                    "Novo Upload",
-                    on_click=rx.redirect("/ingestao-dados"),
+                    rx.icon("plus", size=18),
+                    "Novo Bloco",
                     color_scheme="blue",
-                    variant="soft",
-                ),
-                rx.select(
-                    DashboardState.lista_nomes_blocos,
-                    value=DashboardState.bloco_selecionado_gestora,
-                    on_change=DashboardState.set_bloco_selecionado_gestora,
-                    placeholder="Filtrar por Bloco",
-                    width="250px",
+                    size="3",
                 ),
                 width="100%",
                 align_items="center",
-                margin_bottom="4",
+                mb="6",
             ),
-
-            # ── KPIs Globais ─────────────────────────────────────────────────
+            
+            # Grid de Métricas (KPIs) — Dados reais do DashboardState
             rx.grid(
-                card_kpi(
-                    "AUM (Patrimônio Global)",
-                    DashboardState.patrimonio_total_gestora_formatado,
-                    "dollar-sign",
-                ),
-                card_kpi(
-                    "Score Médio da Carteira",
-                    DashboardState.score_medio_geral,
-                    "shield-check",
-                ),
-                card_kpi(
-                    "Aportes Rastreáveis",
-                    DashboardState.quantidade_total_aportes,
-                    "briefcase",
-                ),
-                columns="3",
+                card_metrica("Total sob Gestão (AUM)", DashboardState.patrimonio_total_gestora_formatado, "dollar-sign", "#10B981"),
+                card_metrica("Blocos de Liquidez Ativos", DashboardState.qtd_blocos_ativos, "layers", "#3B82F6"),
+                card_metrica("Risco Médio da Carteira", DashboardState.classificacao_risco_medio, "shield-check", "#8B5CF6"),
+                card_metrica("Inadimplência Projetada", DashboardState.inadimplencia_projetada, "trending-down", "#EF4444"),
+                columns=rx.breakpoints(initial="1", sm="2", lg="4"),
                 spacing="4",
                 width="100%",
-                margin_bottom="8",
+                mb="8",
             ),
-
-            # ── Gráficos: Score por Bloco + Concentração ─────────────────────
-            rx.grid(
-                rx.card(
-                    rx.heading(
-                        "Saúde dos Blocos — Score Médio por Gema",
-                        size="5",
-                        margin_bottom="4",
-                    ),
-                    rx.recharts.bar_chart(
-                        rx.recharts.bar(
-                            data_key="score_medio",
-                            fill=rx.color("blue", 7),
-                        ),
-                        rx.recharts.x_axis(data_key="bloco"),
-                        rx.recharts.y_axis(),
-                        rx.recharts.graphing_tooltip(),
-                        data=DashboardState.score_medio_blocos,
-                        width="100%",
-                        height=300,
-                    ),
-                    width="100%",
-                ),
-                rx.card(
-                    rx.heading(
-                        "Concentração — Volume por Bloco",
-                        size="5",
-                        margin_bottom="4",
-                    ),
-                    rx.recharts.pie_chart(
-                        rx.recharts.pie(
-                            data=DashboardState.dados_grafico_pizza,
-                            data_key="value",
-                            name_key="name",
-                            cx="50%",
-                            cy="50%",
-                            fill=rx.color("blue", 7),
-                            label=True,
-                        ),
-                        rx.recharts.legend(),
-                        rx.recharts.graphing_tooltip(),
-                        width="100%",
-                        height=300,
-                    ),
-                    width="100%",
-                ),
-                columns="2",
-                spacing="4",
-                width="100%",
-                margin_bottom="8",
-            ),
-
-            # ── Insight IA ───────────────────────────────────────────────────
+            
+            # Tabela de Alocações Recentes — Dados reais do BigQuery
             rx.card(
-                rx.heading(
-                    "Clara Assistant — Insight AI",
-                    size="5",
-                    margin_bottom="4",
+                rx.hstack(
+                    rx.heading("Distribuição de Aportes Recentes", size="5", color="#111827"),
+                    rx.spacer(),
+                    rx.input(placeholder="Buscar empresa ou CNPJ...", size="2", width="250px"),
+                    width="100%",
+                    mb="4",
+                    align_items="center"
                 ),
-                rx.text(
-                    DashboardState.insight_ia,
-                    color="gray",
-                    font_style="italic",
-                ),
-                width="100%",
-                margin_bottom="8",
-            ),
-
-            # ── Ranking de Reputação Geral ───────────────────────────────────
-            rx.card(
-                rx.heading(
-                    "Ranking de Reputação — Todas as Empresas",
-                    size="5",
-                    margin_bottom="4",
-                ),
+                
                 rx.table.root(
                     rx.table.header(
                         rx.table.row(
                             rx.table.column_header_cell("Empresa Sacada"),
-                            rx.table.column_header_cell("Bloco (Gema)"),
-                            rx.table.column_header_cell("Score Médio ML"),
-                            rx.table.column_header_cell("Volume Total"),
-                        )
+                            rx.table.column_header_cell("Valor Alocado (R$)"),
+                            rx.table.column_header_cell("Score Nuclea (ML)"),
+                            rx.table.column_header_cell("Status Atual"),
+                            rx.table.column_header_cell("Ações"),
+                        ),
                     ),
                     rx.table.body(
                         rx.foreach(
-                            DashboardState.ranking_empresas_gestora,
+                            DashboardState.tabela_aportes_gestora,
                             lambda item: rx.table.row(
-                                rx.table.cell(item["empresa"]),
-                                rx.table.cell(item["bloco"]),
-                                rx.table.cell(item["score_medio"]),
-                                rx.table.cell(item["volume"]),
+                                rx.table.cell(
+                                    rx.vstack(
+                                        rx.text(item["empresa"], weight="bold", color="#111827"),
+                                        rx.text(item["cnpj"], size="1", color="#6B7280"),
+                                        align_items="start",
+                                        spacing="0",
+                                    )
+                                ),
+                                rx.table.cell(rx.text(item["valor"], weight="medium")),
+                                rx.table.cell(rx.badge(item["risco"], variant="soft")),
+                                rx.table.cell(rx.badge(item["status"], variant="solid")),
+                                rx.table.cell(
+                                    rx.button("Detalhes", size="1", variant="outline", color_scheme="gray")
+                                ),
                             ),
-                        )
+                        ),
                     ),
+                    width="100%",
+                    variant="surface",
                 ),
+                
                 width="100%",
+                variant="surface",
+                border="1px solid #E5E7EB",
             ),
-
+            
             width="100%",
-            padding_y="8",
+            padding=["2rem", "3rem"],
+            align_items="flex-start",
         ),
-        size="4",
+        
+        direction=rx.breakpoints(initial="column", sm="row"),
+        width="100vw",
+        min_height="100vh",
+        bg="#F9FAFB",
+        spacing="0",
     )
