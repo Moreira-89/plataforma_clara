@@ -28,7 +28,7 @@ def sidebar_investidor() -> rx.Component:
             ),
             rx.link(
                 rx.hstack(rx.icon("layers", size=20), rx.text("Explorar Blocos", size="3"), align="center", spacing="2"), 
-                href="/explorar-blocos", # Rota a definir
+                href="/explorar-blocos", 
                 color="#94A3B8", 
                 p="2", 
                 border_radius="md", 
@@ -37,7 +37,7 @@ def sidebar_investidor() -> rx.Component:
             ),
             rx.link(
                 rx.hstack(rx.icon("file-text", size=20), rx.text("Relatórios Nuclea", size="3"), align="center", spacing="2"), 
-                href="/relatorios", # Rota a definir
+                href="/relatorios", 
                 color="#94A3B8", 
                 p="2", 
                 border_radius="md", 
@@ -76,7 +76,7 @@ def card_metrica_investidor(titulo: str, valor: str, subtitulo: str, icone: str,
             rx.vstack(
                 rx.text(titulo, size="2", color="#64748B", weight="medium"),
                 rx.heading(valor, size="6", color="#111827", weight="bold"),
-                rx.text(subtitulo, size="1", color="#10B981" if "+" in subtitulo else "#64748B"), # Verde se for rendimento
+                rx.text(subtitulo, size="1", color="#10B981" if "+" in subtitulo else "#64748B"), 
                 align_items="start",
                 spacing="1",
             ),
@@ -90,15 +90,34 @@ def card_metrica_investidor(titulo: str, valor: str, subtitulo: str, icone: str,
         box_shadow="0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
     )
 
+def criar_linha_bloco_investidor(nome: str, setor: str, capital: str, rentabilidade: str, score: str, status: str) -> rx.Component:
+    """Função auxiliar para renderizar cada linha do portfólio do investidor."""
+    
+    # Cores dinâmicas para o Score Nuclea
+    cor_score = "green" if "A" in score else ("yellow" if "B" in score else "red")
+    cor_status = "green" if status == "Ativo" else "yellow"
+
+    return rx.table.row(
+        rx.table.cell(rx.text(nome, weight="bold", color="#111827")),
+        rx.table.cell(rx.badge(setor, color_scheme="blue", variant="soft")),
+        rx.table.cell(rx.text(capital, weight="medium")),
+        rx.table.cell(rx.text(rentabilidade, color="#10B981", weight="bold")), # Verde para rentabilidade
+        rx.table.cell(rx.badge(score, color_scheme=cor_score, variant="solid")),
+        rx.table.cell(rx.badge(status, color_scheme=cor_status, variant="soft")),
+        rx.table.cell(
+            rx.button("Análise Completa", size="1", variant="outline", color_scheme="gray", 
+                      on_click=rx.redirect("/relatorios")) # Direciona para a aba de relatórios Insight AI
+        ),
+    )
+
+
 @rx.page(route="/dashboard-investidor", on_load=DashboardState.carregar_dados_dashboard)
 def dashboard_investidor() -> rx.Component:
     """Página principal do Dashboard do Investidor."""
     
     return rx.flex(
-        # 1. Menu Lateral
         sidebar_investidor(),
         
-        # 2. Área Principal de Conteúdo
         rx.vstack(
             # Cabeçalho da Página
             rx.hstack(
@@ -108,7 +127,6 @@ def dashboard_investidor() -> rx.Component:
                     align_items="flex-start",
                 ),
                 rx.spacer(),
-                # Investidor não cria bloco, talvez aqui fique um botão de "Baixar Relatório"
                 rx.button(
                     rx.icon("download", size=18),
                     "Exportar Dados",
@@ -123,29 +141,51 @@ def dashboard_investidor() -> rx.Component:
             
             # Grid de Métricas (KPIs)
             rx.grid(
-                card_metrica_investidor("Capital Investido", "R$ 1.500.000", "Referência: Hoje", "wallet", "#3B82F6"), # Azul
-                card_metrica_investidor("Rendimento Projetado", "R$ 142.000", "+9.4% a.a.", "trending-up", "#10B981"), # Verde
-                card_metrica_investidor("Blocos Alocados", "3 Blocos", "Diversificação OK", "pie-chart", "#8B5CF6"), # Roxo
-                card_metrica_investidor("Score Médio de Reputação", "Alto (AA)", "Risco Nuclea", "shield-check", "#F59E0B"), # Âmbar
-                columns=rx.breakpoints(initial="1", sm="2", lg="4"), 
+                card_metrica_investidor("Capital Investido", "R$ 1.500.000", "Referência: Hoje", "wallet", "#3B82F6"),
+                card_metrica_investidor("Rendimento Projetado", "R$ 142.000", "+9.4% a.a.", "trending-up", "#10B981"),
+                card_metrica_investidor("Blocos Alocados", "3 Blocos", "Diversificação OK", "pie-chart", "#8B5CF6"),
+                card_metrica_investidor("Score Médio de Reputação", "Alto (AA)", "Risco Nuclea", "shield-check", "#F59E0B"),
+                columns=["1", "2", "4"], 
                 spacing="4",
                 width="100%",
                 mb="8",
             ),
             
-            # Secção de Blocos (Placeholder por enquanto)
+            # Tabela de Portfólio Substituindo o Placeholder
             rx.card(
-                rx.heading("Meus Blocos de Liquidez", size="5", color="#111827", mb="4"),
-                rx.text("Abaixo estarão os blocos onde seu capital foi alocado, com o Score Nuclea de cada um.", size="2", color="#64748B", mb="4"),
-                
-                rx.center(
-                    rx.text("Lista de Blocos renderizada pelo Reflex (Baseado nos dados do Backend).", color="#9CA3AF"),
-                    height="200px",
+                rx.hstack(
+                    rx.heading("Meus Blocos de Liquidez", size="5", color="#111827"),
+                    rx.spacer(),
+                    rx.input(placeholder="Buscar bloco...", size="2", width="250px"),
                     width="100%",
-                    bg="#F3F4F6",
-                    border_radius="md",
-                    border="1px dashed #D1D5DB",
+                    mb="4",
+                    align_items="center"
                 ),
+                rx.text("Acompanhe a alocação do seu capital e o Score Nuclea em tempo real.", size="2", color="#64748B", mb="4"),
+                
+                # Tabela Reflex Customizada
+                rx.table.root(
+                    rx.table.header(
+                        rx.table.row(
+                            rx.table.column_header_cell("Nome do Bloco"),
+                            rx.table.column_header_cell("Setor"),
+                            rx.table.column_header_cell("Capital Alocado (R$)"),
+                            rx.table.column_header_cell("Rentabilidade"),
+                            rx.table.column_header_cell("Score Nuclea (ML)"),
+                            rx.table.column_header_cell("Status"),
+                            rx.table.column_header_cell("Ações"),
+                        ),
+                    ),
+                    rx.table.body(
+                        # Mock de dados simulando a carteira do investidor
+                        criar_linha_bloco_investidor("Bloco Safira - Tech", "Tecnologia", "R$ 500.000,00", "+14.5% a.a.", "A+", "Ativo"),
+                        criar_linha_bloco_investidor("FIDC Master Varejo", "Varejo", "R$ 750.000,00", "+15.2% a.a.", "A-", "Ativo"),
+                        criar_linha_bloco_investidor("Agro Exportação Q3", "Agronegócio", "R$ 250.000,00", "+16.0% a.a.", "B+", "Alocando"),
+                    ),
+                    width="100%",
+                    variant="surface",
+                ),
+                
                 width="100%",
                 variant="surface",
                 border="1px solid #E5E7EB",
@@ -156,7 +196,7 @@ def dashboard_investidor() -> rx.Component:
             align_items="flex-start",
         ),
         
-        direction=rx.breakpoints(initial="column", sm="row"),
+        direction=["column", "row"],
         width="100vw",
         min_height="100vh",
         bg="#F9FAFB",

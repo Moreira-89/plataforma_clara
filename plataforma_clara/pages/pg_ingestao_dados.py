@@ -132,7 +132,6 @@ def ingestao_dados() -> rx.Component:
                             color_scheme="gray",
                             variant="surface",
                             size="3",
-                            # on_click=rx.clear_selected_files("upload_csv_alocacoes"), # Liga ao botão de limpar do Reflex
                         ),
                         rx.spacer(),
                         rx.button(
@@ -140,7 +139,7 @@ def ingestao_dados() -> rx.Component:
                             "Processar Ficheiro",
                             color_scheme="blue",
                             size="3",
-                            # on_click=IngestaoDadosState.handle_upload(rx.upload_files(upload_id="upload_csv_alocacoes")), # Envia para o State
+                            on_click=IngestaoDadosState.lidar_com_upload_de_arquivo(files=rx.upload_files(upload_id="upload_csv_alocacoes")),
                         ),
                         width="100%",
                         mt="4",
