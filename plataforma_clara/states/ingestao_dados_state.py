@@ -11,6 +11,7 @@ from google.cloud import bigquery
 
 from plataforma_clara.model.schemas import tb_aporte
 from plataforma_clara.services.csv_processor import processar_arquivo_csv
+from plataforma_clara.services.bigquery_utils import criar_cliente_bigquery
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +135,8 @@ class IngestaoDadosState(rx.State):
     async def enviar_dados_bigquery(self, dados: list[dict[str, Any]]):
         """Envia dados processados para o BigQuery em background sem bloquear o event loop."""
         def _bq_task():
-            client = bigquery.Client()
+            # Usa a função centralizada que suporta credenciais JSON string ou arquivo
+            client = criar_cliente_bigquery(project_id="plataforma-clara")
             table_id = "plataforma-clara.dados_fidc.tb_aporte"
 
             dataframe_bigquery = pd.DataFrame(dados)

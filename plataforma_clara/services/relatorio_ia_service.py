@@ -10,7 +10,6 @@ import PyPDF2
 import reflex as rx
 from groq import APIStatusError
 from google.cloud import bigquery
-from google.oauth2 import service_account
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from markdown_pdf import MarkdownPdf, Section
@@ -18,20 +17,13 @@ from pydantic import SecretStr
 from sqlalchemy import func
 
 from plataforma_clara.model.schemas import tb_usuario
+from plataforma_clara.services.bigquery_utils import criar_cliente_bigquery
 
 logger = logging.getLogger(__name__)
 
 _PROJETO_ID = "plataforma-clara"
 _TABELA_APORTES_BQ = f"{_PROJETO_ID}.dados_fidc.tb_aporte"
 _ROOT_DIR = Path(__file__).resolve().parents[2]
-_ENV_CREDENCIAL = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip()
-_CANDIDATOS_CREDENCIAIS = (
-    ([Path(_ENV_CREDENCIAL)] if _ENV_CREDENCIAL else [])
-    + [
-        _ROOT_DIR / "plataforma-clara-0eafb2cacca9.json",
-        _ROOT_DIR / "credentials.json",
-    ]
-)
 _PDF_REFERENCIA_PATH = _ROOT_DIR / "Relatório de Insights Financeiros FIDC - Google Gemini.pdf"
 _MAX_REF_CHARS = 5000
 _MAX_AMOSTRA_APORTES = 60
@@ -182,12 +174,11 @@ def _buscar_nome_investidor(documento_investidor: str) -> str:
     return f"Investidor {documento}"
 
 
+# Função _criar_cliente_bigquery foi movida para bigquery_utils.py
+# Esta é uma função de compatibilidade que delega para a nova implementação
 def _criar_cliente_bigquery() -> bigquery.Client:
-    for caminho in _CANDIDATOS_CREDENCIAIS:
-        if caminho.is_file():
-            credentials = service_account.Credentials.from_service_account_file(str(caminho))
-            return bigquery.Client(project=_PROJETO_ID, credentials=credentials)
-    return bigquery.Client(project=_PROJETO_ID)
+    """Cria cliente BigQuery com suporte a credenciais JSON string ou arquivo."""
+    return criar_cliente_bigquery(project_id=_PROJETO_ID)
 
 
 def _buscar_dados_bigquery_investidor(documento_investidor: str) -> list[dict[str, Any]]:
