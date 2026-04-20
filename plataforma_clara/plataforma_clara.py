@@ -5,9 +5,8 @@ from plataforma_clara.pages.pg_home import home_page
 from plataforma_clara.pages.pg_explorar_blocos import explorar_blocos
 from plataforma_clara.pages.pg_relatorios import pg_relatorios
 from plataforma_clara.pages.pg_detalhes_bloco import pg_detalhes_bloco
-# Dashboards usam @rx.page() — importar o módulo é suficiente para registrar
-import plataforma_clara.pages.pg_dashboard_gestora  # noqa: F401
-import plataforma_clara.pages.pg_dashboard_investidor  # noqa: F401
+import plataforma_clara.pages.pg_dashboard_gestora 
+import plataforma_clara.pages.pg_dashboard_investidor 
 
 import reflex as rx
 
