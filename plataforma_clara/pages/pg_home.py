@@ -11,7 +11,6 @@ def navbar_home() -> rx.Component:
         ),
         rx.spacer(),
         rx.hstack(
-            # Rota ajustada para o seu padrão de login
             rx.link("Entrar", href="/login-usuario", color="#CBD5E1", weight="medium", _hover={"color": "white"}), 
             rx.button(
                 "Criar Conta", 
@@ -26,7 +25,7 @@ def navbar_home() -> rx.Component:
         width="100%",
         padding_y="1.5rem",
         padding_x=["2rem", "4rem", "8rem"],
-        bg="#0F172A", # Slate 900
+        bg="#0F172A",
         border_bottom="1px solid #1E293B"
     )
 
@@ -34,7 +33,7 @@ def feature_card(icone: str, titulo: str, descricao: str) -> rx.Component:
     """Cartão de destaque para as funcionalidades principais."""
     return rx.card(
         rx.vstack(
-            rx.icon(icone, size=36, color="#3B82F6", mb="3"), # Azul padrão
+            rx.icon(icone, size=36, color="#3B82F6", mb="3"),
             rx.heading(titulo, size="5", color="#111827", weight="bold"),
             rx.text(descricao, size="3", color="#4B5563", line_height="1.6"),
             align_items="start",
@@ -51,10 +50,8 @@ def feature_card(icone: str, titulo: str, descricao: str) -> rx.Component:
 def home_page() -> rx.Component:
     """Página Inicial (Landing Page) da Plataforma Clara."""
     return rx.box(
-        # 1. Navbar
         navbar_home(),
         
-        # 2. Hero Section (Apresentação Principal)
         rx.center(
             rx.vstack(
                 rx.badge("MVP Acadêmico - FIAP + Nuclea", color_scheme="blue", variant="soft", size="2", mb="4"),
@@ -104,12 +101,11 @@ def home_page() -> rx.Component:
             width="100%",
             min_height="70vh",
             bg="#0F172A",
-            background_image="radial-gradient(circle at 50% 0%, #1E293B 0%, #0F172A 70%)", # Efeito de luz no topo
+            background_image="radial-gradient(circle at 50% 0%, #1E293B 0%, #0F172A 70%)",
             padding_y="5rem",
             padding_x=["2rem", "4rem"],
         ),
         
-        # 3. Features Section (Benefícios)
         rx.box(
             rx.vstack(
                 rx.heading("Inteligência e Segurança em Três Pilares", size="7", color="#111827", text_align="center", mb="8"),
@@ -143,7 +139,6 @@ def home_page() -> rx.Component:
             bg="#F8FAFC",
         ),
         
-        # 4. Footer
         rx.center(
             rx.vstack(
                 rx.divider(border_color="#E2E8F0", mb="4"),

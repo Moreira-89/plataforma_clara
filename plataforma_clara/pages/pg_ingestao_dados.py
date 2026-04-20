@@ -5,7 +5,6 @@ from plataforma_clara.states.autenticacao_state import AutenticacaoState
 def sidebar_gestora() -> rx.Component:
     """Componente de Menu Lateral para a Gestora (Reutilizado)."""
     return rx.vstack(
-        # Logótipo / Branding
         rx.vstack(
             rx.heading("Clara", size="7", weight="bold", color="white"),
             rx.text("Portal da Gestora", size="2", color="#94A3B8"),
@@ -14,7 +13,6 @@ def sidebar_gestora() -> rx.Component:
             width="100%",
         ),
         
-        # Links de Navegação
         rx.vstack(
             rx.link(
                 rx.hstack(rx.icon("layout-dashboard", size=20), rx.text("Visão Geral", size="3"), align="center", spacing="2"), 
@@ -30,7 +28,7 @@ def sidebar_gestora() -> rx.Component:
                 href="/ingestao-dados", 
                 color="white", 
                 p="2", 
-                bg="#1E293B", # Item ativo nesta página
+                bg="#1E293B",
                 border_radius="md", 
                 width="100%",
                 _hover={"text_decoration": "none"}
@@ -41,7 +39,6 @@ def sidebar_gestora() -> rx.Component:
         
         rx.spacer(),
         
-        # Botão de Logout
         rx.button(
             rx.hstack(rx.icon("log-out", size=20), rx.text("Sair", size="3"), align="center", spacing="2"), 
             on_click=AutenticacaoState.fazer_logout,
@@ -91,7 +88,6 @@ def ingestao_dados() -> rx.Component:
         sidebar_gestora(),
         
         rx.vstack(
-            # Cabeçalho da Página
             rx.hstack(
                 rx.vstack(
                     rx.heading("Ingestão de Dados", size="8", weight="bold", color="#111827"),
@@ -103,12 +99,10 @@ def ingestao_dados() -> rx.Component:
                 mb="6",
             ),
             
-            # Área de Upload (Drag and Drop)
             rx.card(
                 rx.vstack(
                     rx.heading("Novo Upload", size="5", color="#111827", mb="2"),
                     
-                    # Componente nativo de upload do Reflex
                     rx.upload(
                         rx.vstack(
                             rx.icon("cloud-upload", size=40, color="#94A3B8"),
@@ -128,7 +122,6 @@ def ingestao_dados() -> rx.Component:
                         _hover={"bg": "#F1F5F9", "border_color": "#3B82F6", "cursor": "pointer"},
                     ),
                     
-                    # Ações após selecionar ficheiro
                     rx.hstack(
                         rx.button(
                             "Limpar",
@@ -167,7 +160,6 @@ def ingestao_dados() -> rx.Component:
                 mb="8",
             ),
             
-            # Tabela de Histórico de Processamento
             rx.card(
                 rx.heading("Histórico de Processamento", size="5", color="#111827", mb="4"),
                 rx.text("Consulte o estado dos ficheiros enviados recentemente e os relatórios de erros, caso existam.", size="2", color="#6B7280", mb="4"),

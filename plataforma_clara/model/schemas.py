@@ -8,7 +8,7 @@ import reflex as rx
 class tb_usuario(rx.Model, table=True):
     """Tabela de usuários da plataforma (gestoras e investidores)."""
 
-    tipo_usuario: str  # Esperado: "gestora" ou "investidor"
+    tipo_usuario: str
     nome_usuario: str
     email_usuario: str = sa.Column(  # type: ignore[assignment]
         sa.String, unique=True, index=True, nullable=False
@@ -20,7 +20,7 @@ class tb_usuario(rx.Model, table=True):
 class tb_aporte(rx.Model, table=True):
     """Modelo para registro de aportes e alocações (Tabela Principal)."""
     id_aporte_uuid: str = sqlmodel.Field(index=True)
-    documento_investidor_cpf_cnpj: str = sqlmodel.Field(index=True) # FK para Cadastro Fantasma
+    documento_investidor_cpf_cnpj: str = sqlmodel.Field(index=True)
     fundo_origem_id: str
     nome_fundo_investidor: str
     empresa_sacada_nome: str
@@ -39,7 +39,6 @@ class tb_aporte(rx.Model, table=True):
     score_risco_interno: float
     flag_outlier_valor: str
 
-    # Metadados de sistema
     data_criacao: datetime.datetime = sqlmodel.Field(
         default_factory=datetime.datetime.utcnow,
         sa_column=sa.Column(sa.DateTime(timezone=True))

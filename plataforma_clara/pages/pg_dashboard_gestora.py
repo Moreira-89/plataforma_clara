@@ -6,7 +6,6 @@ from plataforma_clara.states.autenticacao_state import AutenticacaoState
 def sidebar_gestora() -> rx.Component:
     """Componente de Menu Lateral para a Gestora."""
     return rx.vstack(
-        # Logótipo / Branding
         rx.vstack(
             rx.heading("Clara", size="7", weight="bold", color="white"),
             rx.text("Portal da Gestora", size="2", color="#94A3B8"),
@@ -15,7 +14,6 @@ def sidebar_gestora() -> rx.Component:
             width="100%",
         ),
         
-        # Links de Navegação
         rx.vstack(
             rx.link(
                 rx.hstack(rx.icon("layout-dashboard", size=20), rx.text("Visão Geral", size="3"), align="center", spacing="2"), 
@@ -42,7 +40,6 @@ def sidebar_gestora() -> rx.Component:
         
         rx.spacer(),
         
-        # Botão de Logout
         rx.button(
             rx.hstack(rx.icon("log-out", size=20), rx.text("Sair", size="3"), align="center", spacing="2"), 
             on_click=AutenticacaoState.fazer_logout,
@@ -92,7 +89,6 @@ def dashboard_gestora() -> rx.Component:
         sidebar_gestora(),
         
         rx.vstack(
-            # Cabeçalho da Página
             rx.hstack(
                 rx.vstack(
                     rx.heading("Visão Geral do FIDC", size="8", weight="bold", color="#111827"),
@@ -111,7 +107,6 @@ def dashboard_gestora() -> rx.Component:
                 mb="6",
             ),
             
-            # Grid de Métricas (KPIs) — Dados reais do DashboardState
             rx.grid(
                 card_metrica("Total sob Gestão (AUM)", DashboardState.patrimonio_total_gestora_formatado, "dollar-sign", "#10B981"),
                 card_metrica("Blocos de Liquidez Ativos", DashboardState.qtd_blocos_ativos, "layers", "#3B82F6"),
@@ -123,7 +118,6 @@ def dashboard_gestora() -> rx.Component:
                 mb="8",
             ),
             
-            # Gráficos Analíticos (Recharts)
             rx.grid(
                 rx.card(
                     rx.heading("Evolução do Volume Total (em Milhões de R$)", size="4", mb="4", color="#111827"),
@@ -166,7 +160,7 @@ def dashboard_gestora() -> rx.Component:
                             name_key="name",
                             cx="50%",
                             cy="50%",
-                            inner_radius="60%", # Gráfico Donut
+                            inner_radius="60%",
                             outer_radius="80%",
                             fill="#8B5CF6",
                             label=True,
@@ -183,7 +177,6 @@ def dashboard_gestora() -> rx.Component:
                 mb="8",
             ),
             
-            # Tabela de Alocações Recentes — Dados reais do BigQuery
             rx.card(
                 rx.hstack(
                     rx.heading("Distribuição de Aportes Recentes", size="5", color="#111827"),

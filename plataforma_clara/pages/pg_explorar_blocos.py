@@ -5,7 +5,6 @@ from plataforma_clara.states.explorar_blocos_state import ExplorarBlocosState
 def sidebar_investidor() -> rx.Component:
     """Componente de Menu Lateral para o Investidor (Reutilizado)."""
     return rx.vstack(
-        # Logótipo / Branding
         rx.vstack(
             rx.heading("Clara", size="7", weight="bold", color="white"),
             rx.text("Portal do Investidor", size="2", color="#94A3B8"),
@@ -14,7 +13,6 @@ def sidebar_investidor() -> rx.Component:
             width="100%",
         ),
         
-        # Links de Navegação
         rx.vstack(
             rx.link(
                 rx.hstack(rx.icon("pie-chart", size=20), rx.text("Meu Portfólio", size="3"), align="center", spacing="2"), 
@@ -30,7 +28,7 @@ def sidebar_investidor() -> rx.Component:
                 href="/explorar-blocos", 
                 color="white", 
                 p="2", 
-                bg="#1E293B", # Item ativo
+                bg="#1E293B",
                 border_radius="md", 
                 width="100%",
                 _hover={"text_decoration": "none"}
@@ -50,7 +48,6 @@ def sidebar_investidor() -> rx.Component:
         
         rx.spacer(),
         
-        # Botão de Logout
         rx.button(
             rx.hstack(rx.icon("log-out", size=20), rx.text("Sair", size="3"), align="center", spacing="2"), 
             on_click=AutenticacaoState.fazer_logout,
@@ -132,7 +129,6 @@ def explorar_blocos() -> rx.Component:
         sidebar_investidor(),
         
         rx.vstack(
-            # Cabeçalho da Página
             rx.hstack(
                 rx.vstack(
                     rx.heading("Explorar Blocos de Liquidez", size="8", weight="bold", color="#111827"),
@@ -144,7 +140,6 @@ def explorar_blocos() -> rx.Component:
                 mb="4",
             ),
             
-            # Barra de Pesquisa e Filtros
             rx.card(
                 rx.hstack(
                     rx.input(
@@ -177,7 +172,6 @@ def explorar_blocos() -> rx.Component:
                 padding="0"
             ),
             
-            # Grid de Blocos Dinâmico
             rx.grid(
                 rx.foreach(
                     ExplorarBlocosState.blocos_filtrados,

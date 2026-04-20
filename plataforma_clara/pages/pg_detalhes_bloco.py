@@ -26,7 +26,7 @@ def sidebar_investidor() -> rx.Component:
                 rx.hstack(rx.icon("layers", size=20), rx.text("Explorar Blocos", size="3"), align="center", spacing="2"), 
                 href="/explorar-blocos", 
                 color="white", 
-                bg="#1E293B", # Deixando 'Explorar' ativo como contexto
+                bg="#1E293B",
                 p="2", 
                 border_radius="md", 
                 width="100%",
@@ -117,7 +117,6 @@ def pg_detalhes_bloco() -> rx.Component:
         sidebar_investidor(),
         
         rx.vstack(
-            # Navegação (Voltar)
             rx.link(
                 rx.hstack(rx.icon("arrow-left", size=16), rx.text("Voltar para Explorar Blocos"), align="center", spacing="2"),
                 href="/explorar-blocos",
@@ -126,7 +125,6 @@ def pg_detalhes_bloco() -> rx.Component:
                 _hover={"color": "#111827"}
             ),
 
-            # Cabeçalho do Bloco
             rx.hstack(
                 rx.vstack(
                     rx.hstack(
@@ -149,7 +147,6 @@ def pg_detalhes_bloco() -> rx.Component:
                 mb="6",
             ),
             
-            # Grid de KPIs do Bloco
             rx.grid(
                 card_metrica_detalhe("Volume do Bloco", DetalhesBlocoState.volume_total, "database", "#3B82F6"),
                 card_metrica_detalhe("Rentabilidade Alvo", DetalhesBlocoState.rentabilidade_alvo, "trending-up", "#10B981"),
@@ -161,9 +158,7 @@ def pg_detalhes_bloco() -> rx.Component:
                 mb="6",
             ),
 
-            # Secção Intermediária: Distribuição e Insights
             rx.flex(
-                # Gráfico (Placeholder)
                 rx.card(
                     rx.heading("Composição de Risco", size="4", color="#111827", mb="4"),
                     rx.center(
@@ -181,7 +176,6 @@ def pg_detalhes_bloco() -> rx.Component:
                     variant="surface",
                 ),
                 
-                # Resumo Insight AI
                 rx.card(
                     rx.hstack(
                         rx.icon("sparkles", color="#8B5CF6", size=20),
@@ -209,7 +203,6 @@ def pg_detalhes_bloco() -> rx.Component:
                 mb="6",
             ),
             
-            # Tabela de Composição da Carteira (Empresas)
             rx.card(
                 rx.hstack(
                     rx.heading("Composição da Carteira (Empresas Financiadas)", size="5", color="#111827"),

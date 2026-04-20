@@ -5,9 +5,6 @@ def formulario_cadastro() -> rx.Component:
     """Página de Cadastro da Plataforma Clara."""
     
     return rx.hstack(
-        # ==========================================
-        # LADO ESQUERDO: Branding
-        # ==========================================
         rx.vstack(
             rx.vstack(
                 rx.heading("Clara", size="9", weight="bold", color="white", mb="2"),
@@ -36,21 +33,16 @@ def formulario_cadastro() -> rx.Component:
             background_image="radial-gradient(circle at 20% 50%, #1E293B 0%, #0F172A 50%)",
         ),
 
-        # ==========================================
-        # LADO DIREITO: Formulário de Cadastro
-        # ==========================================
         rx.center(
             rx.vstack(
                 rx.heading("Criar Conta", size="7", weight="bold", color="#0F172A"),
                 rx.text("Preencha os dados abaixo para se registrar.", size="3", color="#64748B", mb="6"),
 
-                # Container dos Inputs
                 rx.vstack(
-                    # Tipo de Perfil
                     rx.vstack(
                         rx.text("Perfil de Acesso", size="2", weight="bold", color="#334155"),
                         rx.select(
-                            ["investidor", "gestora"], # Valores exatos que o seu backend espera
+                            ["investidor", "gestora"],
                             placeholder="Selecione seu perfil",
                             width="100%",
                             size="3",
@@ -61,7 +53,6 @@ def formulario_cadastro() -> rx.Component:
                         spacing="1",
                     ),
 
-                    # Nome Completo / Razão Social
                     rx.vstack(
                         rx.text("Nome Completo / Razão Social", size="2", weight="bold", color="#334155"),
                         rx.input(
@@ -77,7 +68,6 @@ def formulario_cadastro() -> rx.Component:
                         spacing="1",
                     ),
 
-                    # CPF / CNPJ e E-mail lado a lado em telas maiores
                     rx.flex(
                         rx.vstack(
                             rx.text("CPF / CNPJ", size="2", weight="bold", color="#334155"),
@@ -113,7 +103,6 @@ def formulario_cadastro() -> rx.Component:
                         width="100%",
                     ),
 
-                    # Senha
                     rx.vstack(
                         rx.text("Senha", size="2", weight="bold", color="#334155"),
                         rx.input(
@@ -135,7 +124,6 @@ def formulario_cadastro() -> rx.Component:
                     mt="2"
                 ),
 
-                # Mensagem de feedback (Erro ou Sucesso) vinda do Backend
                 rx.cond(
                     CadastroUsuarioState.mensagem_para_usuario != "",
                     rx.callout(
@@ -147,7 +135,6 @@ def formulario_cadastro() -> rx.Component:
                     ),
                 ),
 
-                # Botão de Cadastro
                 rx.button(
                     "Criar Conta",
                     width="100%",
@@ -160,7 +147,6 @@ def formulario_cadastro() -> rx.Component:
                     on_click=lambda: CadastroUsuarioState.identificar_tipo_usuario(CadastroUsuarioState.tipo_usuario), 
                 ),
 
-                # Link para Login
                 rx.text(
                     "Já possui uma conta? ",
                     rx.link("Faça login aqui", href="/login-usuario", color="#2563EB", weight="bold"),

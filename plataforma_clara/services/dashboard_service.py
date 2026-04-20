@@ -7,11 +7,11 @@ import reflex as rx
 
 logger = logging.getLogger(__name__)
 
-# ── Cache simples em memória com TTL ─────────────────────────────────────────
+# Cache em memória para reduzir consultas repetidas na mesma janela de uso.
 _cache_investidor: dict[str, tuple[float, list[dict[str, Any]]]] = {}
 _cache_gestora: list[dict[str, Any]] = []
 _cache_gestora_timestamp: float = 0.0
-_CACHE_TTL_SEGUNDOS: float = 300.0  # 5 minutos
+_CACHE_TTL_SEGUNDOS: float = 300.0
 
 
 def buscar_metricas_blocos_liquidez(
@@ -34,7 +34,6 @@ def buscar_metricas_blocos_liquidez(
 
     agora = time.monotonic()
 
-    # Verifica cache por investidor
     if not force_refresh and cpf_investidor in _cache_investidor:
         ts, dados = _cache_investidor[cpf_investidor]
         if (agora - ts) < _CACHE_TTL_SEGUNDOS:
@@ -60,7 +59,6 @@ def buscar_metricas_blocos_liquidez(
             
         dados_dashboard: list[dict[str, Any]] = [dict(row) for row in result]
 
-        # Atualiza cache deste investidor
         _cache_investidor[cpf_investidor] = (agora, dados_dashboard)
 
         logger.info(
@@ -70,8 +68,8 @@ def buscar_metricas_blocos_liquidez(
         )
         return dados_dashboard
 
-    except Exception as e:
-        logger.error("Erro ao buscar métricas no BigQuery para %s: %s", cpf_investidor, e, exc_info=True)
+    except Exception as exc:
+        logger.error("Erro ao buscar métricas no BigQuery para %s: %s", cpf_investidor, exc, exc_info=True)
         return []
 
 
@@ -118,12 +116,11 @@ def buscar_metricas_gerais_gestora(*, force_refresh: bool = False) -> list[dict[
         logger.info("Dados BigQuery gestora carregados: %d blocos.", len(dados_dashboard))
         return dados_dashboard
 
-    except Exception as e:
-        logger.error("Erro ao buscar métricas BigQuery para gestora: %s", e, exc_info=True)
+    except Exception as exc:
+        logger.error("Erro ao buscar métricas BigQuery para gestora: %s", exc, exc_info=True)
         return []
 
 
-# ── Cache para tabela de aportes da gestora ──────────────────────────────────
 _cache_tabela_aportes: list[dict[str, Any]] = []
 _cache_tabela_aportes_timestamp: float = 0.0
 
@@ -176,7 +173,6 @@ def buscar_tabela_aportes_gestora(*, force_refresh: bool = False) -> list[dict[s
             
         dados_tabela = [dict(row) for row in result]
 
-        # Formata o CNPJ para exibição (XX.XXX.XXX/XXXX-XX)
         def formatar_cnpj(cnpj: str) -> str:
             cnpj = str(cnpj).zfill(14)
             if len(cnpj) == 14 and cnpj.isdigit():
@@ -201,6 +197,6 @@ def buscar_tabela_aportes_gestora(*, force_refresh: bool = False) -> list[dict[s
         logger.info("Tabela aportes gestora carregada: %d registros.", len(dados))
         return dados
 
-    except Exception as e:
-        logger.error("Erro ao buscar tabela de aportes para gestora: %s", e, exc_info=True)
+    except Exception as exc:
+        logger.error("Erro ao buscar tabela de aportes para gestora: %s", exc, exc_info=True)
         return []

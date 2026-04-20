@@ -6,7 +6,6 @@ from plataforma_clara.states.autenticacao_state import AutenticacaoState
 def sidebar_investidor() -> rx.Component:
     """Componente de Menu Lateral para o Investidor."""
     return rx.vstack(
-        # Logótipo / Branding
         rx.vstack(
             rx.heading("Clara", size="7", weight="bold", color="white"),
             rx.text("Portal do Investidor", size="2", color="#94A3B8"),
@@ -15,14 +14,13 @@ def sidebar_investidor() -> rx.Component:
             width="100%",
         ),
         
-        # Links de Navegação
         rx.vstack(
             rx.link(
                 rx.hstack(rx.icon("pie-chart", size=20), rx.text("Meu Portfólio", size="3"), align="center", spacing="2"), 
                 href="/dashboard-investidor", 
                 color="white", 
                 p="2", 
-                bg="#1E293B", # Item ativo
+                bg="#1E293B",
                 border_radius="md", 
                 width="100%",
                 _hover={"text_decoration": "none"}
@@ -51,7 +49,6 @@ def sidebar_investidor() -> rx.Component:
         
         rx.spacer(),
         
-        # Botão de Logout
         rx.button(
             rx.hstack(rx.icon("log-out", size=20), rx.text("Sair", size="3"), align="center", spacing="2"), 
             on_click=AutenticacaoState.fazer_logout,
@@ -95,7 +92,6 @@ def card_metrica_investidor(titulo: str, valor: str, subtitulo: str, icone: str,
 
 def criar_linha_transparencia_investidor(item: dict) -> rx.Component:
     """Função auxiliar para renderizar cada linha de transparência (empresa) do investidor."""
-    # A variável 'score' é um número no backend, precisamos converter para string e usar lógica simples para cor
     score_val = item["score"].to(float)
     cor_score = rx.cond(score_val >= 80, "green", rx.cond(score_val >= 50, "yellow", "red"))
     score_txt = rx.cond(score_val >= 80, "A+", rx.cond(score_val >= 50, "B+", "C-"))
@@ -104,7 +100,7 @@ def criar_linha_transparencia_investidor(item: dict) -> rx.Component:
         rx.table.cell(rx.text(item["empresa"], weight="bold", color="#111827")),
         rx.table.cell(rx.badge(item["bloco"], color_scheme="blue", variant="soft")),
         rx.table.cell(rx.text(item["valor"], weight="medium", color="#111827")),
-        rx.table.cell(rx.text("+10.0% a.a.", color="#10B981", weight="bold")), # Simulando rentabilidade
+        rx.table.cell(rx.text("+10.0% a.a.", color="#10B981", weight="bold")),
         rx.table.cell(rx.badge(score_txt, color_scheme=cor_score, variant="solid")),
         rx.table.cell(rx.badge("Ativo", color_scheme="green", variant="soft")),
         rx.table.cell(
@@ -122,7 +118,6 @@ def dashboard_investidor() -> rx.Component:
         sidebar_investidor(),
         
         rx.vstack(
-            # Cabeçalho da Página
             rx.hstack(
                 rx.vstack(
                     rx.heading("Meu Portfólio FIDC", size="8", weight="bold", color="#111827"),
@@ -142,7 +137,6 @@ def dashboard_investidor() -> rx.Component:
                 mb="6",
             ),
             
-            # Grid de Métricas (KPIs)
             rx.grid(
                 card_metrica_investidor("Capital Investido", DashboardState.patrimonio_total_investidor, "Referência: Hoje", "wallet", "#3B82F6"),
                 card_metrica_investidor("Total Aportes", DashboardState.quantidade_total_aportes.to_string(), "Histórico Ativo", "layers", "#10B981"),
@@ -154,7 +148,6 @@ def dashboard_investidor() -> rx.Component:
                 mb="8",
             ),
             
-            # Gráficos Analíticos (Recharts)
             rx.grid(
                 rx.card(
                     rx.heading("Rendimento Projetado (em Milhões de R$)", size="4", mb="4", color="#111827"),
@@ -198,7 +191,6 @@ def dashboard_investidor() -> rx.Component:
                 mb="8",
             ),
             
-            # Tabela de Portfólio Substituindo o Placeholder
             rx.card(
                 rx.hstack(
                     rx.heading("Transparência do Portfólio (Empresas Sacadas)", size="5", color="#111827"),
@@ -210,7 +202,6 @@ def dashboard_investidor() -> rx.Component:
                 ),
                 rx.text("Acompanhe a alocação do seu capital e o Score Nuclea em tempo real.", size="2", color="#64748B", mb="4"),
                 
-                # Tabela Reflex Customizada
                 rx.table.root(
                     rx.table.header(
                         rx.table.row(

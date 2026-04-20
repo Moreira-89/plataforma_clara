@@ -6,22 +6,19 @@ def formulario_login() -> rx.Component:
     """Página de Login da Plataforma Clara."""
     
     return rx.hstack(
-        # ==========================================
-        # LADO ESQUERDO: Branding e Proposta de Valor
-        # ==========================================
         rx.vstack(
             rx.vstack(
                 rx.heading("Clara", size="9", weight="bold", color="white", mb="2"),
                 rx.text(
                     "Transparência e Inteligência em FIDCs", 
                     size="5", 
-                    color="#94A3B8", # Slate 400
+                    color="#94A3B8",
                     weight="medium"
                 ),
                 rx.text(
                     "Conectando Gestoras e Investidores com segurança, rastreabilidade e análise de risco preditiva.", 
                     size="3", 
-                    color="#64748B", # Slate 500
+                    color="#64748B",
                     mt="4",
                     max_width="400px",
                 ),
@@ -30,24 +27,18 @@ def formulario_login() -> rx.Component:
                 height="100%",
                 padding_left="15%",
             ),
-            # Classes de responsividade: Oculto em mobile, visível em telas médias/grandes
             display=["none", "none", "flex"], 
             width=["0%", "0%", "50%"],
             height="100vh",
-            bg="#0F172A", # Fundo escuro (Slate 900) corporativo
-            background_image="radial-gradient(circle at 20% 50%, #1E293B 0%, #0F172A 50%)", # Efeito de luz sutil
+            bg="#0F172A",
+            background_image="radial-gradient(circle at 20% 50%, #1E293B 0%, #0F172A 50%)",
         ),
 
-        # ==========================================
-        # LADO DIREITO: Formulário de Login
-        # ==========================================
         rx.center(
             rx.vstack(
-                # Cabeçalho do Form
                 rx.heading("Bem-vindo de volta", size="7", weight="bold", color="#0F172A"),
                 rx.text("Insira suas credenciais para acessar sua conta.", size="3", color="#64748B", mb="6"),
 
-                # Campo de E-mail
                 rx.text("E-mail", size="2", weight="bold", width="100%", text_align="left", color="#334155"),
                 rx.input(
                     placeholder="seu@email.com",
@@ -55,11 +46,9 @@ def formulario_login() -> rx.Component:
                     width="100%",
                     size="3",
                     border_color="#CBD5E1",
-                    # O Reflex gera automaticamente 'set_nome_da_variavel' para variáveis no State
                     on_change=AutenticacaoState.set_email_usuario, 
                 ),
 
-                # Campo de Senha
                 rx.text("Senha", size="2", weight="bold", width="100%", text_align="left", mt="4", color="#334155"),
                 rx.input(
                     placeholder="••••••••",
@@ -82,7 +71,6 @@ def formulario_login() -> rx.Component:
                     ),
                 ),
 
-                # Controles Extras (Lembrar / Esqueci a senha)
                 rx.hstack(
                     rx.link("Esqueceu a senha?", href="#", size="2", color="#2563EB", weight="medium"),
                     justify_content="flex_end",
@@ -91,19 +79,17 @@ def formulario_login() -> rx.Component:
                     mb="6",
                 ),
 
-                # Botão de Login
                 rx.button(
                     "Entrar na Plataforma",
                     width="100%",
                     size="3",
-                    bg="#2563EB", # Blue 600
+                    bg="#2563EB",
                     color="white",
                     weight="bold",
-                    _hover={"bg": "#1D4ED8"}, # Blue 700 no hover
+                    _hover={"bg": "#1D4ED8"},
                     on_click=AutenticacaoState.fazer_login, 
                 ),
 
-                # Link de Cadastro
                 rx.text(
                     "Não possui uma conta? ",
                     rx.link("Solicite acesso aqui", href="/cadastro", color="#2563EB", weight="bold"),
@@ -114,7 +100,6 @@ def formulario_login() -> rx.Component:
                     width="100%"
                 ),
 
-                # Estilização do Container do Form
                 width=["100%", "80%", "70%", "60%"],
                 max_width="450px",
                 align_items="flex-start",
@@ -125,10 +110,9 @@ def formulario_login() -> rx.Component:
             ),
             width=["100%", "100%", "50%"],
             height="100vh",
-            bg="#F8FAFC", # Slate 50 (cinza clarinho para o fundo do form)
+            bg="#F8FAFC",
         ),
         
-        # Configurações do container principal (hstack)
         width="100vw",
         height="100vh",
         margin="0",

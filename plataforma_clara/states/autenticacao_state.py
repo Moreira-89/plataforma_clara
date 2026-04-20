@@ -20,7 +20,6 @@ class AutenticacaoState(rx.State):
     mensagem_para_usuario: str = ""
     documento_usuario_logado: str = ""
 
-    # Setters explícitos para compatibilidade com versões futuras do Reflex.
     def set_email_usuario(self, valor: str) -> None:
         self.email_usuario = valor
 
@@ -70,7 +69,7 @@ class AutenticacaoState(rx.State):
 
         logger.info("Login bem-sucedido para: %s (tipo: %s)", email_normalizado, dados_usuario["tipo_usuario"])
         
-        # Higienizar o documento de identidade (apenas números)
+        # O documento limpo é usado em filtros SQL e consultas no BigQuery.
         doc_limpo = re.sub(r'[^0-9]', '', dados_usuario["identificador_usuario"])
         self.documento_usuario_logado = doc_limpo
 
