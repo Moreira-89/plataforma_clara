@@ -2,13 +2,25 @@ import reflex as rx
 from typing import Any
 from plataforma_clara.states.dashboard_state import DashboardState
 import hashlib
+import urllib.parse
 
 class ExplorarBlocosState(DashboardState):
     """Estado responsável pelos filtros da página de Explorar Blocos."""
-    
+
+    state_auto_setters = True
+
     termo_busca: str = ""
     filtro_setor: str = ""
     filtro_score: str = ""
+
+    def set_termo_busca(self, valor: str) -> None:
+        self.termo_busca = valor
+
+    def set_filtro_setor(self, valor: str) -> None:
+        self.filtro_setor = valor
+
+    def set_filtro_score(self, valor: str) -> None:
+        self.filtro_score = valor
 
     @rx.var
     def blocos_filtrados(self) -> list[dict[str, Any]]:
@@ -56,9 +68,7 @@ class ExplorarBlocosState(DashboardState):
             elif score >= 50: nota = "B+"
             elif score >= 40: nota = "B"
             
-            # O ID para navegação será o nome sem espaços (em base64 ou url encode)
-            # Para simplificar a URL:
-            import urllib.parse
+            # O ID para navegação será URL-encoded para suportar caracteres especiais.
             id_bloco = urllib.parse.quote(nome_bloco)
             
             resultado.append({

@@ -1,11 +1,13 @@
 import reflex as rx
 import asyncio
 from typing import Any
-import pandas as pd
 import sqlalchemy as sa
 from plataforma_clara.states.dashboard_state import DashboardState
 import urllib.parse
 import hashlib
+import logging
+
+logger = logging.getLogger(__name__)
 
 class DetalhesBlocoState(DashboardState):
     """Estado para a página de detalhes de um bloco de liquidez específico."""
@@ -18,6 +20,7 @@ class DetalhesBlocoState(DashboardState):
     
     empresas_bloco: list[dict[str, Any]] = []
 
+    @rx.event
     async def carregar_detalhes(self):
         """Busca os detalhes do bloco no BigQuery de forma assíncrona."""
         
@@ -26,6 +29,12 @@ class DetalhesBlocoState(DashboardState):
         bloco_id = bloco_id_raw[0] if isinstance(bloco_id_raw, list) and bloco_id_raw else bloco_id_raw
         
         if not bloco_id:
+            self.nome_bloco = ""
+            self.empresas_bloco = []
+            self.volume_total = "R$ 0,00"
+            self.score_medio = "N/A"
+            self.rentabilidade_alvo = "N/A"
+            self.prazo_medio = "N/A"
             return
             
         bloco_decodificado = urllib.parse.unquote(str(bloco_id))
@@ -39,8 +48,8 @@ class DetalhesBlocoState(DashboardState):
             self.rentabilidade_alvo = resultados.get("rentabilidade_alvo", "N/A")
             self.prazo_medio = resultados.get("prazo_medio", "N/A")
             
-        except Exception as e:
-            print(f"Erro ao carregar bloco {bloco_decodificado}: {e}")
+        except Exception:
+            logger.exception("Erro ao carregar detalhes do bloco: %s", bloco_decodificado)
             
     def _buscar_dados_bloco_bq(self, bloco: str) -> dict:
         """Query bloqueante isolada em thread para não travar a UI (usando Supabase)."""

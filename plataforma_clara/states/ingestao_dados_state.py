@@ -14,29 +14,6 @@ from plataforma_clara.services.csv_processor import processar_arquivo_csv
 
 logger = logging.getLogger(__name__)
 
-# Campos do modelo tb_aporte que devem ser enviados ao BigQuery (exclui 'id' do SQLModel)
-_CAMPOS_APORTE: list[str] = [
-    "id_aporte_uuid",
-    "documento_investidor_cpf_cnpj",
-    "fundo_origem_id",
-    "nome_fundo_investidor",
-    "empresa_sacada_nome",
-    "cnpj_sacado_limpo",
-    "valor_aporte_compra",
-    "valor_mercado_atual",
-    "quantidade_papeis_adquiridos",
-    "data_vencimento",
-    "data_referencia_competencia",
-    "prazo_vencimento_dias",
-    "status_prazo_vencimento",
-    "taxa_retorno_pre_fixada",
-    "bloco_liquidez_setorial",
-    "categoria_tecnica_ativo",
-    "codigo_identificacao_isin",
-    "score_risco_interno",
-    "flag_outlier_valor"
-]
-
 
 class IngestaoDadosState(rx.State):
     """Estado responsável pelo fluxo de upload e processamento de CSVs."""
@@ -53,7 +30,6 @@ class IngestaoDadosState(rx.State):
         O parâmetro DEVE se chamar ``files`` para casar com o contrato do framework.
         """
         self.mensagem_para_usuario = ""
-        caminho_temporario = None
 
         try:
             if not files:
@@ -61,7 +37,15 @@ class IngestaoDadosState(rx.State):
                 return
 
             dados_arquivos = await files[0].read()
-            filename = files[0].filename
+            filename = os.path.basename(files[0].filename or "")
+
+            if not filename:
+                self.mensagem_para_usuario = "Nome de arquivo inválido."
+                return
+
+            if not filename.lower().endswith(".csv"):
+                self.mensagem_para_usuario = "Formato inválido. Envie um arquivo .csv."
+                return
 
             def _processar_arquivo():
                 caminho_temporario = rx.get_upload_dir() / filename
@@ -127,6 +111,12 @@ class IngestaoDadosState(rx.State):
             # Executa toda a leitura do pandas e DB insert em thread isolada
             qtd_inseridos, bq_dados = await asyncio.to_thread(_processar_arquivo)
 
+            if qtd_inseridos == 0:
+                self.mensagem_para_usuario = (
+                    "Arquivo processado, mas sem linhas válidas para inserção."
+                )
+                return
+
             logger.info("%d aportes salvos no Supabase com sucesso.", qtd_inseridos)
 
             self.mensagem_para_usuario = "Sucesso! CSV processado no Supabase e enviado para a nuvem."
@@ -141,7 +131,7 @@ class IngestaoDadosState(rx.State):
             self.mensagem_para_usuario = f"Erro no processamento: {str(e)}"
 
     @rx.event(background=True)
-    async def enviar_dados_bigquery(self, dados: list[dict]):
+    async def enviar_dados_bigquery(self, dados: list[dict[str, Any]]):
         """Envia dados processados para o BigQuery em background sem bloquear o event loop."""
         def _bq_task():
             client = bigquery.Client()

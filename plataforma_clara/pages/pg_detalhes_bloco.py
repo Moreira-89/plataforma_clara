@@ -1,5 +1,6 @@
 import reflex as rx
 from plataforma_clara.states.detalhes_bloco_state import DetalhesBlocoState
+from plataforma_clara.states.autenticacao_state import AutenticacaoState
 
 def sidebar_investidor() -> rx.Component:
     """Componente de Menu Lateral (Reutilizado para manter a navegação visual)."""
@@ -44,14 +45,16 @@ def sidebar_investidor() -> rx.Component:
             width="100%",
         ),
         rx.spacer(),
-        rx.link(
+        rx.button(
             rx.hstack(rx.icon("log-out", size=20), rx.text("Sair", size="3"), align="center", spacing="2"), 
-            href="/", 
+            on_click=AutenticacaoState.fazer_logout,
             color="#EF4444",
             p="2", 
             border_radius="md", 
             width="100%",
-            _hover={"bg": "#FEF2F2", "text_decoration": "none"}
+            justify_content="flex-start",
+            variant="ghost",
+            _hover={"bg": "#FEF2F2"}
         ),
         bg="#0F172A",
         width=["100%", "250px"],
@@ -108,7 +111,7 @@ def criar_linha_empresa_dinamica(empresa: dict) -> rx.Component:
 def pg_detalhes_bloco() -> rx.Component:
     """Página de Detalhes de um Bloco de Liquidez Específico."""
     
-    bloco_id = rx.State.router.page.params.get("bloco_id", "")
+    bloco_id = DetalhesBlocoState.router.page.params.get("bloco_id", "")
     
     return rx.flex(
         sidebar_investidor(),

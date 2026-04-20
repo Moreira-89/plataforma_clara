@@ -28,6 +28,15 @@ COLUNAS_OBRIGATORIAS: list[str] = [
 
 # Colunas cuja ausência de valor torna a linha inutilizável
 _COLUNAS_CRITICAS: list[str] = ["cnpj_sacado_limpo", "valor_aporte_compra", "documento_investidor_cpf_cnpj"]
+_COLUNAS_NUMERICAS: list[str] = [
+    "valor_aporte_compra",
+    "valor_mercado_atual",
+    "quantidade_papeis_adquiridos",
+    "prazo_vencimento_dias",
+    "taxa_retorno_pre_fixada",
+    "score_risco_interno",
+]
+_COLUNAS_DATA: list[str] = ["data_vencimento", "data_referencia_competencia"]
 
 
 def processar_arquivo_csv(caminho_arquivo: str | object) -> pd.DataFrame:
@@ -79,12 +88,32 @@ def processar_arquivo_csv(caminho_arquivo: str | object) -> pd.DataFrame:
 
     # Seleciona só as colunas do padrão (descarta extras) e remove linhas
     # onde as colunas críticas estejam nulas.
-    dataframe_limpo = dataframe[COLUNAS_OBRIGATORIAS].dropna(subset=_COLUNAS_CRITICAS)
+    dataframe_limpo = dataframe[COLUNAS_OBRIGATORIAS].copy()
 
-    # Converte colunas de data para objetos datetime.date para compatibilidade com o banco de dados
-    for col in ["data_vencimento", "data_referencia_competencia"]:
-        if col in dataframe_limpo.columns:
-            dataframe_limpo[col] = pd.to_datetime(dataframe_limpo[col]).dt.date
+    # Trata strings vazias como nulas antes de validar os campos críticos.
+    for col in dataframe_limpo.select_dtypes(include=["object", "string"]).columns:
+        serie = dataframe_limpo[col].astype("string")
+        dataframe_limpo[col] = serie.mask(serie.str.strip() == "", pd.NA)
+
+    # Normaliza documentos para conter somente dígitos.
+    dataframe_limpo["documento_investidor_cpf_cnpj"] = (
+        dataframe_limpo["documento_investidor_cpf_cnpj"].astype("string").str.replace(r"[^0-9]", "", regex=True)
+    )
+    dataframe_limpo["cnpj_sacado_limpo"] = (
+        dataframe_limpo["cnpj_sacado_limpo"].astype("string").str.replace(r"[^0-9]", "", regex=True)
+    )
+
+    # Converte colunas numéricas de forma tolerante e elimina linhas inválidas.
+    for col in _COLUNAS_NUMERICAS:
+        dataframe_limpo[col] = pd.to_numeric(dataframe_limpo[col], errors="coerce")
+
+    # Converte colunas de data para datetime.date.
+    for col in _COLUNAS_DATA:
+        dataframe_limpo[col] = pd.to_datetime(dataframe_limpo[col], errors="coerce").dt.date
+
+    dataframe_limpo = dataframe_limpo.dropna(
+        subset=_COLUNAS_CRITICAS + _COLUNAS_NUMERICAS + _COLUNAS_DATA
+    )
 
     # Substitui NaN por None para que o SQLModel/PostgreSQL insiram como NULL corretamente
     dataframe_limpo = dataframe_limpo.where(pd.notnull(dataframe_limpo), None)

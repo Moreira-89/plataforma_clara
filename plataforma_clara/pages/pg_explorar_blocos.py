@@ -1,5 +1,5 @@
 import reflex as rx
-from plataforma_clara.states.dashboard_state import DashboardState
+from plataforma_clara.states.autenticacao_state import AutenticacaoState
 from plataforma_clara.states.explorar_blocos_state import ExplorarBlocosState
 
 def sidebar_investidor() -> rx.Component:
@@ -51,14 +51,16 @@ def sidebar_investidor() -> rx.Component:
         rx.spacer(),
         
         # Botão de Logout
-        rx.link(
+        rx.button(
             rx.hstack(rx.icon("log-out", size=20), rx.text("Sair", size="3"), align="center", spacing="2"), 
-            href="/", 
+            on_click=AutenticacaoState.fazer_logout,
             color="#EF4444",
             p="2", 
             border_radius="md", 
             width="100%",
-            _hover={"bg": "#FEF2F2", "text_decoration": "none"}
+            justify_content="flex-start",
+            variant="ghost",
+            _hover={"bg": "#FEF2F2"}
         ),
         
         bg="#0F172A",

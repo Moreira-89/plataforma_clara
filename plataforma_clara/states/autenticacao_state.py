@@ -20,6 +20,13 @@ class AutenticacaoState(rx.State):
     mensagem_para_usuario: str = ""
     documento_usuario_logado: str = ""
 
+    # Setters explícitos para compatibilidade com versões futuras do Reflex.
+    def set_email_usuario(self, valor: str) -> None:
+        self.email_usuario = valor
+
+    def set_senha_hash_usuario(self, valor: str) -> None:
+        self.senha_hash_usuario = valor
+
     def _limpar_formulario(self) -> None:
         """Reseta apenas os campos do formulário de login (preserva dados de sessão)."""
         self.email_usuario = ""

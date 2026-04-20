@@ -71,6 +71,17 @@ def formulario_login() -> rx.Component:
                     on_change=AutenticacaoState.set_senha_hash_usuario,
                 ),
 
+                rx.cond(
+                    AutenticacaoState.mensagem_para_usuario != "",
+                    rx.callout(
+                        AutenticacaoState.mensagem_para_usuario,
+                        icon="info",
+                        color_scheme="red",
+                        width="100%",
+                        mt="4",
+                    ),
+                ),
+
                 # Controles Extras (Lembrar / Esqueci a senha)
                 rx.hstack(
                     rx.link("Esqueceu a senha?", href="#", size="2", color="#2563EB", weight="medium"),

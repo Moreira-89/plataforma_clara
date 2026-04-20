@@ -55,15 +55,21 @@ class DashboardState(rx.State):
             self.quantidade_total_aportes = 0
             return
 
+        def _to_float(valor: Any) -> float:
+            try:
+                return float(valor or 0)
+            except (TypeError, ValueError):
+                return 0.0
+
         self.total_alocado_geral = sum(
-            item.get("total_alocado", 0) for item in dados
+            _to_float(item.get("total_alocado", 0)) for item in dados
         )
         total_scores = sum(
-            item.get("score_medio_reputacao", 0) for item in dados
+            _to_float(item.get("score_medio_reputacao", 0)) for item in dados
         )
         self.score_medio_geral = round(total_scores / len(dados), 2)
         self.quantidade_total_aportes = sum(
-            item.get("quantidade_aportes", 0) for item in dados
+            int(_to_float(item.get("quantidade_aportes", 0))) for item in dados
         )
 
     # ── Investidor ───────────────────────────────────────────────────────────
@@ -81,6 +87,7 @@ class DashboardState(rx.State):
         self.score_medio_geral = 0.0
         self.quantidade_total_aportes = 0
         self.insight_ia = ""
+        self.tabela_transparencia_investidor = []
 
         # Acessa o sub-state de autenticação de forma segura via get_state()
         auth = await self.get_state(
@@ -162,6 +169,17 @@ class DashboardState(rx.State):
     @rx.event
     async def carregar_dados_gestora(self):
         """Busca a visão global do FIDC para a Gestora (BigQuery + Supabase)."""
+        self.dados_blocos_gestora = []
+        self.tabela_aportes_gestora = []
+        self.lista_nomes_blocos = ["Todos"]
+        self.dados_blocos = []
+        self.patrimonio_total_gestora = 0.0
+        self.score_medio_blocos = []
+        self.ranking_empresas_gestora = []
+        self.total_alocado_geral = 0.0
+        self.score_medio_geral = 0.0
+        self.quantidade_total_aportes = 0
+        self.insight_ia = ""
         self.mensagem_erro = ""
 
         # ── 1. Dados via BigQuery (gráficos e filtro por bloco) ──────────────
@@ -337,17 +355,13 @@ class DashboardState(rx.State):
     @rx.var
     def dados_evolucao_aum(self) -> list[dict[str, Any]]:
         """Simulação de dados de Evolução de AUM (6 meses) baseado no valor atual."""
-        import random
         meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"]
-        base = self.patrimonio_total_gestora * 0.8
-        dados = []
-        for mes in meses:
-            base += self.patrimonio_total_gestora * random.uniform(0.01, 0.05)
-            dados.append({"name": mes, "volume": round(base / 1_000_000, 2)})
-        # O último mês é o valor exato atual
-        if dados:
-            dados[-1]["volume"] = round(self.patrimonio_total_gestora / 1_000_000, 2)
-        return dados
+        fatores = [0.83, 0.87, 0.91, 0.95, 0.98, 1.0]
+        total = self.patrimonio_total_gestora
+        return [
+            {"name": mes, "volume": round((total * fator) / 1_000_000, 2)}
+            for mes, fator in zip(meses, fatores, strict=False)
+        ]
 
     @rx.var
     def dados_distribuicao_aportes(self) -> list[dict[str, Any]]:

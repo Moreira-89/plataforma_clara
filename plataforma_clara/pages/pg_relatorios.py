@@ -1,11 +1,12 @@
 import reflex as rx
 
-# from plataforma_clara.states.assistente_ia_state import AssistenteIAState # Estado para gerir o LLM
+from plataforma_clara.states.assistente_ia_state import AssistenteIAState
+from plataforma_clara.states.autenticacao_state import AutenticacaoState
+
 
 def sidebar_investidor() -> rx.Component:
-    """Componente de Menu Lateral para o Investidor (Reutilizado)."""
+    """Componente de menu lateral do investidor."""
     return rx.vstack(
-        # Logótipo / Branding
         rx.vstack(
             rx.heading("Clara", size="7", weight="bold", color="white"),
             rx.text("Portal do Investidor", size="2", color="#94A3B8"),
@@ -13,54 +14,70 @@ def sidebar_investidor() -> rx.Component:
             mb="6",
             width="100%",
         ),
-        
-        # Links de Navegação
         rx.vstack(
             rx.link(
-                rx.hstack(rx.icon("pie-chart", size=20), rx.text("Meu Portfólio", size="3"), align="center", spacing="2"), 
-                href="/dashboard-investidor", 
-                color="#94A3B8", 
-                p="2", 
-                border_radius="md", 
+                rx.hstack(
+                    rx.icon("pie-chart", size=20),
+                    rx.text("Meu Portfólio", size="3"),
+                    align="center",
+                    spacing="2",
+                ),
+                href="/dashboard-investidor",
+                color="#94A3B8",
+                p="2",
+                border_radius="md",
                 width="100%",
-                _hover={"bg": "#1E293B", "color": "white", "text_decoration": "none"}
+                _hover={"bg": "#1E293B", "color": "white", "text_decoration": "none"},
             ),
             rx.link(
-                rx.hstack(rx.icon("layers", size=20), rx.text("Explorar Blocos", size="3"), align="center", spacing="2"), 
-                href="/explorar-blocos", 
-                color="#94A3B8", 
-                p="2", 
-                border_radius="md", 
+                rx.hstack(
+                    rx.icon("layers", size=20),
+                    rx.text("Explorar Blocos", size="3"),
+                    align="center",
+                    spacing="2",
+                ),
+                href="/explorar-blocos",
+                color="#94A3B8",
+                p="2",
+                border_radius="md",
                 width="100%",
-                _hover={"bg": "#1E293B", "color": "white", "text_decoration": "none"}
+                _hover={"bg": "#1E293B", "color": "white", "text_decoration": "none"},
             ),
             rx.link(
-                rx.hstack(rx.icon("file-text", size=20), rx.text("Relatórios Nuclea", size="3"), align="center", spacing="2"), 
-                href="/relatorios", 
-                color="white", 
-                p="2", 
-                bg="#1E293B", # Item ativo
-                border_radius="md", 
+                rx.hstack(
+                    rx.icon("file-text", size=20),
+                    rx.text("Relatórios Nuclea", size="3"),
+                    align="center",
+                    spacing="2",
+                ),
+                href="/relatorios",
+                color="white",
+                p="2",
+                bg="#1E293B",
+                border_radius="md",
                 width="100%",
-                _hover={"text_decoration": "none"}
+                _hover={"text_decoration": "none"},
             ),
             spacing="2",
             width="100%",
         ),
-        
         rx.spacer(),
-        
-        # Botão de Logout
-        rx.link(
-            rx.hstack(rx.icon("log-out", size=20), rx.text("Sair", size="3"), align="center", spacing="2"), 
-            href="/", 
+        rx.button(
+            rx.hstack(
+                rx.icon("log-out", size=20),
+                rx.text("Sair", size="3"),
+                align="center",
+                spacing="2",
+            ),
+            on_click=AutenticacaoState.fazer_logout,
             color="#EF4444",
-            p="2", 
-            border_radius="md", 
+            p="2",
+            border_radius="md",
             width="100%",
-            _hover={"bg": "#FEF2F2", "text_decoration": "none"}
+            justify_content="flex-start",
+            variant="ghost",
+            _hover={"bg": "#FEF2F2"},
         ),
-        
         bg="#0F172A",
         width=["100%", "250px"],
         height="100vh",
@@ -70,93 +87,103 @@ def sidebar_investidor() -> rx.Component:
     )
 
 
-
 def pg_relatorios() -> rx.Component:
-    """Página de Relatórios Insight AI para o Investidor."""
-    
-    from plataforma_clara.states.assistente_ia_state import AssistenteIAState
-    
+    """Página de geração do relatório consolidado de investimentos."""
     return rx.flex(
         sidebar_investidor(),
-        
-        rx.flex(
-            # Área Central: Geração de Relatório
+        rx.center(
             rx.vstack(
-                rx.vstack(
-                    rx.heading("Insight AI - Relatórios de Transparência", size="8", weight="bold", color="#111827"),
-                    rx.text("Selecione um Bloco de Liquidez para gerar uma análise institucional aprofundada.", size="4", color="#4B5563"),
-                    align_items="center",
+                rx.heading(
+                    "Relatório Consolidado de Investimentos",
+                    size="8",
+                    weight="bold",
+                    color="#111827",
                     text_align="center",
-                    width="100%",
-                    mb="8",
                 ),
-                
+                rx.text(
+                    "Selecione o relatório, gere a análise da IA e baixe o PDF.",
+                    size="4",
+                    color="#4B5563",
+                    text_align="center",
+                ),
                 rx.card(
                     rx.vstack(
-                        rx.hstack(
-                            rx.icon("file-text", color="#8B5CF6", size=32),
-                            rx.heading("Geração de Relatório Institucional PDF", size="6", color="#111827"),
-                            align_items="center",
-                            spacing="3",
-                            mb="4"
+                        rx.text(
+                            "1) Selecione o tipo de relatório",
+                            size="2",
+                            weight="bold",
+                            color="#334155",
                         ),
-                        
-                        rx.text("A nossa IA analisa o histórico completo do banco de dados, o risco setorial e o comportamento de pagamento para compor um PDF institucional assinado pela Insight AI.", color="#4B5563", mb="6"),
-                        
                         rx.select(
-                            ["Bloco Safira", "Bloco Rubi", "Bloco Esmeralda", "Bloco Diamante"],
-                            placeholder="Selecione o Bloco de Liquidez...",
-                            value=AssistenteIAState.bloco_selecionado,
-                            on_change=AssistenteIAState.set_bloco_selecionado,
-                            size="3",
+                            AssistenteIAState.opcoes_relatorio,
+                            placeholder="Selecione...",
+                            value=AssistenteIAState.relatorio_selecionado,
+                            on_change=AssistenteIAState.set_relatorio_selecionado,
                             width="100%",
-                            mb="6",
+                            size="3",
                         ),
-                        
+                        rx.text(
+                            "2) Clique em gerar para baixar o PDF consolidado com todos os blocos do investidor logado.",
+                            size="2",
+                            color="#475569",
+                        ),
                         rx.button(
                             rx.cond(
                                 AssistenteIAState.is_loading,
-                                rx.spinner(size="3"),
                                 rx.hstack(
-                                    rx.icon("download", size=20),
-                                    rx.text("Gerar e Baixar Relatório PDF", size="4", weight="bold"),
-                                    align_items="center",
-                                    spacing="2"
-                                )
+                                    rx.spinner(size="2"),
+                                    rx.text("Gerando relatório..."),
+                                    spacing="2",
+                                    align="center",
+                                ),
+                                rx.hstack(
+                                    rx.icon("download", size=18),
+                                    rx.text("Gerar e Baixar PDF", weight="bold"),
+                                    spacing="2",
+                                    align="center",
+                                ),
                             ),
                             on_click=AssistenteIAState.gerar_e_baixar_relatorio,
-                            size="4",
                             width="100%",
+                            size="3",
                             color_scheme="blue",
                             disabled=AssistenteIAState.is_loading,
                             cursor=rx.cond(AssistenteIAState.is_loading, "wait", "pointer"),
                         ),
-                        
+                        rx.cond(
+                            AssistenteIAState.mensagem_para_usuario != "",
+                            rx.callout(
+                                AssistenteIAState.mensagem_para_usuario,
+                                icon="info",
+                                color_scheme=rx.cond(
+                                    AssistenteIAState.mensagem_para_usuario.to(str).contains("sucesso"),
+                                    "green",
+                                    "blue",
+                                ),
+                                width="100%",
+                            ),
+                        ),
+                        spacing="4",
                         width="100%",
-                        padding="3rem",
                         align_items="flex-start",
                     ),
-                    variant="surface",
+                    width=["100%", "100%", "80%", "65%"],
+                    max_width="840px",
                     border="1px solid #E5E7EB",
-                    width=["100%", "100%", "80%", "60%"],
-                    margin="0 auto",
-                    box_shadow="lg"
+                    variant="surface",
+                    box_shadow="0 10px 15px -3px rgb(0 0 0 / 0.08)",
                 ),
+                spacing="6",
                 width="100%",
+                max_width="980px",
                 align_items="center",
-                justify_content="center",
-                height="100%",
-                mt="10",
             ),
-            
-            direction="column",
             width="100%",
             padding=["2rem", "3rem"],
+            bg="#F9FAFB",
         ),
-        
         direction=rx.breakpoints(initial="column", sm="row"),
         width="100vw",
         min_height="100vh",
-        bg="#F9FAFB",
         spacing="0",
     )

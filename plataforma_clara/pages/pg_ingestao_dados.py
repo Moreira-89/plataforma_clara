@@ -1,5 +1,6 @@
 import reflex as rx
 from plataforma_clara.states.ingestao_dados_state import IngestaoDadosState
+from plataforma_clara.states.autenticacao_state import AutenticacaoState
 
 def sidebar_gestora() -> rx.Component:
     """Componente de Menu Lateral para a Gestora (Reutilizado)."""
@@ -41,14 +42,16 @@ def sidebar_gestora() -> rx.Component:
         rx.spacer(),
         
         # Botão de Logout
-        rx.link(
+        rx.button(
             rx.hstack(rx.icon("log-out", size=20), rx.text("Sair", size="3"), align="center", spacing="2"), 
-            href="/", 
+            on_click=AutenticacaoState.fazer_logout,
             color="#EF4444",
             p="2", 
             border_radius="md", 
             width="100%",
-            _hover={"bg": "#FEF2F2", "text_decoration": "none"}
+            justify_content="flex-start",
+            variant="ghost",
+            _hover={"bg": "#FEF2F2"}
         ),
         
         bg="#0F172A",
@@ -132,6 +135,7 @@ def ingestao_dados() -> rx.Component:
                             color_scheme="gray",
                             variant="surface",
                             size="3",
+                            on_click=rx.clear_selected_files("upload_csv_alocacoes"),
                         ),
                         rx.spacer(),
                         rx.button(
@@ -146,6 +150,16 @@ def ingestao_dados() -> rx.Component:
                     ),
                     width="100%",
                     align_items="flex-start",
+                ),
+                rx.cond(
+                    IngestaoDadosState.mensagem_para_usuario != "",
+                    rx.callout(
+                        IngestaoDadosState.mensagem_para_usuario,
+                        icon="info",
+                        width="100%",
+                        color_scheme="blue",
+                        mt="4",
+                    ),
                 ),
                 width="100%",
                 variant="surface",

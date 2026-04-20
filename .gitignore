@@ -5,6 +5,7 @@ assets/external/
 *.db
 plataforma-clara-0eafb2cacca9.json
 telas/
+.codex
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

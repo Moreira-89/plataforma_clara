@@ -1,5 +1,6 @@
 import logging
 import re
+import asyncio
 
 import bcrypt
 import reflex as rx
@@ -14,7 +15,7 @@ _EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 # Regras de identificação de documentos brasileiros
 _REGRAS_DOCUMENTOS: dict[str, dict] = {
     "CPF": {"tamanho": 11, "permite_letras": False},
-    "CNPJ": {"tamanho": 14, "permite_letras": True},
+    "CNPJ": {"tamanho": 14, "permite_letras": False},
 }
 
 
@@ -29,6 +30,22 @@ class CadastroUsuarioState(rx.State):
     identificador_usuario: str = ""
     senha_hash_usuario: str = ""
     mensagem_para_usuario: str = ""
+
+    # Setters explícitos para compatibilidade com versões futuras do Reflex.
+    def set_tipo_usuario(self, valor: str) -> None:
+        self.tipo_usuario = valor
+
+    def set_nome_usuario(self, valor: str) -> None:
+        self.nome_usuario = valor
+
+    def set_email_usuario(self, valor: str) -> None:
+        self.email_usuario = valor
+
+    def set_identificador_usuario(self, valor: str) -> None:
+        self.identificador_usuario = valor
+
+    def set_senha_hash_usuario(self, valor: str) -> None:
+        self.senha_hash_usuario = valor
 
     def _limpar_estado(self) -> None:
         """Reseta todos os campos de formulário para o valor padrão."""
@@ -81,7 +98,7 @@ class CadastroUsuarioState(rx.State):
         self.mensagem_para_usuario = f"{tipo_doc} validado com sucesso!"
 
         # Prossegue para a persistência dos dados.
-        self._salvar_informacao_banco()
+        await asyncio.to_thread(self._salvar_informacao_banco)
 
         # Quando houver erro de persistência, interrompe o fluxo sem redirecionar.
         if self.mensagem_para_usuario != "Usuário cadastrado com sucesso!":
