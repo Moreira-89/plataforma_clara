@@ -21,6 +21,8 @@ _REGRAS_DOCUMENTOS: dict[str, dict] = {
 class CadastroUsuarioState(rx.State):
     """Estado responsável por gerenciar o fluxo de cadastro de novos usuários."""
 
+    state_auto_setters = True
+
     tipo_usuario: str = ""
     nome_usuario: str = ""
     email_usuario: str = ""

@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 class AutenticacaoState(rx.State):
     """Estado responsável pelo fluxo de login/autenticação."""
 
+    state_auto_setters = True
+
     email_usuario: str = ""
     senha_hash_usuario: str = ""
     mensagem_para_usuario: str = ""
