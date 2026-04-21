@@ -7,7 +7,7 @@ def formulario_cadastro() -> rx.Component:
     return rx.hstack(
         rx.vstack(
             rx.vstack(
-                rx.image(src="/logo_para_usar_fundo_escuro.png", height="150px", alt="Logo Clara", mb="4"),
+                rx.image(src="/logo_para_usar_fundo_escuro.png", height="80px", alt="Logo Clara", mb="4", transform="scale(1.8)", transform_origin="left center"),
                 rx.text(
                     "Junte-se ao ecossistema de FIDCs", 
                     size="5", 

@@ -8,7 +8,7 @@ def sidebar_investidor() -> rx.Component:
     """Componente de menu lateral do investidor."""
     return rx.vstack(
         rx.vstack(
-            rx.image(src="/logo_para_usar_fundo_escuro.png", height="80px", alt="Logo Clara"),
+            rx.image(src="/logo_para_usar_fundo_escuro.png", height="40px", alt="Logo Clara", transform="scale(2)", transform_origin="left center"),
             rx.text("Portal do Investidor", size="2", color="#94A3B8", mt="2"),
             align_items="flex-start",
             mb="6",
