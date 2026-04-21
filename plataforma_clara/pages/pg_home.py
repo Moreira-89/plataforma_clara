@@ -4,7 +4,7 @@ def navbar_home() -> rx.Component:
     """Barra de navegação da Landing Page."""
     return rx.hstack(
         rx.hstack(
-            rx.image(src="/logo_para_usar_fundo_escuro.png", height="40px", alt="Logo Clara", transform="scale(2)", transform_origin="left center"),
+            rx.image(src="/logo_para_usar_fundo_escuro.png", height="40px", alt="Logo Clara", transform="scale(3.5)", transform_origin="left center"),
             align_items="center",
             spacing="2"
         ),
