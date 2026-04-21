@@ -461,7 +461,16 @@ def _gerar_pdf_e_ler_bytes(nome_investidor: str, markdown: str) -> tuple[bytes, 
     nome_arquivo = f"Relatorio_Consolidado_{nome_limpo}.pdf"
     caminho_arquivo = os.path.join(str(rx.get_upload_dir()), nome_arquivo)
 
+    caminho_logo = _ROOT_DIR / "assets" / "logo_para_usar_fundo_claro.png"
+    # Adicionando a logo no topo do relatório
+    markdown_com_logo = f'<img src="file://{caminho_logo.absolute()}" class="logo-relatorio" />\n\n' + markdown
+
     css_estilo = """
+    .logo-relatorio {
+        max-height: 80px;
+        margin-bottom: 20px;
+    }
+
     @page {
         size: A4 landscape;
         margin: 1.5cm;
@@ -506,7 +515,7 @@ def _gerar_pdf_e_ler_bytes(nome_investidor: str, markdown: str) -> tuple[bytes, 
     """
 
     pdf = MarkdownPdf(toc_level=2)
-    pdf.add_section(Section(markdown), user_css=css_estilo)
+    pdf.add_section(Section(markdown_com_logo), user_css=css_estilo)
     pdf.save(caminho_arquivo)
 
     try:

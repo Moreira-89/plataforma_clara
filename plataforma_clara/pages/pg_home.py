@@ -4,8 +4,7 @@ def navbar_home() -> rx.Component:
     """Barra de navegação da Landing Page."""
     return rx.hstack(
         rx.hstack(
-            rx.icon("layers", size=24, color="#3B82F6"),
-            rx.heading("Clara", size="7", weight="bold", color="white"),
+            rx.image(src="/logo_para_usar_fundo_escuro.png", height="80px", alt="Logo Clara"),
             align_items="center",
             spacing="2"
         ),

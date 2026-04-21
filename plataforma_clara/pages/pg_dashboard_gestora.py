@@ -7,8 +7,8 @@ def sidebar_gestora() -> rx.Component:
     """Componente de Menu Lateral para a Gestora."""
     return rx.vstack(
         rx.vstack(
-            rx.heading("Clara", size="7", weight="bold", color="white"),
-            rx.text("Portal da Gestora", size="2", color="#94A3B8"),
+            rx.image(src="/logo_para_usar_fundo_escuro.png", height="80px", alt="Logo Clara"),
+            rx.text("Portal da Gestora", size="2", color="#94A3B8", mt="2"),
             align_items="flex-start",
             mb="6",
             width="100%",
