@@ -1,3 +1,14 @@
+"""
+Serviço de geração de relatório consolidado de investimentos via IA (ChatGroq).
+
+Fluxo principal:
+    1. Busca o nome do investidor no banco (Supabase/PostgreSQL).
+    2. Busca os aportes do investidor no BigQuery (tb_aporte).
+    3. Compacta os dados para caber no limite de tokens do provedor Groq.
+    4. Envia o prompt institucional ao LLM (llama-3.3-70b-versatile via Groq).
+    5. Converte o Markdown gerado em PDF e retorna os bytes para download.
+"""
+
 import logging
 import os
 import re
@@ -14,10 +25,15 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from markdown_pdf import MarkdownPdf, Section
 from pydantic import SecretStr
+
 from sqlalchemy import func
 
 from plataforma_clara.model.schemas import tb_usuario
 from plataforma_clara.services.bigquery_utils import criar_cliente_bigquery
+
+# -----------------------------------------------------------------------------
+# INICIALIZAÇÃO
+# -----------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
 
@@ -528,22 +544,57 @@ def _gerar_pdf_e_ler_bytes(nome_investidor: str, markdown: str) -> tuple[bytes, 
     return conteudo_bytes, nome_arquivo
 
 
+# -----------------------------------------------------------------------------
+# PONTO DE ENTRADA PÚBLICO
+# -----------------------------------------------------------------------------
+
+
 def gerar_relatorio_consolidado_investidor(documento_investidor: str) -> tuple[bytes, str]:
+    """
+    Orquestra todo o fluxo de geração do relatório consolidado em PDF.
+
+    COMO FUNCIONA:
+        1. Normalização do Documento — Remove caracteres não numéricos do identificador.
+        2. Busca do Nome — Consulta o banco para obter o nome legível do investidor.
+        3. Busca no BigQuery — Obtém até 2.000 aportes do investidor da tb_aporte.
+        4. Montagem do Payload — Estrutura os dados de investimentos para o prompt.
+        5. Geração do Markdown — Chama o ChatGroq com prompt institucional e retry
+           progressivo para lidar com limites de token (status 413).
+        6. Conversão para PDF — Converte o Markdown em PDF via markdown_pdf,
+           incluindo logo e CSS de paginação. O arquivo temporário é removido após leitura.
+
+    Args:
+        documento_investidor (str): CPF ou CNPJ do investidor logado (qualquer formato).
+
+    Returns:
+        tuple[bytes, str]: Tupla com (bytes do PDF, nome do arquivo para download).
+
+    Raises:
+        ValueError: Se o documento for inválido ou se não houver aportes no BigQuery.
+        RuntimeError: Se o ChatGroq retornar resposta vazia após todas as tentativas.
+        APIStatusError: Se o Groq retornar erro diferente de 413 (ex: autenticação).
+    """
+    # --- 1. NORMALIZAÇÃO DO DOCUMENTO ---
     documento = _normalizar_documento(documento_investidor)
     if not documento:
         raise ValueError("Não foi possível identificar o investidor logado.")
 
+    # --- 2. BUSCA DO NOME ---
     nome_investidor = _buscar_nome_investidor(documento)
+
+    # --- 3. BUSCA NO BIGQUERY ---
     dados_bq = _buscar_dados_bigquery_investidor(documento)
     if not dados_bq:
         raise ValueError("Nenhum investimento encontrado para esse investidor no BigQuery.")
 
+    # --- 4. MONTAGEM DO PAYLOAD ---
     dados_invest = _montar_dados_investimentos(nome_investidor, dados_bq)
     descricao_cliente = (
         "Investidor da Plataforma Clara com análise consolidada de todos os blocos "
         "de liquidez em que possui alocação."
     )
 
+    # --- 5. GERAÇÃO DO MARKDOWN ---
     logger.info(
         "Gerando relatório IA com prompt institucional para %s (%d registros).",
         nome_investidor,
@@ -555,4 +606,6 @@ def gerar_relatorio_consolidado_investidor(documento_investidor: str) -> tuple[b
         dados_bq=dados_bq,
         dados_invest=dados_invest,
     )
+
+    # --- 6. CONVERSÃO PARA PDF ---
     return _gerar_pdf_e_ler_bytes(nome_investidor, markdown)
