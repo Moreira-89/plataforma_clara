@@ -1,0 +1,60 @@
+# Ambiente de desenvolvimento local completo.
+#
+# O Redis já entra aqui, embora ainda não seja usado pela aplicação: a Fase 3 do
+# roadmap (event-driven) vai precisar dele para cache distribuído e, dependendo da
+# decisão AD-2, também como broker via Redis Streams. Subir junto agora evita mexer
+# no compose depois.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: clara
+      POSTGRES_PASSWORD: clara
+      POSTGRES_DB: plataforma_clara
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # A aplicação só sobe depois que o banco aceita conexões, senão o Reflex
+      # falha no primeiro rx.session() e derruba o container.
+      test: ["CMD-SHELL", "pg_isready -U clara -d plataforma_clara"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://clara:clara@postgres:5432/plataforma_clara
+      REDIS_URL: redis://redis:6379/0
+      # Credenciais externas vêm do .env local e nunca são versionadas.
+      GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+    ports:
+      - "3000:3000"
+      - "8000:8000"
+    volumes:
+      # Bind mount para hot reload: alterações no código refletem sem rebuild.
+      - .:/app
+      # Volume anônimo protege o .web do container de ser sobrescrito pelo host.
+      - /app/.web
+
+volumes:
+  postgres_data:

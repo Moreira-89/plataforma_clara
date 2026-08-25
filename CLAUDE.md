@@ -20,9 +20,22 @@ reflex run              # http://localhost:3000
 reflex db init
 reflex db migrate
 reflex db upgrade
+
+# Testes
+pip install -r requirements-dev.txt
+pytest                      # suíte completa
+pytest -m "not integracao"  # o que a CI roda
+ruff check .                # lint
+
+# Docker (app + postgres + redis)
+docker compose up --build
 ```
 
-Não há suite de testes automatizados no repositório (sem pytest). Não assuma cobertura de testes ao propor mudanças — valide manualmente ou pergunte antes de refatorar código sem rede de segurança.
+Use Python 3.12. O `requirements.txt` fixa `pandas~=2.3.3`, que não tem wheel para 3.14 — a instalação falha ao compilar dependências transitivas.
+
+A suíte é de **caracterização**: documenta o comportamento atual (incluindo bugs conhecidos, marcados como tal nas docstrings), não o comportamento desejado. Um teste que quebra numa refatoração é uma pergunta ("essa mudança foi intencional?"), não necessariamente um erro. Não "consertar" um teste marcado como CARACTERIZAÇÃO DE BUG sem corrigir o código junto.
+
+Os testes não tocam em Postgres, BigQuery nem Groq — as dependências externas são substituídas por fakes em `tests/conftest.py`.
 
 ## Arquitetura
 
@@ -51,13 +64,13 @@ Dupla persistência: cada aporte é gravado no PostgreSQL **e** no BigQuery em `
 | Framework | Reflex (Python → React + FastAPI) |
 | DB operacional | PostgreSQL via Supabase, ORM SQLAlchemy |
 | DB analítico | Google BigQuery (`dados_fidc.tb_aporte`) |
-| LLM | ChatGroq — `llama3-70b-8192`, temperatura 0 |
-| PDF | WeasyPrint (Markdown/HTML → PDF) |
+| LLM | ChatGroq — `llama-3.3-70b-versatile`, temperatura 0.1, `max_tokens=900` |
+| PDF | `markdown-pdf` (Markdown → PDF) |
 | Dados | Pandas |
 | Auth | bcrypt (12 rounds) |
 | UI | Radix UI / `rx.color()`, ícones Lucide |
-| ML | Scikit-learn (Score Nuclea, modelo `.pkl`) |
-| Orquestração de IA | Langchain (Insight Engine) |
+| ML | Nenhum modelo treinado no repositório — o `score_risco_interno` chega pronto como coluna do CSV de ingestão |
+| Orquestração de IA | Langchain (prompt + invocação do Groq). `langgraph` está no `requirements.txt` mas ainda não é usado |
 
 ## Estrutura de Diretórios
 
@@ -85,7 +98,8 @@ pages/                   # uma página por rota
 - Nunca commitar `.env` ou credenciais de service account — ambos já cobertos por `.gitignore`, não recriar arquivos de credencial na raiz do projeto.
 - Nunca alterar o schema de `tb_aporte` só no PostgreSQL ou só no BigQuery — as duas tabelas precisam ficar sincronizadas manualmente (não há migração automática entre elas).
 - Nunca usar hash de senha fora do padrão bcrypt já implementado em `cadastro_usuario_state.py`.
-- Nunca chamar a API do Groq fora de `services/relatorio_ia_service.py` — é o único lugar com o retry progressivo (redução de contexto em 20% por tentativa, até 3 tentativas) tratado para `RateLimitError`.
+- Nunca chamar a API do Groq fora de `services/relatorio_ia_service.py` — é o único lugar com o retry progressivo (5 tentativas com cortes crescentes na amostra de aportes, nos grupos de empresa e no texto de referência) tratado para `APIStatusError` 413.
+- Nunca assumir que existe modelo de ML no projeto: o score de risco é um dado de entrada, não um cálculo da plataforma.
 
 ## Variáveis de Ambiente
 

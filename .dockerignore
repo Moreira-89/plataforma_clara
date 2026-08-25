@@ -1,0 +1,11 @@
+.git
+.venv
+.web
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+# Credenciais nunca entram na imagem — são injetadas como variáveis de ambiente.
+.env
+*.json.key
+alembic/versions/__pycache__

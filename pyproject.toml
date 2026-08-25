@@ -1,0 +1,36 @@
+# Configuração de ferramentas de desenvolvimento.
+# O projeto em si não é empacotado (é uma aplicação Reflex), então não há
+# seção [project] nem build-system — apenas configuração de tooling.
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+]
+markers = [
+    "integracao: exige serviços externos (Postgres, BigQuery, Groq). Desabilitado por padrão na CI.",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = [".venv", ".web", "alembic/versions"]
+
+[tool.ruff.lint]
+# E/F = pyflakes+pycodestyle, I = isort, UP = pyupgrade, B = bugbear.
+select = ["E", "F", "I", "UP", "B"]
+ignore = [
+    "E501",  # comprimento de linha: o código legado tem várias linhas longas de query SQL.
+    "B008",  # chamada de função em default de argumento (padrão comum em FastAPI/Depends).
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Imports de efeito colateral: o decorador @rx.page registra a página ao importar.
+"plataforma_clara/plataforma_clara.py" = ["F401"]
