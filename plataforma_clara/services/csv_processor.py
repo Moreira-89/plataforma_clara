@@ -84,8 +84,9 @@ def processar_arquivo_csv(caminho_arquivo: str | object) -> pd.DataFrame:
            e datas com pd.to_datetime(errors="coerce"), transformando inválidos em NaN/NaT.
         7. Descarte de Linhas Inválidas — Remove linhas com nulos nas colunas críticas,
            numéricas e de data.
-        8. Substituição de NaN por None — Necessário para que o SQLModel insira NULL
-           corretamente no PostgreSQL (NaN não é reconhecido como NULL pelo driver).
+        8. Substituição de Nulos por None — Converte o DataFrame para dtype object e
+           troca todo nulo do Pandas (NaN, NaT, pd.NA) por None, para que o SQLModel
+           insira NULL corretamente no PostgreSQL. O psycopg2 não adapta nenhum deles.
 
     Args:
         caminho_arquivo (str | object): Caminho do arquivo CSV a ser processado.
@@ -151,9 +152,7 @@ def processar_arquivo_csv(caminho_arquivo: str | object) -> pd.DataFrame:
         .str.replace(r"[^0-9]", "", regex=True)
     )
     dataframe_limpo["cnpj_sacado_limpo"] = (
-        dataframe_limpo["cnpj_sacado_limpo"]
-        .astype("string")
-        .str.replace(r"[^0-9]", "", regex=True)
+        dataframe_limpo["cnpj_sacado_limpo"].astype("string").str.replace(r"[^0-9]", "", regex=True)
     )
 
     # --- 6. CONVERSÃO DE TIPOS ---
@@ -170,9 +169,22 @@ def processar_arquivo_csv(caminho_arquivo: str | object) -> pd.DataFrame:
         subset=_COLUNAS_CRITICAS + _COLUNAS_NUMERICAS + _COLUNAS_DATA
     )
 
-    # --- 8. SUBSTITUIÇÃO DE NaN POR None ---
-    # O psycopg2 (driver PostgreSQL) não aceita float("nan") como NULL.
-    # pd.notnull retorna False para NaN e NaT, então where() substitui por None.
+    # --- 8. SUBSTITUIÇÃO DE NULOS DO PANDAS POR None ---
+    # O psycopg2 (driver PostgreSQL) não adapta nenhum dos "nulos" do Pandas:
+    # float("nan"), pd.NaT e pd.NA levantam ProgrammingError ao virar parâmetro.
+    #
+    # O astype(object) é obrigatório e não é redundante: a etapa 4 converteu as
+    # colunas de texto para o dtype "string", e uma coluna StringDtype não CONSEGUE
+    # armazenar None — ela converte silenciosamente para pd.NA. Sem a conversão para
+    # object, o where() abaixo vira um no-op justamente nas colunas de texto opcionais
+    # (hoje, `codigo_identificacao_isin`).
+    #
+    # Na prática o `to_dict(orient="records")` da ingestão hoje mascara isso, porque
+    # ele boxeia pd.NA para None na saída. Mas essa é uma garantia do consumidor, não
+    # deste módulo: qualquer leitura por .iloc, .itertuples ou .values receberia pd.NA.
+    # Corrigir aqui mantém o invariante prometido — "o DataFrame devolvido não contém
+    # nulos do Pandas" — independente de como o chamador consome o resultado.
+    dataframe_limpo = dataframe_limpo.astype(object)
     dataframe_limpo = dataframe_limpo.where(pd.notnull(dataframe_limpo), None)
 
     logger.info(

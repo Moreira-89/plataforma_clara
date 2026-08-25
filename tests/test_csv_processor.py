@@ -207,27 +207,46 @@ def test_isin_ausente_nao_descarta_a_linha(escrever_csv, linha_aporte_valida):
     assert pd.isna(resultado.iloc[0]["codigo_identificacao_isin"])
 
 
-def test_isin_ausente_vira_pd_na_e_nao_none(escrever_csv, linha_aporte_valida):
+def test_nulo_ausente_e_none_e_nao_um_nulo_do_pandas(escrever_csv, linha_aporte_valida):
     """
-    CARACTERIZAÇÃO DE BUG (D12 no roadmap) — este teste documenta comportamento
-    QUEBRADO, não desejado. Não "consertar" o teste sem consertar o código.
+    REGRESSÃO (D12 no roadmap): a etapa 8 promete que o DataFrame devolvido não contém
+    nulos do Pandas, porque o psycopg2 não adapta nenhum deles (`nan`, `NaT`, `pd.NA`).
 
-    A etapa 8 do processador troca NaN por None justamente porque o psycopg2 não
-    adapta NaN. Mas a etapa 4 converteu as colunas de texto para o dtype "string"
-    do Pandas, e uma coluna StringDtype não armazena None: ela guarda `pd.NA`.
-    O `.where(pd.notnull(df), None)` da etapa 8 portanto não tem efeito aqui.
+    Antes da correção, a promessa valia só para colunas numéricas: as de texto tinham
+    virado dtype "string" na etapa 4, e StringDtype converte None para `pd.NA`
+    silenciosamente — o `.where()` da etapa 8 era um no-op ali.
 
-    Consequência prática: `psycopg2.extensions.adapt(pd.NA)` levanta
-    ProgrammingError("can't adapt type 'NAType'"), então um único aporte sem ISIN
-    derruba o `bulk_insert_mappings` do lote INTEIRO na ingestão.
-
-    Quando o bug for corrigido (provavelmente na Fase 1, ao extrair o domínio),
-    este teste deve ser trocado por uma asserção de `is None`.
+    O bug não chegava a quebrar a ingestão porque o `to_dict(orient="records")` do
+    IngestaoDadosState boxeia pd.NA para None na saída. Mas isso é garantia do
+    consumidor, não deste módulo: qualquer acesso por .iloc/.itertuples/.values
+    receberia pd.NA. O teste trava o invariante no nível do DataFrame.
     """
     caminho = escrever_csv([dict(linha_aporte_valida, codigo_identificacao_isin="")])
 
     resultado = processar_arquivo_csv(caminho)
-    valor = resultado.iloc[0]["codigo_identificacao_isin"]
 
-    assert valor is pd.NA
-    assert valor is not None
+    # Testado pelos dois acessos porque eles percorrem caminhos distintos do Pandas:
+    # a linha como Series e a coluna como Series podem devolver valores diferentes.
+    assert resultado.iloc[0]["codigo_identificacao_isin"] is None
+    assert resultado["codigo_identificacao_isin"].iloc[0] is None
+    # Nenhum valor do resultado pode ser um nulo do Pandas (nan / NaT / NA).
+    valores_nulos = [v for v in resultado.to_numpy().ravel() if v is not None and pd.isna(v)]
+    assert valores_nulos == []
+
+
+def test_nenhum_valor_do_resultado_e_rejeitado_pelo_psycopg2(escrever_csv, linha_aporte_valida):
+    """
+    Teste de contrato com o driver: todo valor que sai daqui vai virar parâmetro de
+    INSERT. `psycopg2.extensions.adapt` é a mesma função que o driver usa internamente,
+    então ela é o juiz certo — e falha em tipos do NumPy/Pandas que "parecem" nativos.
+    """
+    psycopg2_ext = pytest.importorskip("psycopg2.extensions")
+
+    caminho = escrever_csv([dict(linha_aporte_valida, codigo_identificacao_isin="")])
+    registro = processar_arquivo_csv(caminho).to_dict(orient="records")[0]
+
+    for coluna, valor in registro.items():
+        try:
+            psycopg2_ext.adapt(valor).getquoted()
+        except Exception as exc:  # pragma: no cover - só executa se houver regressão
+            pytest.fail(f"psycopg2 não adapta {coluna}={valor!r} ({type(valor).__name__}): {exc}")
