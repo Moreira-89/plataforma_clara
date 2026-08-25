@@ -10,7 +10,6 @@ import reflex as rx
 from plataforma_clara.components.sidebar import sidebar_investidor
 from plataforma_clara.states.assistente_ia_state import AssistenteIAState
 
-
 # -----------------------------------------------------------------------------
 # PÁGINA PRINCIPAL
 # -----------------------------------------------------------------------------

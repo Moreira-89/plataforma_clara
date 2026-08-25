@@ -1,5 +1,6 @@
-import reflex as rx
 import os
+
+import reflex as rx
 from dotenv import load_dotenv
 
 # Carrega as variáveis do arquivo .env para a memória do sistema

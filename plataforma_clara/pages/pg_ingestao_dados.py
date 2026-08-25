@@ -10,7 +10,6 @@ import reflex as rx
 from plataforma_clara.components.sidebar import sidebar_gestora
 from plataforma_clara.states.ingestao_dados_state import IngestaoDadosState
 
-
 # -----------------------------------------------------------------------------
 # COMPONENTES INTERNOS
 # -----------------------------------------------------------------------------
