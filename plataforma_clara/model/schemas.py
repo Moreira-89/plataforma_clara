@@ -7,12 +7,10 @@ das tabelas e a sessão de banco automaticamente.
 """
 
 import datetime
-from typing import Optional
 
+import reflex as rx
 import sqlalchemy as sa
 import sqlmodel
-import reflex as rx
-
 
 # -----------------------------------------------------------------------------
 # MODELOS DE BANCO DE DADOS
@@ -93,7 +91,7 @@ class tb_aporte(rx.Model, table=True):
     bloco_liquidez_setorial: str
     categoria_tecnica_ativo: str
     # Optional — nem todos os ativos possuem código ISIN atribuído.
-    codigo_identificacao_isin: Optional[str] = None
+    codigo_identificacao_isin: str | None = None
     score_risco_interno: float
     flag_outlier_valor: str
 

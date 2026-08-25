@@ -10,8 +10,8 @@ import logging
 import time
 from typing import Any
 
-import sqlalchemy as sa
 import reflex as rx
+import sqlalchemy as sa
 
 # -----------------------------------------------------------------------------
 # INICIALIZAÇÃO

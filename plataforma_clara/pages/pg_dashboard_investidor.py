@@ -11,7 +11,6 @@ import reflex as rx
 from plataforma_clara.components.sidebar import sidebar_investidor
 from plataforma_clara.states.dashboard_state import DashboardState
 
-
 # -----------------------------------------------------------------------------
 # COMPONENTES INTERNOS
 # -----------------------------------------------------------------------------

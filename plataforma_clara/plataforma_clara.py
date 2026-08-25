@@ -16,6 +16,11 @@ COMO FUNCIONA:
 
 import reflex as rx
 
+# Importações de efeito colateral: o decorador @rx.page registra a página no Reflex
+# assim que o módulo é importado. O # noqa: F401 suprime o aviso de "import não usado",
+# pois o import é intencional (efeito colateral), não para usar um símbolo.
+import plataforma_clara.pages.pg_dashboard_gestora  # noqa: F401
+import plataforma_clara.pages.pg_dashboard_investidor  # noqa: F401
 from plataforma_clara.pages.pg_cadastro_usuario import formulario_cadastro
 from plataforma_clara.pages.pg_detalhes_bloco import pg_detalhes_bloco
 from plataforma_clara.pages.pg_explorar_blocos import explorar_blocos
@@ -25,12 +30,6 @@ from plataforma_clara.pages.pg_login import formulario_login
 from plataforma_clara.pages.pg_relatorios import pg_relatorios
 from plataforma_clara.states.dashboard_state import DashboardState
 from plataforma_clara.states.detalhes_bloco_state import DetalhesBlocoState
-
-# Importações de efeito colateral: o decorador @rx.page registra a página no Reflex
-# assim que o módulo é importado. O # noqa: F401 suprime o aviso de "import não usado",
-# pois o import é intencional (efeito colateral), não para usar um símbolo.
-import plataforma_clara.pages.pg_dashboard_gestora  # noqa: F401
-import plataforma_clara.pages.pg_dashboard_investidor  # noqa: F401
 
 # -----------------------------------------------------------------------------
 # INSTANCIAÇÃO DO APP

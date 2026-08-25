@@ -1,5 +1,7 @@
-import reflex as rx 
+import reflex as rx
+
 from plataforma_clara.states.cadastro_usuario_state import CadastroUsuarioState
+
 
 def formulario_cadastro() -> rx.Component:
     """Página de Cadastro da Plataforma Clara."""

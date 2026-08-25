@@ -18,8 +18,8 @@ import reflex as rx
 from google.cloud import bigquery
 
 from plataforma_clara.model.schemas import tb_aporte
-from plataforma_clara.services.csv_processor import processar_arquivo_csv
 from plataforma_clara.services.bigquery_utils import criar_cliente_bigquery
+from plataforma_clara.services.csv_processor import processar_arquivo_csv
 
 # -----------------------------------------------------------------------------
 # INICIALIZAÇÃO

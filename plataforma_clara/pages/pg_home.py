@@ -1,5 +1,6 @@
 import reflex as rx
 
+
 def navbar_home() -> rx.Component:
     """Barra de navegação da Landing Page."""
     return rx.hstack(

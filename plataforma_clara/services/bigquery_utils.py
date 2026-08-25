@@ -11,7 +11,6 @@ import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import Optional
 
 from google.cloud import bigquery
 from google.oauth2 import service_account
@@ -31,7 +30,7 @@ _PROJETO_ID = "plataforma-clara"
 # -----------------------------------------------------------------------------
 
 
-def _parsear_credenciais_do_env() -> Optional[dict]:
+def _parsear_credenciais_do_env() -> dict | None:
     """
     Tenta obter credenciais do BigQuery da variável de ambiente.
 
@@ -69,11 +68,11 @@ def _parsear_credenciais_do_env() -> Optional[dict]:
     caminho = Path(env_cred)
     if caminho.is_file():
         try:
-            with open(caminho, "r", encoding="utf-8") as f:
+            with open(caminho, encoding="utf-8") as f:
                 credenciais_dict = json.load(f)
             logger.info("✓ Credenciais do BigQuery carregadas de arquivo: %s", caminho)
             return credenciais_dict
-        except (json.JSONDecodeError, IOError) as e:
+        except (OSError, json.JSONDecodeError) as e:
             logger.warning("Falha ao carregar credenciais de arquivo %s: %s", caminho, e)
 
     # --- 4. RETORNO NULO ---
@@ -85,7 +84,7 @@ def _parsear_credenciais_do_env() -> Optional[dict]:
 # -----------------------------------------------------------------------------
 
 
-def criar_cliente_bigquery(project_id: Optional[str] = None) -> bigquery.Client:
+def criar_cliente_bigquery(project_id: str | None = None) -> bigquery.Client:
     """
     Cria e retorna um cliente BigQuery autenticado.
 
@@ -136,7 +135,7 @@ def criar_cliente_bigquery(project_id: Optional[str] = None) -> bigquery.Client:
     return bigquery.Client(project=project_id)
 
 
-def salvar_credenciais_em_arquivo_temporario() -> Optional[Path]:
+def salvar_credenciais_em_arquivo_temporario() -> Path | None:
     """
     Salva as credenciais em um arquivo temporário no disco.
 

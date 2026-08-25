@@ -10,7 +10,6 @@ import reflex as rx
 from plataforma_clara.components.sidebar import sidebar_investidor
 from plataforma_clara.states.detalhes_bloco_state import DetalhesBlocoState
 
-
 # -----------------------------------------------------------------------------
 # COMPONENTES INTERNOS
 # -----------------------------------------------------------------------------

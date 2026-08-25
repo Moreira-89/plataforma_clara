@@ -9,23 +9,22 @@ Fluxo principal:
     5. Converte o Markdown gerado em PDF e retorna os bytes para download.
 """
 
+import json
 import logging
 import os
 import re
-import json
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
-from collections import defaultdict
 
 import PyPDF2
 import reflex as rx
-from groq import APIStatusError
 from google.cloud import bigquery
+from groq import APIStatusError
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from markdown_pdf import MarkdownPdf, Section
 from pydantic import SecretStr
-
 from sqlalchemy import func
 
 from plataforma_clara.model.schemas import tb_usuario
