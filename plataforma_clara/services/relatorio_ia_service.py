@@ -13,21 +13,22 @@ import json
 import logging
 import os
 import re
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 import PyPDF2
-import reflex as rx
 from google.cloud import bigquery
 from groq import APIStatusError
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from markdown_pdf import MarkdownPdf, Section
 from pydantic import SecretStr
-from sqlalchemy import func
 
-from plataforma_clara.model.schemas import tb_usuario
+from plataforma_clara.domain import identidade
+from plataforma_clara.infra.db import sessao
+from plataforma_clara.infra.repositorios.usuario import UsuarioRepositorio
 from plataforma_clara.services.bigquery_utils import criar_cliente_bigquery
 
 # -----------------------------------------------------------------------------
@@ -168,21 +169,19 @@ _USER_TEMPLATE = """
     """
 
 
-def _normalizar_documento(documento: str) -> str:
-    return re.sub(r"[^0-9]", "", str(documento or ""))
+# Alias mantido: a normalização é a mesma do resto da plataforma, agora em
+# domain/identidade.py. O nome curto continua porque é usado em vários pontos daqui.
+_normalizar_documento = identidade.normalizar_documento
 
 
 def _buscar_nome_investidor(documento_investidor: str) -> str:
+    """Busca o nome do investidor no PostgreSQL, com fallback legível."""
     documento = _normalizar_documento(documento_investidor)
     if not documento:
         return "Investidor"
 
-    with rx.session() as session:
-        usuario = (
-            session.query(tb_usuario)
-            .filter(func.regexp_replace(tb_usuario.identificador_usuario, "[^0-9]", "", "g") == documento)
-            .first()
-        )
+    with sessao() as sessao_ativa:
+        usuario = UsuarioRepositorio(sessao_ativa).buscar_por_documento(documento)
         if usuario and usuario.nome_usuario:
             return str(usuario.nome_usuario)
 
@@ -474,7 +473,12 @@ def _gerar_markdown_chatgroq(
 def _gerar_pdf_e_ler_bytes(nome_investidor: str, markdown: str) -> tuple[bytes, str]:
     nome_limpo = re.sub(r"[^a-zA-Z0-9_-]+", "_", nome_investidor).strip("_") or "investidor"
     nome_arquivo = f"Relatorio_Consolidado_{nome_limpo}.pdf"
-    caminho_arquivo = os.path.join(str(rx.get_upload_dir()), nome_arquivo)
+    # O PDF é escrito em disco só porque markdown_pdf não expõe saída em memória;
+    # ele é lido e apagado logo abaixo. Um diretório temporário do sistema serve
+    # melhor que o diretório de uploads do Reflex, que era o destino antes: nada
+    # aqui depende do framework, e o arquivo não fica visível pela rota de upload.
+    diretorio_temporario = tempfile.mkdtemp(prefix="relatorio_clara_")
+    caminho_arquivo = os.path.join(diretorio_temporario, nome_arquivo)
 
     caminho_logo = _ROOT_DIR / "assets" / "logo_para_usar_fundo_claro.png"
     # Adicionando a logo no topo do relatório
@@ -539,6 +543,8 @@ def _gerar_pdf_e_ler_bytes(nome_investidor: str, markdown: str) -> tuple[bytes, 
     finally:
         if os.path.exists(caminho_arquivo):
             os.remove(caminho_arquivo)
+        if os.path.isdir(diretorio_temporario):
+            os.rmdir(diretorio_temporario)
 
     return conteudo_bytes, nome_arquivo
 

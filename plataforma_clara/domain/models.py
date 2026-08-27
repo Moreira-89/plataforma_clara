@@ -1,14 +1,21 @@
 """
-Modelos de dados da Plataforma Clara (SQLModel + Reflex).
+Modelos de tabela da Plataforma Clara (SQLModel puro, sem Reflex).
 
-Define as tabelas do banco de dados via classes que herdam de rx.Model,
-que internamente usa SQLModel sobre SQLAlchemy. O Reflex gerencia a criação
-das tabelas e a sessão de banco automaticamente.
+Substitui o antigo `model/schemas.py`, que herdava de `rx.Model`. O conteúdo é o
+mesmo — colunas, tipos, índices e nome de tabela idênticos —, mas sem o acoplamento
+ao Reflex: estas classes funcionam sob qualquer runner (Reflex hoje, FastAPI na
+Fase 2) porque dependem apenas de SQLModel/SQLAlchemy.
+
+O que `rx.Model` fornecia e agora é declarado explicitamente:
+    - `id` como chave primária autoincremental.
+    - `__tablename__` derivado do nome da classe. Como as classes foram renomeadas
+      para `Usuario` e `Aporte` (nomes de domínio), o nome físico da tabela passa a
+      ser fixado à mão — o padrão do SQLModel seria "usuario"/"aporte", que NÃO
+      corresponde ao banco existente.
 """
 
 import datetime
 
-import reflex as rx
 import sqlalchemy as sa
 import sqlmodel
 
@@ -17,7 +24,7 @@ import sqlmodel
 # -----------------------------------------------------------------------------
 
 
-class tb_usuario(rx.Model, table=True):
+class Usuario(sqlmodel.SQLModel, table=True):
     """
     Representa um usuário cadastrado na plataforma.
 
@@ -25,6 +32,7 @@ class tb_usuario(rx.Model, table=True):
     ou 'investidor' (acesso ao dashboard pessoal de portfólio).
 
     Campos:
+        id (int | None): Chave primária autoincremental.
         tipo_usuario (str): Perfil de acesso — 'gestora' ou 'investidor'.
         nome_usuario (str): Nome completo para exibição na interface.
         email_usuario (str): E-mail único, usado como login. Indexado para buscas.
@@ -32,18 +40,23 @@ class tb_usuario(rx.Model, table=True):
         senha_hash_usuario (str): Hash bcrypt da senha. Nunca armazenar texto plano.
     """
 
+    __tablename__ = "tb_usuario"
+
+    id: int | None = sqlmodel.Field(default=None, primary_key=True)
     tipo_usuario: str
     nome_usuario: str
-    # sa.Column com unique=True garante que não haverá dois usuários com o mesmo e-mail
-    # a nível de banco — uma camada extra de segurança além da validação na aplicação.
-    email_usuario: str = sa.Column(  # type: ignore[assignment]
-        sa.String, unique=True, index=True, nullable=False
+    # unique=True garante que não haverá dois usuários com o mesmo e-mail a nível de
+    # banco — uma camada extra além da verificação prévia feita no serviço de cadastro.
+    # ATENÇÃO: esta constraint existe apenas nos metadados do modelo. Nenhuma migração
+    # em alembic/versions/ a cria (ver o aviso no topo de infra/db.py).
+    email_usuario: str = sqlmodel.Field(
+        sa_column=sa.Column(sa.String, unique=True, index=True, nullable=False)
     )
     identificador_usuario: str
     senha_hash_usuario: str
 
 
-class tb_aporte(rx.Model, table=True):
+class Aporte(sqlmodel.SQLModel, table=True):
     """
     Representa um registro de aporte/alocação de capital em um FIDC.
 
@@ -51,7 +64,12 @@ class tb_aporte(rx.Model, table=True):
     pelos investidores, organizados por Bloco de Liquidez e empresa sacada.
     É espelhada no BigQuery para consultas analíticas de alto volume.
 
+    Qualquer mudança de coluna aqui precisa ser replicada manualmente no schema do
+    BigQuery (`dados_fidc.tb_aporte`) — não há migração automática entre os dois.
+    O teste `test_domain_models.py` trava essa correspondência.
+
     Campos:
+        id (int | None): Chave primária autoincremental.
         id_aporte_uuid (str): UUID v4 gerado na ingestão. Indexado para buscas rápidas.
         documento_investidor_cpf_cnpj (str): Documento do investidor (somente dígitos).
         fundo_origem_id (str): Identificador do fundo FIDC de origem.
@@ -68,12 +86,16 @@ class tb_aporte(rx.Model, table=True):
         taxa_retorno_pre_fixada (float): Taxa de retorno contratada (% a.a.).
         bloco_liquidez_setorial (str): Nome do Bloco de Liquidez (ex: 'Safira').
         categoria_tecnica_ativo (str): Categoria do ativo (ex: 'Recebível Comercial').
-        codigo_identificacao_isin (Optional[str]): Código ISIN, quando disponível.
-        score_risco_interno (float): Score de risco ML (0–100), maior = menor risco.
+        codigo_identificacao_isin (str | None): Código ISIN, quando disponível.
+        score_risco_interno (float): Score de risco (0–100), maior = menor risco.
+                                     Chega pronto no CSV; a plataforma não o calcula.
         flag_outlier_valor (str): Indica se o valor é estatisticamente atípico.
         data_criacao (datetime.datetime): Timestamp UTC de inserção do registro.
     """
 
+    __tablename__ = "tb_aporte"
+
+    id: int | None = sqlmodel.Field(default=None, primary_key=True)
     id_aporte_uuid: str = sqlmodel.Field(index=True)
     documento_investidor_cpf_cnpj: str = sqlmodel.Field(index=True)
     fundo_origem_id: str
@@ -90,13 +112,13 @@ class tb_aporte(rx.Model, table=True):
     taxa_retorno_pre_fixada: float
     bloco_liquidez_setorial: str
     categoria_tecnica_ativo: str
-    # Optional — nem todos os ativos possuem código ISIN atribuído.
+    # Opcional — nem todos os ativos possuem código ISIN atribuído.
     codigo_identificacao_isin: str | None = None
     score_risco_interno: float
     flag_outlier_valor: str
 
-    # sa.Column com timezone=True garante que o timestamp seja armazenado em UTC,
-    # evitando problemas de fuso horário ao fazer queries comparativas.
+    # timezone=True garante que o timestamp seja armazenado em UTC, evitando
+    # problemas de fuso horário ao fazer queries comparativas.
     data_criacao: datetime.datetime = sqlmodel.Field(
         default_factory=datetime.datetime.utcnow,
         sa_column=sa.Column(sa.DateTime(timezone=True)),
