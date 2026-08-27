@@ -1,24 +1,32 @@
 """
 Estado de autenticação da Plataforma Clara.
 
-Gerencia o fluxo completo de login e logout: validação de credenciais com bcrypt,
-normalização do documento do usuário logado e redirecionamento por perfil.
+Depois da extração do domínio, este state só faz o que é de tela: guardar o que
+foi digitado, exibir mensagem e redirecionar. A validação de credenciais vive em
+`services/autenticacao_service.py` e o hash em `domain/seguranca.py`.
+
+O documento do usuário logado continua sendo guardado aqui, em memória do servidor,
+sem token — é a D1 do roadmap, e é a Fase 2 que a resolve com JWT.
 """
 
 import asyncio
 import logging
-import re
 
-import bcrypt
 import reflex as rx
 
-from plataforma_clara.model.schemas import tb_usuario
+from plataforma_clara.services.autenticacao_service import autenticar
 
 # -----------------------------------------------------------------------------
 # INICIALIZAÇÃO
 # -----------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
+
+# Para onde cada perfil vai depois do login.
+_DESTINO_POR_PERFIL = {
+    "investidor": "/dashboard-investidor",
+    "gestora": "/dashboard-gestora",
+}
 
 
 # -----------------------------------------------------------------------------
@@ -30,8 +38,8 @@ class AutenticacaoState(rx.State):
     """
     Estado responsável pelo fluxo de login e logout.
 
-    Mantém as credenciais digitadas pelo usuário durante o preenchimento
-    do formulário e o documento normalizado após login bem-sucedido.
+    Mantém as credenciais digitadas durante o preenchimento do formulário e o
+    documento normalizado após o login bem-sucedido.
     """
 
     state_auto_setters = True
@@ -55,7 +63,7 @@ class AutenticacaoState(rx.State):
     # -----------------------------------------------------------------------------
 
     def _limpar_formulario(self) -> None:
-        """Reseta apenas os campos do formulário de login (preserva documento_usuario_logado)."""
+        """Reseta apenas os campos do formulário (preserva documento_usuario_logado)."""
         self.email_usuario = ""
         self.senha_hash_usuario = ""
         self.mensagem_para_usuario = ""
@@ -70,69 +78,36 @@ class AutenticacaoState(rx.State):
         Valida as credenciais do usuário e redireciona conforme o perfil.
 
         COMO FUNCIONA:
-            1. Normalização do E-mail — Strip e lowercase para comparação uniforme.
-            2. Validação de Presença — Garante que ambos os campos estejam preenchidos.
-            3. Consulta ao Banco (em Thread) — Busca o usuário pelo e-mail e verifica
-               o hash bcrypt da senha. Executado em asyncio.to_thread para não bloquear
-               o event loop do Reflex (bcrypt é CPU-bound e relativamente lento).
-            4. Tratamento de Falha — Mensagem de erro genérica e limpeza dos campos.
-            5. Redirecionamento por Perfil — Redireciona para o dashboard correspondente
-               ao tipo_usuario ('gestora' ou 'investidor').
+            1. Validação de Presença — Campos vazios recebem uma mensagem própria,
+               diferente de "credenciais inválidas".
+            2. Autenticação em Thread — `autenticar` faz I/O de banco e roda bcrypt,
+               que é CPU-bound; `asyncio.to_thread` evita travar o event loop.
+            3. Tratamento de Falha — Mensagem genérica, sem revelar se o problema
+               foi o e-mail ou a senha, e limpeza dos campos.
+            4. Redirecionamento por Perfil — Guarda o documento normalizado e leva
+               ao dashboard correspondente.
         """
-        # --- 1. NORMALIZAÇÃO DO E-MAIL ---
-        email_normalizado = (self.email_usuario or "").strip().lower()
-        senha_digitada = self.senha_hash_usuario or ""
-
-        # --- 2. VALIDAÇÃO DE PRESENÇA ---
-        if not email_normalizado or not senha_digitada:
+        # --- 1. VALIDAÇÃO DE PRESENÇA ---
+        if not (self.email_usuario or "").strip() or not self.senha_hash_usuario:
             self.mensagem_para_usuario = "Preencha e-mail e senha para continuar."
             return
 
-        # --- 3. CONSULTA AO BANCO (EM THREAD) ---
-        def _validar_credenciais():
-            """Executado em thread isolada — bcrypt.checkpw é bloqueante e CPU-bound."""
-            with rx.session() as session:
-                usuario = session.query(tb_usuario).filter_by(email_usuario=email_normalizado).first()
+        # --- 2. AUTENTICAÇÃO EM THREAD ---
+        usuario = await asyncio.to_thread(
+            autenticar, self.email_usuario, self.senha_hash_usuario
+        )
 
-                if usuario:
-                    try:
-                        senha_correta = bcrypt.checkpw(
-                            senha_digitada.encode("utf-8"),
-                            usuario.senha_hash_usuario.encode("utf-8"),
-                        )
-                        if senha_correta:
-                            return {
-                                "tipo_usuario": usuario.tipo_usuario,
-                                "identificador_usuario": usuario.identificador_usuario,
-                            }
-                    except (TypeError, ValueError):
-                        logger.warning("Hash inválido para e-mail: %s", email_normalizado)
-                return None
-
-        dados_usuario = await asyncio.to_thread(_validar_credenciais)
-
-        # --- 4. TRATAMENTO DE FALHA ---
-        if not dados_usuario:
-            logger.info("Tentativa de login falhou para: %s", email_normalizado)
+        # --- 3. TRATAMENTO DE FALHA ---
+        if usuario is None:
             self.mensagem_para_usuario = "Credenciais inválidas"
             self.email_usuario = ""
             self.senha_hash_usuario = ""
             return
 
-        logger.info(
-            "Login bem-sucedido: %s (tipo: %s)", email_normalizado, dados_usuario["tipo_usuario"]
-        )
+        # --- 4. REDIRECIONAMENTO POR PERFIL ---
+        self.documento_usuario_logado = usuario.documento
 
-        # O documento é normalizado (somente dígitos) para uso em filtros SQL e BigQuery.
-        doc_limpo = re.sub(r"[^0-9]", "", dados_usuario["identificador_usuario"])
-        self.documento_usuario_logado = doc_limpo
-
-        # --- 5. REDIRECIONAMENTO POR PERFIL ---
-        destino = {
-            "investidor": "/dashboard-investidor",
-            "gestora": "/dashboard-gestora",
-        }.get(dados_usuario["tipo_usuario"])
-
+        destino = _DESTINO_POR_PERFIL.get(usuario.tipo_usuario)
         if destino:
             self._limpar_formulario()
             return rx.redirect(destino)

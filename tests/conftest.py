@@ -12,10 +12,11 @@ COMO FUNCIONA:
        passa em todas as validações do csv_processor. Testes derivam variações dele.
     2. Fábrica de CSV — `escrever_csv` grava uma lista de dicts num arquivo temporário
        e devolve o caminho, isolando cada teste em seu próprio tmp_path.
-    3. Sessão falsa de banco — `fabricar_sessao_fake` substitui `rx.session()` por um
-       context manager que devolve linhas pré-definidas, sem tocar em Postgres.
-    4. Reset de cache — `limpar_caches_dashboard` (autouse) zera os caches globais de
-       módulo entre testes, já que eles sobrevivem ao fim de cada teste.
+    3. Sessão falsa de banco — `fabricar_sessao_fake` produz a fábrica de sessão que
+       os serviços recebem por injeção, devolvendo linhas pré-definidas sem tocar
+       em Postgres.
+    4. Reset de cache — `limpar_cache_do_dashboard` (autouse) zera o cache de módulo
+       entre testes, já que ele sobrevive ao fim de cada um.
 """
 
 from __future__ import annotations
@@ -113,19 +114,75 @@ class _ResultadoFake:
         return self._linhas
 
 
+class _ConsultaFake:
+    """
+    Imita o encadeamento do Query do SQLAlchemy (`query().filter().order_by().all()`).
+
+    Os métodos de encadeamento devolvem a si mesmos e não interpretam nada: o
+    objetivo é isolar o repositório do banco, não reimplementar o SQLAlchemy. O que
+    a consulta devolve é definido antes, na construção da SessaoFake.
+    """
+
+    def __init__(self, objetos: list[Any], escalar: Any):
+        self._objetos = objetos
+        self._escalar = escalar
+
+    def filter(self, *_args: Any, **_kwargs: Any) -> _ConsultaFake:
+        return self
+
+    def filter_by(self, *_args: Any, **_kwargs: Any) -> _ConsultaFake:
+        return self
+
+    def group_by(self, *_args: Any) -> _ConsultaFake:
+        return self
+
+    def order_by(self, *_args: Any) -> _ConsultaFake:
+        return self
+
+    def all(self) -> list[Any]:
+        return self._objetos
+
+    def first(self) -> Any | None:
+        return self._objetos[0] if self._objetos else None
+
+    def scalar(self) -> Any:
+        return self._escalar
+
+
 class SessaoFake:
     """
-    Sessão de banco falsa: devolve linhas pré-definidas e registra as chamadas.
+    Sessão de banco falsa: devolve dados pré-definidos e registra o que recebeu.
+
+    Cobre os dois caminhos que os repositórios usam — SQL textual via `execute` e
+    o Query do ORM via `query` —, além das escritas (`add`, `bulk_insert_mappings`,
+    `commit`). Nenhum teste da suíte toca em Postgres.
 
     Atributos:
-        chamadas: lista de (query, params) recebidos — permite asserção sobre
-                  quantas vezes o banco foi consultado (essencial para testar cache).
+        chamadas: lista de (query, params) passados a `execute` — permite contar
+                  acessos ao banco, o que é essencial para testar cache.
+        consultas_orm: quantas vezes `query()` foi chamado.
+        inseridos: registros recebidos por `bulk_insert_mappings`.
+        adicionados: objetos recebidos por `add`.
+        commits: quantas vezes `commit()` foi chamado.
     """
 
-    def __init__(self, linhas: list[dict[str, Any]], erro: Exception | None = None):
-        self._linhas = linhas
+    def __init__(
+        self,
+        linhas: list[dict[str, Any]] | None = None,
+        erro: Exception | None = None,
+        *,
+        objetos: list[Any] | None = None,
+        escalar: Any = None,
+    ):
+        self._linhas = linhas or []
         self._erro = erro
+        self._objetos = objetos or []
+        self._escalar = escalar
         self.chamadas: list[tuple[Any, Any]] = []
+        self.consultas_orm: int = 0
+        self.inseridos: list[dict[str, Any]] = []
+        self.adicionados: list[Any] = []
+        self.commits: int = 0
 
     def __enter__(self) -> SessaoFake:
         return self
@@ -133,30 +190,61 @@ class SessaoFake:
     def __exit__(self, *_args: object) -> bool:
         return False
 
+    # --- Leitura ---
+
     def execute(self, query: Any, params: Any = None) -> _ResultadoFake:
         self.chamadas.append((query, params))
         if self._erro is not None:
             raise self._erro
         return _ResultadoFake(self._linhas)
 
+    def query(self, *_args: Any) -> _ConsultaFake:
+        self.consultas_orm += 1
+        if self._erro is not None:
+            raise self._erro
+        return _ConsultaFake(self._objetos, self._escalar)
+
+    # --- Escrita ---
+
+    def add(self, objeto: Any) -> None:
+        self.adicionados.append(objeto)
+
+    def bulk_insert_mappings(self, _modelo: Any, registros: list[dict[str, Any]]) -> None:
+        self.inseridos.extend(registros)
+
+    def commit(self) -> None:
+        self.commits += 1
+
+    def refresh(self, _objeto: Any) -> None:
+        return None
+
 
 @pytest.fixture
 def fabricar_sessao_fake() -> Callable[..., Callable[[], SessaoFake]]:
     """
-    Devolve uma fábrica de substitutos para `rx.session`.
+    Devolve uma fábrica de sessão falsa, no formato que os serviços aceitam.
+
+    Depois da extração do domínio, os serviços recebem a fábrica por parâmetro
+    (`sessao_factory=`) em vez de chamarem `rx.session()` — não é mais preciso
+    fazer monkeypatch de nada.
 
     Uso típico:
-        sessao = SessaoFake([...])
-        monkeypatch.setattr(dashboard_service.rx, "session", lambda: sessao)
+        fabrica = fabricar_sessao_fake([{...}])
+        dashboard_service.buscar_metricas_gerais_gestora(sessao_factory=fabrica)
+        assert len(fabrica().chamadas) == 1
 
     A fábrica devolve sempre a MESMA instância de SessaoFake, para que o teste
-    possa inspecionar `sessao.chamadas` e contar os acessos ao banco.
+    possa inspecionar as chamadas e contar os acessos ao banco.
     """
 
     def _fabricar(
-        linhas: list[dict[str, Any]] | None = None, *, erro: Exception | None = None
+        linhas: list[dict[str, Any]] | None = None,
+        *,
+        erro: Exception | None = None,
+        objetos: list[Any] | None = None,
+        escalar: Any = None,
     ) -> Callable[[], SessaoFake]:
-        sessao = SessaoFake(linhas or [], erro=erro)
+        sessao = SessaoFake(linhas, erro, objetos=objetos, escalar=escalar)
         return lambda: sessao
 
     return _fabricar
@@ -168,22 +256,18 @@ def fabricar_sessao_fake() -> Callable[..., Callable[[], SessaoFake]]:
 
 
 @pytest.fixture(autouse=True)
-def limpar_caches_dashboard() -> None:
+def limpar_cache_do_dashboard() -> None:
     """
-    Zera os caches de módulo do dashboard_service antes de cada teste.
+    Zera o cache de módulo do dashboard_service antes de cada teste.
 
-    Os caches são variáveis globais com TTL de 5 minutos (D4 no roadmap). Sem este
-    reset, um teste contaminaria o seguinte — e a ordem de execução mudaria o resultado.
-    O import é preguiçoso porque o dashboard_service importa reflex, que nem todo
-    teste precisa carregar.
+    O cache tem TTL de 5 minutos e vive no processo (D4 no roadmap). Sem este
+    reset, um teste contaminaria o seguinte — e a ordem de execução mudaria o
+    resultado. O import é preguiçoso porque nem todo teste precisa carregar o
+    stack completo.
     """
     try:
         from plataforma_clara.services import dashboard_service
-    except ImportError:  # pragma: no cover - ambiente sem reflex instalado
+    except ImportError:  # pragma: no cover - ambiente sem as dependências instaladas
         return
 
-    dashboard_service._cache_investidor.clear()
-    dashboard_service._cache_gestora = []
-    dashboard_service._cache_gestora_timestamp = 0.0
-    dashboard_service._cache_tabela_aportes = []
-    dashboard_service._cache_tabela_aportes_timestamp = 0.0
+    dashboard_service._cache.limpar()
