@@ -22,45 +22,20 @@ Returns:
 """
 
 import logging
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config.logging import configurar_logging
+from app.api.lifespan import lifespan
 from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """
-    Prepara e encerra os recursos de processo da aplicação.
-
-    Args:
-        app (FastAPI): A aplicação, disponível para guardar clientes em `app.state`.
-
-    Yields:
-        None: Enquanto a aplicação está no ar.
-    """
-    configurar_logging()
-    logger.info("Backend iniciando (ambiente: %s).", settings.ambiente)
-
-    # A INSTANCIAR AQUI, quando implementarmos: cliente do Firestore, cliente do
-    # Redis e o app do Firebase Admin. Todos guardados em `app.state` e fechados
-    # depois do yield.
-
-    yield
-
-    logger.info("Backend encerrando.")
-
-
 app = FastAPI(
     title="Plataforma Clara — API",
     description="Transparência e análise de risco para FIDCs.",
-    version="0.1.0",
+    version="1.0.0",
     lifespan=lifespan,
 )
 

@@ -7,8 +7,17 @@ limpo e pronto para persistência no banco.
 """
 
 import logging
+from collections.abc import Hashable
+from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 import pandas as pd
+
+if TYPE_CHECKING:
+    # Só para o verificador de tipos: `DtypeArg` é o tipo que o `read_csv` declara
+    # para o parâmetro `dtype`. Fica sob TYPE_CHECKING porque `pandas._typing` é
+    # módulo privado — em tempo de execução nada importa daqui.
+    from pandas._typing import DtypeArg
 
 # -----------------------------------------------------------------------------
 # INICIALIZAÇÃO
@@ -65,7 +74,7 @@ _COLUNAS_DATA: list[str] = ["data_vencimento", "data_referencia_competencia"]
 # -----------------------------------------------------------------------------
 
 
-def processar_arquivo_csv(caminho_arquivo: str | object) -> pd.DataFrame:
+def processar_arquivo_csv(caminho_arquivo: str | Path) -> pd.DataFrame:
     """
     Lê um CSV do disco, valida o esquema e devolve apenas os dados utilizáveis.
 
@@ -102,7 +111,7 @@ def processar_arquivo_csv(caminho_arquivo: str | object) -> pd.DataFrame:
     # Definimos dtypes explícitos para as colunas de texto para evitar que o Pandas
     # converta CNPJs (strings numéricas longas) para int/float e perca zeros à esquerda.
     try:
-        dtypes = {
+        dtypes: DtypeArg = {
             "id_aporte_uuid": str,
             "documento_investidor_cpf_cnpj": str,
             "fundo_origem_id": str,
@@ -134,7 +143,10 @@ def processar_arquivo_csv(caminho_arquivo: str | object) -> pd.DataFrame:
 
     # --- 3. SELEÇÃO E CÓPIA ---
     # .copy() evita SettingWithCopyWarning ao modificar o DataFrame filtrado.
-    dataframe_limpo = dataframe[COLUNAS_OBRIGATORIAS].copy()
+    # O `cast` fixa o tipo na origem: indexar com uma lista sempre devolve DataFrame,
+    # mas as stubs declaram um retorno amplo (DataFrame | Series) que se propaga por
+    # todo o resto da função.
+    dataframe_limpo = cast(pd.DataFrame, dataframe[COLUNAS_OBRIGATORIAS].copy())
 
     # --- 4. TRATAMENTO DE STRINGS VAZIAS ---
     # Strings com apenas espaços ("  ") não são detectadas como nulas por padrão,
@@ -152,7 +164,9 @@ def processar_arquivo_csv(caminho_arquivo: str | object) -> pd.DataFrame:
         .str.replace(r"[^0-9]", "", regex=True)
     )
     dataframe_limpo["cnpj_sacado_limpo"] = (
-        dataframe_limpo["cnpj_sacado_limpo"].astype("string").str.replace(r"[^0-9]", "", regex=True)
+        dataframe_limpo["cnpj_sacado_limpo"]
+        .astype("string")
+        .str.replace(r"[^0-9]", "", regex=True)
     )
 
     # --- 6. CONVERSÃO DE TIPOS ---
@@ -162,12 +176,16 @@ def processar_arquivo_csv(caminho_arquivo: str | object) -> pd.DataFrame:
         dataframe_limpo[col] = pd.to_numeric(dataframe_limpo[col], errors="coerce")
 
     for col in _COLUNAS_DATA:
-        dataframe_limpo[col] = pd.to_datetime(dataframe_limpo[col], errors="coerce").dt.date
+        convertida = cast(pd.Series, pd.to_datetime(dataframe_limpo[col], errors="coerce"))
+        dataframe_limpo[col] = convertida.dt.date
 
     # --- 7. DESCARTE DE LINHAS INVÁLIDAS ---
-    dataframe_limpo = dataframe_limpo.dropna(
-        subset=_COLUNAS_CRITICAS + _COLUNAS_NUMERICAS + _COLUNAS_DATA
-    )
+    colunas_exigidas: list[Hashable] = [
+        *_COLUNAS_CRITICAS,
+        *_COLUNAS_NUMERICAS,
+        *_COLUNAS_DATA,
+    ]
+    dataframe_limpo = dataframe_limpo.dropna(subset=colunas_exigidas)
 
     # --- 8. SUBSTITUIÇÃO DE NULOS DO PANDAS POR None ---
     # O psycopg2 (driver PostgreSQL) não adapta nenhum dos "nulos" do Pandas:

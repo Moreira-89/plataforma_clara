@@ -1,0 +1,19 @@
+// Configuração do Pylance/Pyright.
+//
+// Sem `extraPaths`, o editor não resolve `from app.config...`: o interpretador
+// está no .venv da raiz, mas a raiz de imports do backend é `backend/`. O pytest
+// já sabe disso pelo pythonpath do backend/pytest.ini; o editor precisa ser avisado.
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": ["backend"],
+  "include": ["backend"],
+  "exclude": [
+    "**/__pycache__",
+    "**/node_modules",
+    ".venv",
+    "frontend/dist"
+  ],
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic"
+}

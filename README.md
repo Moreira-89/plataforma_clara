@@ -31,10 +31,9 @@ O `score_risco_interno` **chega pronto como coluna do CSV**. Não há modelo de 
 Requer **Python 3.12** (o `pandas~=2.3.3` não tem wheel para 3.14) e **Node 22**.
 
 ```bash
-cp .env.example .env          # preencher antes de subir
-
 # Backend
 cd backend
+cp .env.example .env          # preencher antes de subir
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload     # http://localhost:8000/docs
@@ -101,7 +100,7 @@ Dentro do backend a direção das dependências é regra dura: **`api/` → `age
 
 ## Variáveis de ambiente
 
-Copie o `.env.example` da raiz (backend) e o de `frontend/`. O `.env` real nunca é versionado — e o arquivo de credencial da service account deve ficar **fora** do repositório, senão o `COPY . .` do Docker o leva para dentro da imagem.
+Copie o `.env.example` de cada serviço (`backend/` e `frontend/`). O `.env` real nunca é versionado — e o arquivo de credencial da service account deve ficar **fora** do repositório, senão o `COPY . .` do Docker o leva para dentro da imagem.
 
 ```
 AMBIENTE=local

@@ -13,6 +13,7 @@ no Firestore para o dashboard ler sem varrer o analítico.
 import datetime
 import logging
 import uuid
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -95,7 +96,7 @@ def _para_bigquery(registro: dict[str, Any]) -> dict[str, Any]:
     return convertido
 
 
-def ingerir_csv(caminho_arquivo: str | Any) -> ResultadoIngestao:
+def ingerir_csv(caminho_arquivo: str | Path) -> ResultadoIngestao:
     """
     Processa um CSV de aportes e devolve os registros prontos para persistir.
 

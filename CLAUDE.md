@@ -13,7 +13,7 @@ A Plataforma Clara reduz a assimetria de informação entre gestoras e investido
 cd backend
 python -m venv .venv && source .venv/bin/activate   # Python 3.12
 pip install -r requirements.txt
-cp ../.env.example ../.env    # preencher antes de subir
+cp .env.example .env          # preencher antes de subir
 uvicorn main:app --reload     # http://localhost:8000/docs
 
 pytest                        # suíte
@@ -130,7 +130,7 @@ pyproject.toml             # config do ruff, repositório inteiro
 
 ## Variáveis de Ambiente
 
-O `.env.example` da raiz é o modelo do backend; o frontend tem o seu em `frontend/.env.example`. O `.env` real nunca entra no repositório.
+Cada serviço tem o seu modelo: `backend/.env.example` e `frontend/.env.example`. O `.env` real nunca entra no repositório.
 
 ```
 AMBIENTE=local
