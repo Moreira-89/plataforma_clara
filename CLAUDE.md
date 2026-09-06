@@ -20,8 +20,7 @@ reflex run              # http://localhost:3000
 alembic revision --autogenerate -m "descricao"
 alembic upgrade head
 
-# Testes
-pip install -r requirements-dev.txt
+# Testes (pytest e ruff vêm no requirements.txt — não há arquivo de dev separado)
 pytest                      # suíte completa
 pytest -m "not integracao"  # o que a CI roda
 ruff check .                # lint
