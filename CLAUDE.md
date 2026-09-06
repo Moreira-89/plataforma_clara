@@ -114,9 +114,19 @@ pyproject.toml             # config do ruff, repositório inteiro
 pyrightconfig.json         # extraPaths para o editor resolver `from app...`
 ```
 
+## Pontos de Atenção
+
+Instruções do dono do projeto. Valem sobre qualquer padrão default.
+
+- **Comentário no código é curto** — no máximo uma linha, dizendo o que aquele trecho faz. Explicação longa (o porquê de uma decisão, histórico, armadilha conhecida) vai para markdown em `docs/`. Não encher arquivo de comentário.
+- **Mudanças grandes estão autorizadas.** O projeto é acadêmico, ainda sem usuários. Apagar pasta, remover biblioteca, refazer camada inteira: pode. Não travar pedindo confirmação a cada passo, não repetir aviso de risco já respondido, e não tratar como perda o trabalho que vai ser refeito.
+- **Conferir o disco, não só o Git.** `git ls-files` não mostra diretório vazio, porque o Git não versiona diretório. Depois de remover coisa, verificar com `find`/`ls` — é o que o editor mostra.
+- **O `.env` fica em `backend/`**, não na raiz. Junto com o `.env.example` de cada serviço.
+- **`docs/` é MkDocs**, servido em <http://localhost:8080>. A organização atual é provisória e vai mudar.
+
 ## Convenções de Código
 
-- **Docstrings obrigatórias** em todo módulo: resumo, seção "COMO FUNCIONA" com passos numerados, `Args`, `Returns`, `Raises`. Comentários inline explicam o *porquê*, não o *o quê*.
+- **Docstrings obrigatórias** em todo módulo: resumo, seção "COMO FUNCIONA" com passos numerados, `Args`, `Returns`, `Raises`. A restrição de tamanho acima vale para comentários, não para docstrings.
 - **Logs**: sempre `logging.getLogger(__name__)`. Nunca `print()`.
 - **I/O bloqueante** (BigQuery, Groq, Firestore): sempre dentro de `asyncio.to_thread` quando chamado de código assíncrono.
 - **Regra de negócio**: mora em `domain/`. Endpoint só orquestra — se um cálculo aparece dentro de um handler, está no lugar errado.
@@ -146,6 +156,14 @@ BIGQUERY_DATASET=dados_fidc
 REDIS_URL=redis://localhost:6379/0
 GROQ_API_KEY=gsk_...
 ```
+
+| Variável | Para que serve |
+|---|---|
+| `CORS_ORIGENS` | Origens autorizadas a chamar a API. Em produção, a URL do frontend no Railway — errada aqui, o browser bloqueia toda requisição. **Formato JSON**: valor solto derruba a aplicação na subida. |
+| `LOG_NIVEL` | Nível do logging. `WARNING` em produção. |
+| `AMBIENTE` | Hoje só aparece em log e no `/health` — **não altera comportamento nenhum**. Existe como `Literal["local","producao"]` para um valor errado falhar na subida, e como gancho para decisões futuras (esconder `/docs`, apertar CORS). |
+| `GOOGLE_APPLICATION_CREDENTIALS` | JSON da service account inline, ou caminho de arquivo fora do repositório. |
+| `REDIS_URL` | Ainda sem cliente na aplicação. |
 
 ## O Que Ainda Não Existe
 
