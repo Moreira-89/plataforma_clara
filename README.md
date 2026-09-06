@@ -46,11 +46,18 @@ npm install
 npm run dev                   # http://localhost:5173
 ```
 
-Ou tudo junto, com backend, frontend e Redis:
+Ou tudo junto — backend, frontend, Redis e a documentação:
 
 ```bash
 docker compose up --build
 ```
+
+| Serviço | Endereço |
+| --- | --- |
+| Backend | <http://localhost:8000> (docs da API em `/docs`) |
+| Frontend | <http://localhost:5173> |
+| RedisInsight | <http://localhost:8001> |
+| Documentação | <http://localhost:8080> |
 
 A suíte não toca em BigQuery, Groq nem Firebase: as dependências externas são substituídas por fakes em `backend/tests/conftest.py`.
 

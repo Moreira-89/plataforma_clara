@@ -1,43 +1,62 @@
-# Ambiente de desenvolvimento local: backend, frontend e Redis.
+# Ambiente de desenvolvimento local: backend, frontend, Redis e documentação.
 #
-# O Postgres saiu do compose junto com a saída do Postgres da arquitetura. Os
-# dados operacionais passam a viver no Firestore e no BigQuery, que são serviços
-# gerenciados — em desenvolvimento se conecta neles direto, ou no emulador do
-# Firebase quando ele entrar.
+# ESTE ARQUIVO NÃO VAI PARA PRODUÇÃO. O Railway não lê docker-compose: lá cada
+# serviço aponta o root directory para backend/ ou frontend/ e builda o Dockerfile
+# de cada um. O que é específico de desenvolvimento (o --reload, o bind mount, a
+# porta da interface do Redis) mora aqui, e não nos Dockerfiles, justamente porque
+# os Dockerfiles são os mesmos dos dois lados.
+#
+# Os dados operacionais vivem no Firestore e no BigQuery, que são gerenciados: em
+# desenvolvimento se conecta neles direto, ou no emulador do Firebase quando ele
+# entrar. Por isso não há banco relacional aqui.
 
 services:
   redis:
-    image: redis:7-alpine
+    # redis-stack em vez do redis puro: além do servidor na 6379, sobe o
+    # RedisInsight na 8001, que é a interface web para inspecionar as chaves.
+    # Em produção o Redis é o do Railway, sem interface.
+    image: redis/redis-stack:latest
     ports:
-      - "6379:6379"
+      - "6379:6379"   # servidor
+      - "8001:8001"   # RedisInsight -> http://localhost:8001
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
+    volumes:
+      - redis_data:/data
 
   backend:
     build: ./backend
     depends_on:
       redis:
         condition: service_healthy
+    # As variáveis vêm do mesmo arquivo que o uvicorn local lê. Sem isto, haveria
+    # duas fontes de configuração disputando: o compose substituindo ${VAR} a
+    # partir do .env da raiz, e o settings.py lendo o .env de backend/. Uma
+    # credencial ausente não daria erro — só falharia na primeira chamada externa.
+    env_file:
+      - ./backend/.env
     environment:
+      # Sobrescrevem o .env: dentro da rede do compose o Redis é 'redis', não localhost.
       AMBIENTE: local
       REDIS_URL: redis://redis:6379/0
-      # Credenciais externas vêm do .env local e nunca são versionadas.
-      GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS:-}
-      GROQ_API_KEY: ${GROQ_API_KEY:-}
     ports:
       - "8000:8000"
     volumes:
-      # Bind mount para hot reload: alteração no código reflete sem rebuild.
+      # Bind mount + --reload abaixo: alteração no código reflete sem rebuild.
       - ./backend:/app
+    # Sobrescreve o CMD do Dockerfile. O --reload derruba e recria o processo a
+    # cada arquivo salvo — ótimo para desenvolver, inaceitável em produção.
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
     build:
       context: ./frontend
       args:
-        # Em desenvolvimento o browser fala com o backend na porta 8000 do host.
+        # O Vite embute esta URL no bundle em tempo de BUILD, então mudá-la exige
+        # rebuild. É o browser do host que faz a chamada, por isso 'localhost'.
         VITE_API_URL: http://localhost:8000
     depends_on:
       - backend
@@ -45,3 +64,14 @@ services:
       PORT: 8080
     ports:
       - "5173:8080"
+
+  docs:
+    # Documentação servida com hot reload, sem instalar mkdocs na máquina.
+    image: squidfunk/mkdocs-material:latest
+    ports:
+      - "8080:8000"   # http://localhost:8080
+    volumes:
+      - .:/docs
+
+volumes:
+  redis_data:

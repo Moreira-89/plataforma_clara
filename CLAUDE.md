@@ -25,8 +25,9 @@ cd frontend
 npm install
 npm run dev                   # http://localhost:5173
 
-# Tudo junto
+# Tudo junto: backend (8000), frontend (5173), RedisInsight (8001), docs (8080)
 docker compose up --build
+docker compose up docs      # só a documentação
 ```
 
 Use Python 3.12. O `requirements.txt` fixa `pandas~=2.3.3`, que não tem wheel para 3.14 — a instalação falha ao compilar dependências transitivas.
@@ -106,8 +107,11 @@ frontend/
   Dockerfile               # build Node → nginx
   vite.config.js           # proxy /api para o backend em desenvolvimento
   src/                     # css, js, img
-docker-compose.yml         # backend + frontend + redis
+docs/                      # documentação MkDocs
+mkdocs.yml
+docker-compose.yml         # backend + frontend + redis-stack + docs
 pyproject.toml             # config do ruff, repositório inteiro
+pyrightconfig.json         # extraPaths para o editor resolver `from app...`
 ```
 
 ## Convenções de Código
