@@ -67,6 +67,26 @@ def test_consulta_do_investidor_filtra_por_bind_parameter(fabricar_sessao_fake):
     assert _DOCUMENTO not in str(consulta)
 
 
+def test_documento_vazio_ainda_filtra_e_nao_abre_a_base_inteira(fabricar_sessao_fake):
+    """
+    REGRESSÃO: um documento vazio precisa continuar filtrando.
+
+    O filtro é escolhido por `documento_investidor is not None`, e não pela
+    veracidade do valor. Se voltar a ser por veracidade, a cláusula WHERE some e a
+    consulta do investidor devolve a carteira consolidada do fundo inteiro — que é
+    exatamente o que o dashboard do investidor não pode mostrar.
+    """
+    fabrica = fabricar_sessao_fake(_LINHAS_BLOCO)
+
+    dashboard_service.buscar_metricas_blocos_liquidez(
+        documento_investidor="", sessao_factory=fabrica
+    )
+
+    consulta, parametros = fabrica().chamadas[0]
+    assert parametros == {"documento": ""}
+    assert "documento_investidor_cpf_cnpj" in str(consulta)
+
+
 def test_visao_da_gestora_nao_filtra_por_investidor(fabricar_sessao_fake):
     """Sem documento, a mesma agregação roda sobre a base inteira e sem parâmetros."""
     fabrica = fabricar_sessao_fake(_LINHAS_BLOCO)

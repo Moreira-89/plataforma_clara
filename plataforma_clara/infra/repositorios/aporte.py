@@ -101,6 +101,11 @@ class AporteRepositorio:
             2. Executa com o documento como parâmetro de bind.
             3. Converte cada linha em `MetricaBloco`.
 
+        A distinção entre as duas visões é `None` vs. qualquer string — NÃO é a
+        veracidade do valor. Um documento vazio (`""`) aplica o filtro e devolve
+        zero linhas, que é o correto: se o chamador não sabe quem é o investidor,
+        a resposta é "nenhum aporte", nunca a carteira inteira do fundo.
+
         Args:
             documento_investidor (str | None): CPF/CNPJ somente com dígitos. None
                                                devolve a visão consolidada.
@@ -109,9 +114,10 @@ class AporteRepositorio:
             list[MetricaBloco]: Blocos ordenados por volume alocado decrescente.
         """
         # --- 1. MONTAGEM ---
-        filtro = _FILTRO_INVESTIDOR if documento_investidor else ""
+        filtrar = documento_investidor is not None
+        filtro = _FILTRO_INVESTIDOR if filtrar else ""
         consulta = sa.text(_SQL_METRICAS_BLOCOS.format(filtro_investidor=filtro))
-        parametros = {"documento": documento_investidor} if documento_investidor else {}
+        parametros = {"documento": documento_investidor} if filtrar else {}
 
         # --- 2. EXECUÇÃO ---
         linhas = self.sessao.execute(consulta, parametros).mappings().fetchall()

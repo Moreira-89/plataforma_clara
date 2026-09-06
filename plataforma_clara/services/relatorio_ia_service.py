@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import tempfile
 from collections import defaultdict
 from pathlib import Path
@@ -543,8 +544,10 @@ def _gerar_pdf_e_ler_bytes(nome_investidor: str, markdown: str) -> tuple[bytes, 
     finally:
         if os.path.exists(caminho_arquivo):
             os.remove(caminho_arquivo)
-        if os.path.isdir(diretorio_temporario):
-            os.rmdir(diretorio_temporario)
+        # rmtree em vez de rmdir: se o markdown_pdf deixar qualquer arquivo extra no
+        # diretório, o rmdir levantaria OSError DENTRO do finally e mascararia a
+        # exceção original da geração do PDF. Limpeza não pode virar a causa raiz.
+        shutil.rmtree(diretorio_temporario, ignore_errors=True)
 
     return conteudo_bytes, nome_arquivo
 

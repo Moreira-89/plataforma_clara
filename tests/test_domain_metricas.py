@@ -13,8 +13,10 @@ from __future__ import annotations
 
 import pytest
 
-from plataforma_clara.domain import metricas, projecoes
-from plataforma_clara.domain.schemas import AgregadoEmpresa, MetricaBloco
+pytest.importorskip("pydantic", reason="requer pydantic instalado")
+
+from plataforma_clara.domain import metricas, projecoes  # noqa: E402
+from plataforma_clara.domain.schemas import AgregadoEmpresa, MetricaBloco  # noqa: E402
 
 
 def _bloco(nome: str, total: float, score: float, aportes: int = 1) -> MetricaBloco:
