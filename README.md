@@ -110,12 +110,11 @@ Dentro do backend a direção das dependências é regra dura: **`api/` → `age
 Copie o `.env.example` de cada serviço (`backend/` e `frontend/`). O `.env` real nunca é versionado — e o arquivo de credencial da service account deve ficar **fora** do repositório, senão o `COPY . .` do Docker o leva para dentro da imagem.
 
 ```
-AMBIENTE=local
-CORS_ORIGENS=["http://localhost:5173"]
 GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account", ...}   # ou caminho de um arquivo
-GCP_PROJETO_ID=plataforma-clara
 REDIS_URL=redis://localhost:6379/0
 GROQ_API_KEY=gsk_...
+LLM_MODEL_NAME="groq:openai/gpt-oss-120b"
+LLM_TEMPERATURE=0.1
 ```
 
 ---

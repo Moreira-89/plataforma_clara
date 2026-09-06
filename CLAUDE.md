@@ -38,7 +38,7 @@ Os testes não tocam em BigQuery, Groq nem Firebase — as dependências externa
 
 ## Arquitetura
 
-Dois serviços independentes no mesmo repositório, cada um com o seu `Dockerfile`, para virarem dois serviços separados no Railway. O frontend fala com o backend por HTTP, usando a URL pública do serviço.
+Dois serviços independentes no mesmo repositório, cada um com o seu `Dockerfile`, para virarem dois serviços separados no Railway. O frontend fala com o backend por HTTP, usando a URL pública do serviço. Em desenvolvimento, o proxy do Vite atende `/api` — não há CORS configurado ainda.
 
 ```
 ┌──────────────┐        HTTP        ┌──────────────┐
@@ -90,12 +90,14 @@ api/ ──▶ agents/ · ingestion/ · storage/ ──▶ domain/
 
 ```
 backend/
-  main.py                  # cria o app, lifespan e CORS. Só montagem, sem regra.
+  main.py                  # cria o app e monta o lifespan. Só montagem.
   Dockerfile
   pytest.ini
   requirements.txt
+  .env.example
   app/
     agents/                #   IA: relatorio.py e os assets do PDF
+    api/lifespan.py        #   ciclo de vida da aplicação
     api/schemas/           #   contratos Pydantic de entrada e saída
     config/                #   settings.py (env) e logging.py
     domain/                #   risco, metricas, formatacao, identidade, erros
@@ -107,11 +109,13 @@ frontend/
   Dockerfile               # build Node → nginx
   vite.config.js           # proxy /api para o backend em desenvolvimento
   src/                     # css, js, img
+  .env.example
 docs/                      # documentação MkDocs
 mkdocs.yml
 docker-compose.yml         # backend + frontend + redis-stack + docs
 pyproject.toml             # config do ruff, repositório inteiro
 pyrightconfig.json         # extraPaths para o editor resolver `from app...`
+.vscode/settings.json      # interpretador e pytest
 ```
 
 ## Pontos de Atenção
@@ -147,23 +151,14 @@ Instruções do dono do projeto. Valem sobre qualquer padrão default.
 Cada serviço tem o seu modelo: `backend/.env.example` e `frontend/.env.example`. O `.env` real nunca entra no repositório.
 
 ```
-AMBIENTE=local
-LOG_NIVEL=INFO
-CORS_ORIGENS=["http://localhost:5173"]
 GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account", ...}  # ou caminho de arquivo
-GCP_PROJETO_ID=plataforma-clara
-BIGQUERY_DATASET=dados_fidc
 REDIS_URL=redis://localhost:6379/0
 GROQ_API_KEY=gsk_...
+LLM_MODEL_NAME="groq:openai/gpt-oss-120b"
+LLM_TEMPERATURE=0.1
 ```
 
-| Variável | Para que serve |
-|---|---|
-| `CORS_ORIGENS` | Origens autorizadas a chamar a API. Em produção, a URL do frontend no Railway — errada aqui, o browser bloqueia toda requisição. **Formato JSON**: valor solto derruba a aplicação na subida. |
-| `LOG_NIVEL` | Nível do logging. `WARNING` em produção. |
-| `AMBIENTE` | Hoje só aparece em log e no `/health` — **não altera comportamento nenhum**. Existe como `Literal["local","producao"]` para um valor errado falhar na subida, e como gancho para decisões futuras (esconder `/docs`, apertar CORS). |
-| `GOOGLE_APPLICATION_CREDENTIALS` | JSON da service account inline, ou caminho de arquivo fora do repositório. |
-| `REDIS_URL` | Ainda sem cliente na aplicação. |
+Não criar variável de ambiente nova sem que algo a consuma.
 
 ## O Que Ainda Não Existe
 
@@ -173,4 +168,5 @@ Não invente que existe. Nesta ordem:
 2. **Firebase Auth** — não há verificação de token nem rota protegida.
 3. **Endpoints** — só existe `/health`. Nenhuma rota de aporte, dashboard, bloco ou relatório.
 4. **Redis** — declarado no compose, sem cliente na aplicação.
-5. **Agregações do dashboard** — as consultas eram SQL e saíram com o Postgres. `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta.
+5. **CORS** — sem middleware. Precisa entrar quando o frontend chamar a API de outro domínio.
+6. **Agregações do dashboard** — as consultas eram SQL e saíram com o Postgres. `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta.

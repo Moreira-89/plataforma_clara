@@ -22,8 +22,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      # Sobrescrevem o .env: na rede do compose o Redis é 'redis', não localhost.
-      AMBIENTE: local
+      # Na rede do compose o Redis é 'redis', não localhost.
       REDIS_URL: redis://redis:6379/0
     ports:
       - "8000:8000"
