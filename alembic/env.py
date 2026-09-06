@@ -1,5 +1,7 @@
+import os
 from logging.config import fileConfig
 
+from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
@@ -18,14 +20,16 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+# A URL vem do ambiente, nunca do alembic.ini — o .ini é versionado e não pode
+# carregar credencial. O valor em `sqlalchemy.url` lá é só um placeholder, e sem
+# esta substituição qualquer comando do Alembic tenta conectar nele e falha.
+load_dotenv()
+_url_do_banco = os.getenv("DATABASE_URL", "").strip()
+if _url_do_banco:
+    config.set_main_option("sqlalchemy.url", _url_do_banco)
+
 # Metadados usados pelo autogenerate. Os modelos são SQLModel puro e o Alembic é
 # usado direto, sem intermediário.
-#
-# AVISO: o histórico em versions/ NÃO reproduz o schema atual — a migração que cria
-# `tb_usuario` declara as colunas `nome`, `email` e `senha_hash`, e nenhuma migração
-# posterior as renomeia para `nome_usuario`, `email_usuario` e `senha_hash_usuario`.
-# Um autogenerate contra um banco vazio vai propor mudanças que não batem com o
-# Supabase em uso. Confira o diff proposto antes de aplicar qualquer migração nova.
 target_metadata = SQLModel.metadata
 
 # other values from the config, defined by the needs of env.py,

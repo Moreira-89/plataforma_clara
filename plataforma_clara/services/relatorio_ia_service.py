@@ -2,7 +2,7 @@
 Serviço de geração de relatório consolidado de investimentos via IA (ChatGroq).
 
 Fluxo principal:
-    1. Busca o nome do investidor no banco (Supabase/PostgreSQL).
+    1. Busca o nome do investidor no PostgreSQL.
     2. Busca os aportes do investidor no BigQuery (tb_aporte).
     3. Compacta os dados para caber no limite de tokens do provedor Groq.
     4. Envia o prompt institucional ao LLM (llama-3.3-70b-versatile via Groq).

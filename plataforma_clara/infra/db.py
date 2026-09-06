@@ -10,13 +10,9 @@ DUAS FORMAS DE OBTER UMA SESSÃO:
     - `obter_sessao()` — gerador, no formato que o `Depends` do FastAPI espera.
       Já existe para que a Fase 2 não precise mexer nesta camada de novo.
 
-AVISO SOBRE MIGRAÇÕES: o histórico em `alembic/versions/` NÃO reproduz o schema que
-o código espera. A migração que cria `tb_usuario` declara as colunas `nome`, `email`
-e `senha_hash`, enquanto o modelo usa `nome_usuario`, `email_usuario` e
-`senha_hash_usuario`, e nenhuma migração posterior faz o rename. Um `alembic upgrade
-head` num banco vazio produz um `tb_usuario` que a aplicação não consegue usar. O
-banco em uso hoje foi ajustado por fora do histórico. Corrigir isso exige decidir
-o que fazer com o estado real do Supabase, e por isso não é feito aqui.
+O histórico do Alembic foi regerado a partir dos modelos quando o banco saiu do
+Supabase: `alembic upgrade head` num banco vazio produz exatamente o schema que o
+código espera.
 """
 
 import logging
@@ -42,9 +38,10 @@ def obter_engine() -> Engine:
         1. Reaproveitamento — Uma engine já criada é devolvida direto; o pool de
            conexões precisa ser único no processo.
         2. Leitura da configuração — Carrega o `.env` e lê `DATABASE_URL`.
-        3. Criação — `pool_pre_ping=True` testa a conexão antes de entregá-la. O
-           Supabase encerra conexões ociosas, e sem isso a primeira query após um
-           período parado falha com "server closed the connection unexpectedly".
+        3. Criação — `pool_pre_ping=True` testa a conexão antes de entregá-la.
+           Postgres gerenciado encerra conexões ociosas, e sem isso a primeira
+           query após um período parado falha com "server closed the connection
+           unexpectedly".
 
     Returns:
         Engine: Engine SQLAlchemy conectada ao PostgreSQL.

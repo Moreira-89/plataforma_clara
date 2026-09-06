@@ -4,7 +4,7 @@ Testes do contrato dos modelos de tabela.
 Cobre `domain/models.py`, que na Fase 1 deixou de herdar de `rx.Model` e passou a
 ser SQLModel puro. A troca é invisível para o banco — e é exatamente isso que estes
 testes verificam: nome de tabela, colunas e índices precisam continuar iguais, senão
-a aplicação para de enxergar os dados que já existem no Supabase.
+a aplicação para de enxergar os dados que já existem no banco.
 
 O segundo contrato travado aqui é entre PostgreSQL, BigQuery e o CSV de ingestão:
 as três pontas compartilham as mesmas 19 colunas de negócio e não há migração

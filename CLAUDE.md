@@ -35,7 +35,7 @@ A suíte é de **caracterização**: documenta o comportamento atual (incluindo 
 
 Os testes não tocam em Postgres, BigQuery nem Groq — as dependências externas são substituídas por fakes em `tests/conftest.py`. Os serviços recebem a sessão de banco por injeção (`sessao_factory=`), então testar não exige monkeypatch.
 
-**O histórico do Alembic não reproduz o schema atual**: a migração que cria `tb_usuario` declara as colunas `nome`, `email` e `senha_hash`, e nenhuma migração posterior as renomeia para os nomes que o código usa (`nome_usuario`, `email_usuario`, `senha_hash_usuario`). O banco em uso foi ajustado por fora do histórico. Confira o diff de qualquer `--autogenerate` antes de aplicar.
+O histórico do Alembic foi regerado do zero na saída do Supabase: há uma única migração inicial, gerada a partir de `domain/models.py`, e `alembic upgrade head` num banco vazio produz o schema que o código espera. A URL vem da `DATABASE_URL` (lida em `alembic/env.py`), nunca do `alembic.ini`.
 
 ## Arquitetura
 
@@ -61,7 +61,7 @@ Toda operação de I/O (Postgres, BigQuery, Groq) é bloqueante e deve rodar em 
                                             │
                     ┌───────────────────────┼────────────────────────┐
                     ▼                                                 ▼
-         PostgreSQL (Supabase)                              Google BigQuery
+         PostgreSQL (Railway)                               Google BigQuery
          tb_usuario, tb_aporte                              dados_fidc.tb_aporte
          (OLTP, autenticação)                                (OLAP, analytics)
                                                                        │
@@ -77,7 +77,9 @@ Dupla persistência: cada aporte é gravado no PostgreSQL **e** no BigQuery em `
 | Camada | Tecnologia |
 |---|---|
 | Entrega | **a definir** — o Reflex saiu, a API ainda não existe |
-| DB operacional | PostgreSQL via Supabase, ORM SQLAlchemy |
+| Hospedagem | Railway (app, PostgreSQL e Redis) + Google Cloud (BigQuery) |
+| DB operacional | PostgreSQL, SQLModel sobre SQLAlchemy |
+| Cache e fila | Redis |
 | DB analítico | Google BigQuery (`dados_fidc.tb_aporte`) |
 | LLM | ChatGroq — `llama-3.3-70b-versatile`, temperatura 0.1, `max_tokens=900` |
 | PDF | `markdown-pdf` (Markdown → PDF) |
@@ -130,8 +132,11 @@ assets/                    # logos; a clara é lida pelo gerador de PDF, não é
 
 ## Variáveis de Ambiente
 
+O `.env.example` é o modelo versionado; o `.env` real nunca entra no repositório.
+
 ```
-DATABASE_URL=postgresql://...                    # Supabase
+DATABASE_URL=postgresql://...                    # Postgres do Railway
+REDIS_URL=redis://...                            # Redis do Railway
 GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account", ...}  # ou caminho de arquivo local
 GROQ_API_KEY=gsk_...
 ```

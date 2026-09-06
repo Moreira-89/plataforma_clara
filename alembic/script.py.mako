@@ -9,6 +9,9 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+# Os modelos são SQLModel: as colunas de texto saem do autogenerate como
+# sqlmodel.sql.sqltypes.AutoString, que sem este import quebra com NameError.
+import sqlmodel
 ${imports if imports else ""}
 
 # revision identifiers, used by Alembic.

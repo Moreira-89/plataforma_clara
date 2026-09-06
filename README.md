@@ -57,7 +57,7 @@ alembic revision --autogenerate -m "descricao"
 alembic upgrade head
 ```
 
-> ⚠️ **O histórico do Alembic não reproduz o schema atual.** A migração que cria `tb_usuario` declara as colunas `nome`, `email` e `senha_hash`, mas o código usa `nome_usuario`, `email_usuario` e `senha_hash_usuario`, e nenhuma migração posterior faz o rename. O banco em uso foi ajustado por fora do histórico. Confira o diff de qualquer `--autogenerate` antes de aplicar.
+A URL vem da `DATABASE_URL`, lida pelo `alembic/env.py` — o `alembic.ini` é versionado e não carrega credencial.
 
 ---
 
@@ -82,8 +82,10 @@ Esta estrutura é herdada da fase anterior e **vai mudar** na reorganização do
 | Camada | Tecnologia |
 | --- | --- |
 | Entrega | a definir |
-| Banco operacional | PostgreSQL (Supabase), SQLModel sobre SQLAlchemy |
+| Hospedagem | Railway (aplicação, PostgreSQL e Redis) + Google Cloud (dados analíticos) |
+| Banco operacional | PostgreSQL, SQLModel sobre SQLAlchemy |
 | Banco analítico | Google BigQuery — `dados_fidc.tb_aporte` |
+| Cache e fila | Redis |
 | LLM | ChatGroq, `llama-3.3-70b-versatile` |
 | PDF | `markdown-pdf` |
 | Dados | pandas |
@@ -93,8 +95,11 @@ Esta estrutura é herdada da fase anterior e **vai mudar** na reorganização do
 
 ## Variáveis de ambiente
 
+Copie o `.env.example` e preencha:
+
 ```
 DATABASE_URL=postgresql://...
+REDIS_URL=redis://...
 GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account", ...}   # ou caminho de um arquivo local
 GROQ_API_KEY=gsk_...
 ```
