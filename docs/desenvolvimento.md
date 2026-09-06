@@ -83,3 +83,51 @@ requisição.
     O arquivo JSON da service account do Google deve ficar **fora** do
     repositório. O `COPY . .` do Dockerfile leva para dentro da imagem tudo que
     estiver na pasta do serviço.
+
+## Tipagem e pandas
+
+O verificador de tipos (Pylance/Pyright) roda com a configuração em
+`pyrightconfig.json`. Duas coisas ali não são óbvias:
+
+**`extraPaths: ["backend"]`.** A raiz de imports do backend é `backend/`, não a
+raiz do repositório — é de lá que `from app.config...` faz sentido. O pytest já
+sabe disso pelo `pythonpath` do `backend/pytest.ini`; o editor precisa ser avisado
+separadamente.
+
+**Os `cast` em `csv_processor.py`.** Eles não mudam nada em tempo de execução. As
+stubs do pandas declaram retornos amplos demais: indexar um DataFrame com uma
+lista devolve, para o verificador, `DataFrame | Series | Unknown`. Esse tipo se
+propaga por toda a função e derruba as chamadas seguintes (`.astype`, `.mask`,
+`.dt`, `.dropna`) com erros que não existem de verdade. Um `cast` na origem
+resolve a cadeia inteira — foi assim que cinco erros viraram zero.
+
+O mesmo vale para o `DtypeArg` importado sob `TYPE_CHECKING`: é o tipo que o
+`read_csv` declara para o parâmetro `dtype`, e vem de `pandas._typing`, que é
+módulo privado. Sob `TYPE_CHECKING` ele serve ao verificador sem virar dependência
+em tempo de execução.
+
+!!! note "Se o Pylance disser que não resolve `fastapi`"
+    O problema é quase sempre o interpretador selecionado no editor, não o código.
+    Confira que é o `.venv` da raiz (Python 3.12) — em VS Code,
+    **Python: Select Interpreter** e depois **Developer: Reload Window**. O
+    `.vscode/settings.json` já aponta para o caminho certo, mas o editor guarda a
+    escolha anterior.
+
+### O `astype(object)` da etapa 8 do CSV
+
+Parece redundante e não é. Quem "simplificar" aquela linha reintroduz um bug.
+
+O contrato do `processar_arquivo_csv` é: **o DataFrame devolvido não contém nulos
+do Pandas** — nada de `float("nan")`, `pd.NaT` ou `pd.NA`. Só `None`.
+
+A etapa 4 converte as colunas de texto para o dtype `string`. Uma coluna
+`StringDtype` **não consegue armazenar `None`**: ela converte silenciosamente para
+`pd.NA`. Sem o `astype(object)` antes, o `where()` seguinte vira um no-op
+justamente nas colunas de texto opcionais — hoje, `codigo_identificacao_isin`.
+
+Na prática o `to_dict(orient="records")` da ingestão mascara o problema, porque
+boxeia `pd.NA` para `None` na saída. Mas isso é garantia do consumidor, não deste
+módulo: qualquer leitura por `.iloc`, `.itertuples` ou `.values` receberia `pd.NA`.
+E `pd.NA` chegando ao Firestore ou ao BigQuery quebra na serialização.
+
+Há um teste travando isso: `test_todo_valor_do_resultado_e_tipo_nativo_do_python`.

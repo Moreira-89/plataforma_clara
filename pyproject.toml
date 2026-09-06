@@ -1,6 +1,4 @@
-# Configuração de ferramentas na raiz do monorepo. O ruff roda sobre o
-# repositório inteiro; a configuração do pytest fica em backend/pytest.ini,
-# porque a suíte pertence ao serviço de backend.
+# Config do ruff para o repositório inteiro. O pytest fica em backend/pytest.ini.
 
 [tool.ruff]
 line-length = 100
@@ -8,14 +6,11 @@ target-version = "py312"
 exclude = [".venv", "node_modules", "frontend/dist"]
 
 [tool.ruff.lint]
-# E/F = pyflakes+pycodestyle, I = isort, UP = pyupgrade, B = bugbear.
 select = ["E", "F", "I", "UP", "B"]
 ignore = [
-    "E501",  # comprimento de linha: há queries e prompts longos.
-    "B008",  # chamada de função em default de argumento (padrão do Depends).
+    "E501",  # linhas longas em prompts e queries
+    "B008",  # chamada em default de argumento (padrão do Depends)
 ]
 
 [tool.ruff.lint.isort]
-# Sem isto o ruff trata `app` como biblioteca de terceiros e mistura os imports
-# do projeto com os do FastAPI.
 known-first-party = ["app"]

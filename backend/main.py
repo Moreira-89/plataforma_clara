@@ -63,5 +63,4 @@ async def health() -> dict[str, str]:
     return {"status": "ok", "ambiente": settings.ambiente}
 
 
-# OS ROUTERS ENTRAM AQUI conforme forem escritos:
-#     app.include_router(aportes.router, prefix="/aportes", tags=["aportes"])
+# Routers entram aqui.

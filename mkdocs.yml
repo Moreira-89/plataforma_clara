@@ -1,11 +1,4 @@
-# Documentação do projeto.
-#
-# Rodar: `docker compose up docs` → http://localhost:8080
-# Ou, com o mkdocs instalado: `mkdocs serve`
-#
-# O tema vem da imagem squidfunk/mkdocs-material usada no compose. Fora do
-# container: `pip install mkdocs-material`. Ele não entra no requirements do
-# backend de propósito — documentação não precisa ir junto na imagem da API.
+# `docker compose up docs` → http://localhost:8080
 
 site_name: Plataforma Clara
 site_description: Transparência e análise de risco para FIDCs
@@ -15,7 +8,6 @@ theme:
   name: material
   language: pt-BR
   palette:
-    # Alterna claro/escuro pelo botão, respeitando a preferência do sistema.
     - media: "(prefers-color-scheme: light)"
       scheme: default
       toggle:
@@ -40,12 +32,12 @@ nav:
   - O que falta: pendencias.md
 
 markdown_extensions:
-  - admonition          # blocos de aviso (!!! warning)
+  - admonition
   - attr_list
   - tables
   - toc:
       permalink: true
-  - pymdownx.details    # blocos recolhíveis
+  - pymdownx.details
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid

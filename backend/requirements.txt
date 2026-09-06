@@ -1,44 +1,29 @@
-# Dependências do backend da Plataforma Clara.
-#
-# Python 3.12: o pandas~=2.3.3 não tem wheel para 3.14, e a instalação falha ao
-# compilar dependências transitivas.
-#
-# Só entra aqui o que é importado de verdade. Bibliotecas de fases futuras entram
-# na fase que as usa, não antes — `langgraph` ficou um roadmap inteiro declarado
-# e nunca importado.
+# Dependências do backend. Python 3.12 (pandas 2.3.3 não tem wheel para 3.14).
+# O que ainda vai entrar e por quê: docs/pendencias.md
 
-# --- API ---------------------------------------------------------------------
+# --- API ---
 fastapi~=0.141.1
 uvicorn[standard]~=0.52.4
 pydantic-settings~=2.15.0
-python-multipart~=0.0.32   # exigido pelo FastAPI para upload de CSV
+python-multipart~=0.0.32
 
-# --- Domínio e dados ---------------------------------------------------------
-# O Postgres saiu: sem SQLAlchemy, SQLModel, Alembic e psycopg2. A persistência
-# passa a ser Firestore (a implementar) e BigQuery. O bcrypt saiu junto com a
-# autenticação própria — quem cuida de senha agora é o Firebase.
+# --- Domínio e dados ---
 pydantic~=2.13.5
 python-dotenv~=1.2.2
 pandas~=2.3.3
 
-# --- Google Cloud e relatório por IA -----------------------------------------
+# --- Google Cloud e IA ---
 google-cloud-bigquery~=3.40.1
 google-auth~=2.57.1
-db-dtypes~=1.5.1           # sem ele, .to_dataframe() falha em colunas DATE/NUMERIC
+db-dtypes~=1.5.1           # exigido pelo .to_dataframe() em colunas DATE/NUMERIC
 groq~=0.37.1
 langchain-core~=1.6.2
 langchain-groq~=1.1.2
 markdown-pdf~=1.13.1
-PyPDF2~=3.0.1              # projeto descontinuado; sucessor é `pypdf`
+PyPDF2~=3.0.1              # descontinuado; sucessor é pypdf
 
-# --- A ENTRAR quando implementarmos --------------------------------------------
-# firebase-admin      -> verificação do token e Firestore
-# redis               -> cache
-#
-# --- Desenvolvimento e CI ----------------------------------------------------
-# Sem arquivo separado: a imagem Docker instala este mesmo requirements e passa
-# a carregar as ferramentas de teste junto.
+# --- Desenvolvimento e CI ---
 pytest~=8.4.2
 pytest-cov~=6.3.0
 ruff~=0.16.6
-httpx~=0.28.1              # cliente do TestClient, para os testes da API da Fase 2
+httpx~=0.28.1

@@ -47,12 +47,11 @@ class Configuracao(BaseSettings):
     ambiente: Literal["local", "producao"] = "local"
     log_nivel: str = "INFO"
 
-    # As origens que podem chamar a API. Em produção é a URL do frontend no Railway;
-    # sem isso o browser bloqueia a chamada antes de ela sair.
+    # Origens autorizadas a chamar a API.
     cors_origens: list[str] = ["http://localhost:5173"]
 
     # --- Google Cloud ---
-    # Aceita o JSON da service account inline ou o caminho de um arquivo.
+    # JSON da service account inline, ou caminho de arquivo.
     google_application_credentials: str = ""
     gcp_projeto_id: str = "plataforma-clara"
     bigquery_dataset: str = "dados_fidc"

@@ -25,15 +25,13 @@ from app.storage.bigquery import criar_cliente_bigquery
 
 logger = logging.getLogger(__name__)
 
-# Colunas de data que o BigQuery recebe como string ISO 8601, não como objeto date.
+# Datas que o BigQuery recebe como string ISO 8601.
 _COLUNAS_DATA_BIGQUERY = ("data_vencimento", "data_referencia_competencia")
 
 _PROJETO_BIGQUERY = "plataforma-clara"
 _TABELA_BIGQUERY = "plataforma-clara.dados_fidc.tb_aporte"
 
-# Schema explícito do job de carga. Definido à mão para que o BigQuery não infira
-# tipos errados a partir do DataFrame (ex.: prazo em dias virar FLOAT).
-# Precisa continuar espelhando as colunas de `domain/models.py::Aporte`.
+# Schema explícito do job: sem ele o BigQuery infere tipo errado do DataFrame.
 _SCHEMA_BIGQUERY = [
     bigquery.SchemaField("id_aporte_uuid", "STRING"),
     bigquery.SchemaField("documento_investidor_cpf_cnpj", "STRING"),

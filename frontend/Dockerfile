@@ -1,13 +1,10 @@
-# Build em duas etapas: o Node compila os estáticos, o nginx serve. A imagem
-# final não carrega Node nem node_modules.
-
+# Build em duas etapas: Node compila, nginx serve. A imagem final não leva Node.
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-# VITE_API_URL é lida em tempo de BUILD: o Vite embute o valor no bundle. Por isso
-# ela precisa ser um build arg, e não só variável de runtime do container.
+# Build arg, não variável de runtime: o Vite embute o valor no bundle.
 ARG VITE_API_URL=
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build

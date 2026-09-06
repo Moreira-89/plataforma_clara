@@ -23,8 +23,7 @@ import logging
 
 from app.config.settings import settings
 
-# Bibliotecas que logam demais no nível de INFO/DEBUG e não dizem nada útil
-# sobre a nossa aplicação.
+# Bibliotecas barulhentas demais em INFO/DEBUG.
 _LOGGERS_SILENCIADOS = (
     "urllib3",
     "google.auth",

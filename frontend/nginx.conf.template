@@ -1,5 +1,4 @@
-# Template processado pelo docker-entrypoint.sh: as variáveis ${...} são
-# substituídas na subida do container, porque a porta só é conhecida em runtime.
+# Processado pelo docker-entrypoint.sh: ${PORT} só é conhecida em runtime.
 server {
     listen ${PORT};
     server_name _;
@@ -7,8 +6,7 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # SPA: qualquer rota desconhecida devolve o index, e o roteamento acontece
-    # no browser. Sem isto, recarregar uma página interna dá 404.
+    # SPA: rota desconhecida devolve o index.
     location / {
         try_files $uri $uri/ /index.html;
     }

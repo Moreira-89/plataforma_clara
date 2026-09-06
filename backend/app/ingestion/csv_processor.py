@@ -14,10 +14,7 @@ from typing import TYPE_CHECKING, cast
 import pandas as pd
 
 if TYPE_CHECKING:
-    # Só para o verificador de tipos: `DtypeArg` é o tipo que o `read_csv` declara
-    # para o parâmetro `dtype`. Fica sob TYPE_CHECKING porque `pandas._typing` é
-    # módulo privado — em tempo de execução nada importa daqui.
-    from pandas._typing import DtypeArg
+    from pandas._typing import DtypeArg  # módulo privado: só para tipagem
 
 # -----------------------------------------------------------------------------
 # INICIALIZAÇÃO
@@ -142,10 +139,7 @@ def processar_arquivo_csv(caminho_arquivo: str | Path) -> pd.DataFrame:
         )
 
     # --- 3. SELEÇÃO E CÓPIA ---
-    # .copy() evita SettingWithCopyWarning ao modificar o DataFrame filtrado.
-    # O `cast` fixa o tipo na origem: indexar com uma lista sempre devolve DataFrame,
-    # mas as stubs declaram um retorno amplo (DataFrame | Series) que se propaga por
-    # todo o resto da função.
+    # .copy() evita SettingWithCopyWarning; o cast corrige a stub (ver docs).
     dataframe_limpo = cast(pd.DataFrame, dataframe[COLUNAS_OBRIGATORIAS].copy())
 
     # --- 4. TRATAMENTO DE STRINGS VAZIAS ---
@@ -188,20 +182,7 @@ def processar_arquivo_csv(caminho_arquivo: str | Path) -> pd.DataFrame:
     dataframe_limpo = dataframe_limpo.dropna(subset=colunas_exigidas)
 
     # --- 8. SUBSTITUIÇÃO DE NULOS DO PANDAS POR None ---
-    # O psycopg2 (driver PostgreSQL) não adapta nenhum dos "nulos" do Pandas:
-    # float("nan"), pd.NaT e pd.NA levantam ProgrammingError ao virar parâmetro.
-    #
-    # O astype(object) é obrigatório e não é redundante: a etapa 4 converteu as
-    # colunas de texto para o dtype "string", e uma coluna StringDtype não CONSEGUE
-    # armazenar None — ela converte silenciosamente para pd.NA. Sem a conversão para
-    # object, o where() abaixo vira um no-op justamente nas colunas de texto opcionais
-    # (hoje, `codigo_identificacao_isin`).
-    #
-    # Na prática o `to_dict(orient="records")` da ingestão hoje mascara isso, porque
-    # ele boxeia pd.NA para None na saída. Mas essa é uma garantia do consumidor, não
-    # deste módulo: qualquer leitura por .iloc, .itertuples ou .values receberia pd.NA.
-    # Corrigir aqui mantém o invariante prometido — "o DataFrame devolvido não contém
-    # nulos do Pandas" — independente de como o chamador consome o resultado.
+    # astype(object) não é redundante: StringDtype não armazena None (ver docs).
     dataframe_limpo = dataframe_limpo.astype(object)
     dataframe_limpo = dataframe_limpo.where(pd.notnull(dataframe_limpo), None)
 

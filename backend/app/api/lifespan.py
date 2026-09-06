@@ -45,9 +45,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     configurar_logging()
     logger.info("Backend iniciando (ambiente: %s).", settings.ambiente)
 
-    # A INSTANCIAR AQUI, quando implementarmos: cliente do Firestore, cliente do
-    # Redis e o app do Firebase Admin. Todos guardados em `app.state` e fechados
-    # depois do yield.
+    # Clientes de Firestore, Redis e Firebase Admin entram aqui.
 
     yield
 

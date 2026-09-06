@@ -1,6 +1,5 @@
 #!/bin/sh
-# O Railway define $PORT só em runtime, e o nginx não lê variável de ambiente
-# no arquivo de configuração. Substituímos antes de subir.
+# nginx não lê variável de ambiente na config; substitui antes de subir.
 set -e
 export PORT="${PORT:-8080}"
 envsubst '${PORT}' < /etc/nginx/templates/nginx.conf.template > /etc/nginx/conf.d/default.conf
