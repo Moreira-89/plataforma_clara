@@ -8,9 +8,12 @@ on:
     branches: [main]
 
 jobs:
-  qualidade:
-    name: Lint e testes
+  backend:
+    name: Backend — lint e testes
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
 
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +25,7 @@ jobs:
           # tem wheel para versões mais novas.
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: backend/requirements.txt
 
       - name: Instalar dependências
         run: |
@@ -29,16 +33,15 @@ jobs:
           pip install -r requirements.txt
 
       - name: Lint (ruff)
-        run: ruff check .
+        # A configuração do ruff está no pyproject.toml da raiz do monorepo.
+        run: ruff check ..
 
       - name: Formatação (apenas código novo)
-        # O código legado ainda não passou por `ruff format` — reformatar tudo agora
-        # produziria um diff enorme misturado com a migração. A checagem começa
-        # restrita a tests/ e se expande conforme cada módulo é reescrito nas fases
-        # seguintes do roadmap.
+        # O código herdado ainda não passou por `ruff format` — reformatar tudo
+        # agora produziria um diff enorme misturado com a reorganização.
         run: ruff format --check tests/
 
       - name: Testes
-        # A suíte não toca em Postgres, BigQuery nem Groq: as dependências externas
-        # são substituídas por fakes. Testes marcados como "integracao" ficam de fora.
+        # A suíte não toca em BigQuery, Groq nem Firebase: as dependências
+        # externas são substituídas por fakes. Testes de integração ficam fora.
         run: pytest -m "not integracao"

@@ -1,32 +1,21 @@
-# Configuração de ferramentas de desenvolvimento.
-# O projeto não é empacotado (é uma aplicação, não uma biblioteca), então não há
-# seção [project] nem build-system — apenas configuração de tooling.
-
-[tool.pytest.ini_options]
-minversion = "8.0"
-testpaths = ["tests"]
-pythonpath = ["."]
-addopts = [
-    "--strict-markers",
-    "--strict-config",
-    "-ra",
-]
-markers = [
-    "integracao: exige serviços externos (Postgres, BigQuery, Groq). Desabilitado por padrão na CI.",
-]
-filterwarnings = [
-    "ignore::DeprecationWarning",
-]
+# Configuração de ferramentas na raiz do monorepo. O ruff roda sobre o
+# repositório inteiro; a configuração do pytest fica em backend/pytest.ini,
+# porque a suíte pertence ao serviço de backend.
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-exclude = [".venv", "alembic/versions"]
+exclude = [".venv", "node_modules", "frontend/dist"]
 
 [tool.ruff.lint]
 # E/F = pyflakes+pycodestyle, I = isort, UP = pyupgrade, B = bugbear.
 select = ["E", "F", "I", "UP", "B"]
 ignore = [
-    "E501",  # comprimento de linha: o código legado tem várias linhas longas de query SQL.
-    "B008",  # chamada de função em default de argumento (padrão comum em FastAPI/Depends).
+    "E501",  # comprimento de linha: há queries e prompts longos.
+    "B008",  # chamada de função em default de argumento (padrão do Depends).
 ]
+
+[tool.ruff.lint.isort]
+# Sem isto o ruff trata `app` como biblioteca de terceiros e mistura os imports
+# do projeto com os do FastAPI.
+known-first-party = ["app"]

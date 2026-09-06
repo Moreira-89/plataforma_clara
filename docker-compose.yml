@@ -1,29 +1,11 @@
-# Ambiente de desenvolvimento local completo.
+# Ambiente de desenvolvimento local: backend, frontend e Redis.
 #
-# O Redis já entra aqui, embora ainda não seja usado pela aplicação: a Fase 3 do
-# roadmap (event-driven) vai precisar dele para cache distribuído e, dependendo da
-# decisão AD-2, também como broker via Redis Streams. Subir junto agora evita mexer
-# no compose depois.
+# O Postgres saiu do compose junto com a saída do Postgres da arquitetura. Os
+# dados operacionais passam a viver no Firestore e no BigQuery, que são serviços
+# gerenciados — em desenvolvimento se conecta neles direto, ou no emulador do
+# Firebase quando ele entrar.
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: clara
-      POSTGRES_PASSWORD: clara
-      POSTGRES_DB: plataforma_clara
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      # A aplicação só sobe depois que o banco aceita conexões: sem isso a
-      # primeira consulta falha e derruba o container.
-      test: ["CMD-SHELL", "pg_isready -U clara -d plataforma_clara"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   redis:
     image: redis:7-alpine
     ports:
@@ -34,15 +16,13 @@ services:
       timeout: 3s
       retries: 5
 
-  app:
-    build: .
+  backend:
+    build: ./backend
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://clara:clara@postgres:5432/plataforma_clara
+      AMBIENTE: local
       REDIS_URL: redis://redis:6379/0
       # Credenciais externas vêm do .env local e nunca são versionadas.
       GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS:-}
@@ -50,8 +30,18 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Bind mount para hot reload: alterações no código refletem sem rebuild.
-      - .:/app
+      # Bind mount para hot reload: alteração no código reflete sem rebuild.
+      - ./backend:/app
 
-volumes:
-  postgres_data:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Em desenvolvimento o browser fala com o backend na porta 8000 do host.
+        VITE_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+    environment:
+      PORT: 8080
+    ports:
+      - "5173:8080"

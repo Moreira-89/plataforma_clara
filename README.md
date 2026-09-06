@@ -8,16 +8,11 @@ Projeto acadêmico (FIAP).
 
 ## Estado atual
 
-O projeto está **em migração**: nasceu como um monolito Reflex (full-stack Python) e está sendo reescrito como monorepo com backend FastAPI e frontend separado.
+**Monorepo em reconstrução.** O projeto nasceu como monolito Reflex sobre PostgreSQL. O Reflex e o Postgres saíram; o que está de pé é o esqueleto de dois serviços independentes — `backend/` (FastAPI) e `frontend/` (Vite) — sobre o ecossistema Google Cloud.
 
-O Reflex foi removido. Restou o núcleo do backend, que não depende de framework de entrega nenhum:
+Já existe: o processamento e a validação do CSV de aportes, a carga no BigQuery, o gerador de relatório por IA e as regras de negócio (classificação de risco, KPIs, formatação, validação de CPF/CNPJ).
 
-- as regras de negócio e os modelos de dados,
-- o acesso ao PostgreSQL e ao BigQuery,
-- o processamento do CSV de ingestão,
-- o serviço que gera o relatório em PDF via IA.
-
-**Não há entry point.** Nada sobe ainda — a camada de entrega é a próxima coisa a ser escrita, e a estrutura de pastas do monorepo está sendo definida. O roadmap da migração vive no Notion.
+Ainda não existe: Firestore, Firebase Auth, Redis e os endpoints. A API sobe e responde `/health`, nada além disso.
 
 ---
 
@@ -33,47 +28,57 @@ O `score_risco_interno` **chega pronto como coluna do CSV**. Não há modelo de 
 
 ## Como rodar
 
-Requer **Python 3.12** (o `pandas~=2.3.3` não tem wheel para 3.14).
+Requer **Python 3.12** (o `pandas~=2.3.3` não tem wheel para 3.14) e **Node 22**.
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+cp .env.example .env          # preencher antes de subir
+
+# Backend
+cd backend
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+uvicorn main:app --reload     # http://localhost:8000/docs
+pytest                        # suíte
+ruff check ..                 # lint
 
-cp .env.example .env   # preencher as três variáveis abaixo
+# Frontend
+cd frontend
+npm install
+npm run dev                   # http://localhost:5173
 ```
+
+Ou tudo junto, com backend, frontend e Redis:
 
 ```bash
-pytest              # suíte completa
-ruff check .        # lint
+docker compose up --build
 ```
 
-A suíte não toca em Postgres, BigQuery nem Groq: as dependências externas são substituídas por fakes em `tests/conftest.py`.
-
-Migrações:
-
-```bash
-alembic revision --autogenerate -m "descricao"
-alembic upgrade head
-```
-
-A URL vem da `DATABASE_URL`, lida pelo `alembic/env.py` — o `alembic.ini` é versionado e não carrega credencial.
+A suíte não toca em BigQuery, Groq nem Firebase: as dependências externas são substituídas por fakes em `backend/tests/conftest.py`.
 
 ---
 
 ## Organização do código
 
-A direção das dependências é regra dura: **`services/` → `infra/` → `domain/`**, nunca ao contrário.
+Dois serviços, cada um com o seu `Dockerfile`, para virarem dois serviços separados no Railway.
 
-| Pasta | Responsabilidade |
-| --- | --- |
-| `domain/` | Regras de negócio puras, modelos de tabela e contratos Pydantic. Não importa framework nenhum. |
-| `infra/` | Engine, sessão e repositórios. **Todo o SQL vive aqui.** |
-| `services/` | Orquestra domínio e infraestrutura: transação, cache, tratamento de falha, chamadas externas. |
-| `alembic/` | Migrações do PostgreSQL. |
-| `tests/` | Suíte de caracterização — documenta o comportamento atual, inclusive o discutível. |
+```
+backend/
+  main.py              # cria o app, lifespan e CORS
+  app/
+    agents/            # IA: prompt, LLM, montagem do relatório
+    api/schemas/       # contratos Pydantic de entrada e saída
+    config/            # settings (env) e logging
+    domain/            # regras puras: risco, métricas, formatação, identidade
+    ingestion/         # validação do CSV e preparo dos registros
+    jobs/              # tarefas de fundo
+    storage/           # clientes de persistência e credenciais
+  tests/
+frontend/
+  src/                 # css, js, img
+  vite.config.js       # proxy /api para o backend em desenvolvimento
+```
 
-Esta estrutura é herdada da fase anterior e **vai mudar** na reorganização do monorepo.
+Dentro do backend a direção das dependências é regra dura: **`api/` → `agents/`, `ingestion/`, `storage/` → `domain/`**, nunca ao contrário. `domain/` não importa framework nenhum.
 
 ---
 
@@ -81,35 +86,36 @@ Esta estrutura é herdada da fase anterior e **vai mudar** na reorganização do
 
 | Camada | Tecnologia |
 | --- | --- |
-| Entrega | a definir |
-| Hospedagem | Railway (aplicação, PostgreSQL e Redis) + Google Cloud (dados analíticos) |
-| Banco operacional | PostgreSQL, SQLModel sobre SQLAlchemy |
-| Banco analítico | Google BigQuery — `dados_fidc.tb_aporte` |
-| Cache e fila | Redis |
-| LLM | ChatGroq, `llama-3.3-70b-versatile` |
+| Hospedagem | Railway — um serviço para o backend, outro para o frontend |
+| API | FastAPI + uvicorn |
+| Frontend | Vite, servido por nginx |
+| Autenticação | Firebase Auth *(a implementar)* |
+| Dados operacionais | Firestore *(a implementar)* |
+| Dados analíticos | Google BigQuery — `dados_fidc.tb_aporte` |
+| Cache | Redis *(a implementar)* |
+| LLM | ChatGroq via Langchain |
 | PDF | `markdown-pdf` |
 | Dados | pandas |
-| Autenticação | bcrypt, 12 rounds |
 
 ---
 
 ## Variáveis de ambiente
 
-Copie o `.env.example` e preencha:
+Copie o `.env.example` da raiz (backend) e o de `frontend/`. O `.env` real nunca é versionado — e o arquivo de credencial da service account deve ficar **fora** do repositório, senão o `COPY . .` do Docker o leva para dentro da imagem.
 
 ```
-DATABASE_URL=postgresql://...
-REDIS_URL=redis://...
-GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account", ...}   # ou caminho de um arquivo local
+AMBIENTE=local
+CORS_ORIGENS=["http://localhost:5173"]
+GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account", ...}   # ou caminho de um arquivo
+GCP_PROJETO_ID=plataforma-clara
+REDIS_URL=redis://localhost:6379/0
 GROQ_API_KEY=gsk_...
 ```
-
-Nunca versionar o `.env` nem o arquivo de credencial da service account.
 
 ---
 
 ## Pontos de atenção
 
-- **Dupla escrita sem transação.** O aporte é gravado no PostgreSQL e depois no BigQuery, fora de qualquer transação. Uma falha no segundo passo diverge os dados em silêncio.
-- **Schema em dois lugares.** Mudar `tb_aporte` exige alterar o modelo (`domain/models.py`), o schema do job (`services/ingestao_service.py`) e o contrato do CSV (`services/csv_processor.py`). Não há migração automática entre Postgres e BigQuery.
+- **Falta a persistência operacional.** A ingestão processa o CSV e carrega no BigQuery, mas não grava em nenhum banco de leitura rápida. O Firestore ainda não foi implementado.
+- **Schema em dois lugares.** Mudar as colunas do aporte exige alterar o schema do job (`backend/app/ingestion/aportes.py`) e o contrato do CSV (`backend/app/ingestion/csv_processor.py`) juntos.
 - **Números simulados, removidos.** A evolução do AUM, o rendimento projetado e a rentabilidade por bloco eram inventados (fatores fixos e um hash do nome do bloco) e apareciam ao lado de dados reais sem rótulo. Saíram junto com a UI. Se voltarem, que venham de dado real ou rotulados como estimativa.
