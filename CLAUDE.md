@@ -14,9 +14,9 @@ pip install -r requirements.txt
 cp .env.example .env   # preencher DATABASE_URL, GOOGLE_APPLICATION_CREDENTIALS, GROQ_API_KEY
 
 # Dev
-reflex run              # http://localhost:3000
+# SEM ENTRY POINT NO MOMENTO: o app Reflex foi removido e o da API ainda não existe.
 
-# Banco de dados (Alembic direto — os modelos não usam mais rx.Model)
+# Banco de dados (Alembic direto)
 alembic revision --autogenerate -m "descricao"
 alembic upgrade head
 
@@ -39,22 +39,25 @@ Os testes não tocam em Postgres, BigQuery nem Groq — as dependências externa
 
 ## Arquitetura
 
-Full-stack Python único: Reflex compila o frontend em React + WebSocket e expõe o backend via FastAPI. Estado reativo (`rx.State`) sincroniza servidor e browser automaticamente. Toda operação de I/O (Postgres, BigQuery, Groq) roda em `asyncio.to_thread` para não bloquear o event loop.
+**O Reflex foi removido do repositório.** Saíram as camadas de UI (`pages/`, `states/`, `components/`), o entry point e o `rxconfig.py`. O que restou é backend puro, sem framework de entrega: nenhum módulo do projeto importa `reflex`, e a suíte roda com ele desinstalado. A estrutura de pastas definitiva do monorepo (backend + frontend) ainda vai ser definida — **enquanto isso, não invente diretório novo**.
 
-O código está organizado em camadas, e a direção das dependências é regra dura:
+Não há entry point. Nada sobe. A camada de entrega é a próxima coisa a ser escrita.
+
+O código restante está em camadas, e a direção das dependências é regra dura:
 
 ```
-pages/ ──▶ states/ ──▶ services/ ──▶ infra/ ──▶ domain/
- (UI)     (Reflex)    (orquestração)  (banco)   (regras puras)
+(entrega, a definir) ──▶ services/ ──▶ infra/ ──▶ domain/
+                       (orquestração)  (banco)   (regras puras)
 ```
 
-- **`domain/`** — regras de negócio, modelos de tabela e contratos Pydantic. **Não pode importar `reflex`, `fastapi` nem `services/`.** É o que atravessa a migração intacto.
+- **`domain/`** — regras de negócio, modelos de tabela e contratos Pydantic. **Não pode importar `fastapi` nem `services/`.** É o que atravessa a migração intacto.
 - **`infra/`** — engine, sessão e repositórios. Todo o SQL vive aqui.
 - **`services/`** — orquestra domínio + infra, decide escopo de transação, cache e tratamento de falha. Recebe a sessão por injeção (`sessao_factory=`).
-- **`states/`** — só o que é de tela: ler campo, exibir mensagem, redirecionar. Nenhum cálculo novo.
+
+Toda operação de I/O (Postgres, BigQuery, Groq) é bloqueante e deve rodar em `asyncio.to_thread` quando chamada de código assíncrono.
 
 ```
-Frontend (Reflex/React) ⇄ WebSocket ⇄ Backend (Reflex Server/FastAPI)
+                              (camada de entrega a definir)
                                             │
                     ┌───────────────────────┼────────────────────────┐
                     ▼                                                 ▼
@@ -67,29 +70,28 @@ Frontend (Reflex/React) ⇄ WebSocket ⇄ Backend (Reflex Server/FastAPI)
                                                               → geração de relatório PDF
 ```
 
-Dupla persistência: cada aporte é gravado no PostgreSQL **e** no BigQuery em `WRITE_APPEND`. Qualquer mudança de schema em `tb_aporte` precisa ser replicada nos dois lados — no modelo (`domain/models.py`), no schema do job (`states/ingestao_dados_state.py::_SCHEMA_BIGQUERY`) e no contrato do CSV (`services/csv_processor.py::COLUNAS_OBRIGATORIAS`). O `tests/test_domain_models.py` trava a correspondência.
+Dupla persistência: cada aporte é gravado no PostgreSQL **e** no BigQuery em `WRITE_APPEND`. Qualquer mudança de schema em `tb_aporte` precisa ser replicada nos dois lados — no modelo (`domain/models.py`), no schema do job (`services/ingestao_service.py::_SCHEMA_BIGQUERY`) e no contrato do CSV (`services/csv_processor.py::COLUNAS_OBRIGATORIAS`). O `tests/test_domain_models.py` trava a correspondência.
 
 ## Stack
 
 | Camada | Tecnologia |
 |---|---|
-| Framework | Reflex (Python → React + FastAPI) |
+| Entrega | **a definir** — o Reflex saiu, a API ainda não existe |
 | DB operacional | PostgreSQL via Supabase, ORM SQLAlchemy |
 | DB analítico | Google BigQuery (`dados_fidc.tb_aporte`) |
 | LLM | ChatGroq — `llama-3.3-70b-versatile`, temperatura 0.1, `max_tokens=900` |
 | PDF | `markdown-pdf` (Markdown → PDF) |
 | Dados | Pandas |
 | Auth | bcrypt (12 rounds) |
-| UI | Radix UI / `rx.color()`, ícones Lucide |
 | ML | Nenhum modelo treinado no repositório — o `score_risco_interno` chega pronto como coluna do CSV de ingestão |
-| Orquestração de IA | Langchain (prompt + invocação do Groq). `langgraph` está no `requirements.txt` mas ainda não é usado |
+| Orquestração de IA | Langchain (prompt + invocação do Groq) |
 
 ## Estrutura de Diretórios
 
+Estrutura ATUAL, herdada da fase anterior. Vai mudar quando o monorepo for reorganizado.
+
 ```
-plataforma_clara.py       # entry point: rotas e instanciação do app
-rxconfig.py                # config Reflex (db_url, app_name)
-domain/                    # camada pura — proibido importar reflex/fastapi
+domain/                    # camada pura — proibido importar framework de entrega
   models.py                #   tabelas SQLModel: tb_usuario, tb_aporte
   schemas.py               #   contratos Pydantic v2 (entrada/saída)
   metricas.py              #   KPIs, filtros e montagem das visões
@@ -103,30 +105,26 @@ infra/
   db.py                    #   engine, sessão e dependência de sessão
   repositorios/            #   todo o SQL (aporte.py, usuario.py)
 services/                  # orquestração: dashboard, bloco, ingestão, auth, IA, BigQuery
-states/                    # um State por página/fluxo (herda rx.State)
-components/sidebar.py      # sidebars reutilizáveis (gestora/investidor)
-pages/                     # uma página por rota
+alembic/                   # migrações (ver aviso acima sobre o histórico)
+assets/                    # logos; a clara é lida pelo gerador de PDF, não é só decoração
 ```
 
 ## Convenções de Código
 
 - **Docstrings obrigatórias** em todo módulo, padrão `@user_global`: resumo, seção "COMO FUNCIONA" com passos numerados, `Args`, `Returns`, `Raises`. Comentários inline explicam o *porquê*, não o *o quê*.
 - **Logs**: sempre `logging.getLogger(__name__)`. Nunca `print()`.
-- **Cores de UI**: sempre `rx.color("gray", 12)` ou tokens equivalentes. Nunca hex hardcoded.
-- **Sidebars**: importar de `components/sidebar.py`. Nunca duplicar a implementação em uma página.
-- **Badges reativos**: usar `rx.cond` para `color_scheme` dinâmico, não lógica condicional fora do fluxo reativo do Reflex.
-- **I/O bloqueante** (queries, BigQuery, chamadas Groq): sempre dentro de `asyncio.to_thread`, nunca direto num handler `@rx.event` síncrono.
-- **Sessão de banco**: nunca `rx.session()`. Serviços recebem `sessao_factory=` (padrão `infra.db.sessao`); repositórios recebem a `Session` pronta e não a fecham.
-- **Regra de negócio**: mora em `domain/`. Um `rx.State` ou um endpoint só orquestra — se um cálculo aparece dentro de um `@rx.var`, ele está no lugar errado.
+- **I/O bloqueante** (queries, BigQuery, chamadas Groq): sempre dentro de `asyncio.to_thread` quando chamado de código assíncrono.
+- **Sessão de banco**: serviços recebem `sessao_factory=` (padrão `infra.db.sessao`); repositórios recebem a `Session` pronta e não a fecham.
+- **Regra de negócio**: mora em `domain/`. A camada de entrega só orquestra — se um cálculo aparece dentro de um handler ou de um endpoint, ele está no lugar errado.
 
 ## Restrições Rígidas
 
 - Nunca commitar `.env` ou credenciais de service account — ambos já cobertos por `.gitignore`, não recriar arquivos de credencial na raiz do projeto.
 - Nunca alterar o schema de `tb_aporte` só no PostgreSQL ou só no BigQuery — as duas tabelas precisam ficar sincronizadas manualmente (não há migração automática entre elas).
-- Nunca apresentar como real o que vem de `domain/projecoes.py` ou de `metricas.rentabilidade_estavel`: são números simulados, exibidos hoje ao lado de dados verdadeiros e sem rótulo que os distinga.
+- Nunca apresentar como real o que vem de `domain/projecoes.py` ou de `metricas.rentabilidade_estavel`: são números simulados. A tela que os exibia sem rótulo foi removida — não recriar o problema na próxima.
 - Nunca usar hash de senha fora do padrão bcrypt de `domain/seguranca.py` — é o único módulo autorizado a gerar ou conferir hash, e o cost factor 12 não pode ser reduzido (hashes antigos seguiriam válidos, e só as senhas novas ficariam fracas).
 - Nunca escrever SQL fora de `infra/repositorios/`, e nunca concatenar valor de usuário na query — documento sempre como bind parameter.
-- Nunca importar `reflex` dentro de `domain/` ou `infra/`. É essa regra que faz a migração para FastAPI ser uma troca de camada de entrega, e não uma reescrita.
+- Nunca reintroduzir `reflex` no projeto, e nunca importar o framework de entrega (hoje nenhum, amanhã `fastapi`) dentro de `domain/` ou `infra/`. É essa regra que faz trocar de camada de entrega ser uma troca, e não uma reescrita.
 - Nunca chamar a API do Groq fora de `services/relatorio_ia_service.py` — é o único lugar com o retry progressivo (5 tentativas com cortes crescentes na amostra de aportes, nos grupos de empresa e no texto de referência) tratado para `APIStatusError` 413.
 - Nunca assumir que existe modelo de ML no projeto: o score de risco é um dado de entrada, não um cálculo da plataforma.
 

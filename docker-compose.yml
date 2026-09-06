@@ -17,8 +17,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      # A aplicação só sobe depois que o banco aceita conexões, senão o Reflex
-      # falha no primeiro rx.session() e derruba o container.
+      # A aplicação só sobe depois que o banco aceita conexões: sem isso a
+      # primeira consulta falha e derruba o container.
       test: ["CMD-SHELL", "pg_isready -U clara -d plataforma_clara"]
       interval: 5s
       timeout: 5s
@@ -48,13 +48,10 @@ services:
       GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
     ports:
-      - "3000:3000"
       - "8000:8000"
     volumes:
       # Bind mount para hot reload: alterações no código refletem sem rebuild.
       - .:/app
-      # Volume anônimo protege o .web do container de ser sobrescrito pelo host.
-      - /app/.web
 
 volumes:
   postgres_data:

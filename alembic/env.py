@@ -18,9 +18,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Metadados usados pelo autogenerate. Antes da Fase 1 os modelos herdavam de
-# `rx.Model` e as migrações eram geradas pelo `reflex db migrate`; agora são
-# SQLModel puro e o Alembic é usado direto.
+# Metadados usados pelo autogenerate. Os modelos são SQLModel puro e o Alembic é
+# usado direto, sem intermediário.
 #
 # AVISO: o histórico em versions/ NÃO reproduz o schema atual — a migração que cria
 # `tb_usuario` declara as colunas `nome`, `email` e `senha_hash`, e nenhuma migração

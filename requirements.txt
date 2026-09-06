@@ -7,10 +7,9 @@
 # na fase que as usa, não antes — `langgraph` ficou um roadmap inteiro declarado
 # e nunca importado.
 
-# --- Entrega: UI atual (Reflex) e API (FastAPI, Fase 2) ---------------------
-# Os dois coexistem enquanto as rotas migram uma a uma. Verificado: instalam
-# juntos sem conflito (o Reflex traz o Starlette, não o FastAPI).
-reflex~=0.8.28.post1
+# --- Entrega: API ------------------------------------------------------------
+# O Reflex saiu do projeto junto com as camadas de UI. Nada mais aqui depende de
+# framework de frontend.
 fastapi~=0.141.1
 uvicorn[standard]~=0.52.4
 pydantic-settings~=2.15.0

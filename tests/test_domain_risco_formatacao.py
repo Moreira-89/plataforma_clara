@@ -8,7 +8,7 @@ dentro de um `CASE WHEN` de SQL) e a formatação de moeda em quatro outros.
 Os valores esperados aqui vieram do código anterior à extração, não de uma
 especificação: se um deles mudar, a pergunta é se a mudança foi intencional.
 
-Nenhum destes testes precisa de banco, de rede ou do Reflex.
+Nenhum destes testes precisa de banco ou de rede.
 """
 
 from __future__ import annotations

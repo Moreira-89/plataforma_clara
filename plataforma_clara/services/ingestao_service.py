@@ -1,9 +1,9 @@
 """
 Serviço de ingestão de aportes a partir de um arquivo CSV.
 
-Extraído de `IngestaoDadosState.lidar_com_upload_de_arquivo`, que misturava upload,
-processamento, persistência e preparo do payload do BigQuery dentro de uma closure
-de um event handler do Reflex. Agora o state só recebe o arquivo e chama isto.
+Reúne o fluxo inteiro de ingestão: processar o CSV, gravar no PostgreSQL e carregar
+no BigQuery. Nada aqui depende de camada de entrega — quem receber o upload só
+precisa entregar o caminho do arquivo.
 
 É este o fluxo que a Fase 3 transforma: em vez de gravar no Postgres e depois
 empurrar para o BigQuery na mão, a gravação emite um evento `AporteIngerido` na
@@ -17,11 +17,14 @@ from collections.abc import Callable
 from contextlib import AbstractContextManager
 from typing import Any
 
+import pandas as pd
+from google.cloud import bigquery
 from sqlmodel import Session
 
 from plataforma_clara.domain.schemas import ResultadoIngestao
 from plataforma_clara.infra.db import sessao as sessao_padrao
 from plataforma_clara.infra.repositorios.aporte import AporteRepositorio
+from plataforma_clara.services.bigquery_utils import criar_cliente_bigquery
 from plataforma_clara.services.csv_processor import (
     COLUNAS_OBRIGATORIAS,
     processar_arquivo_csv,
@@ -33,6 +36,34 @@ FabricaDeSessao = Callable[[], AbstractContextManager[Session]]
 
 # Colunas de data que o BigQuery recebe como string ISO 8601, não como objeto date.
 _COLUNAS_DATA_BIGQUERY = ("data_vencimento", "data_referencia_competencia")
+
+_PROJETO_BIGQUERY = "plataforma-clara"
+_TABELA_BIGQUERY = "plataforma-clara.dados_fidc.tb_aporte"
+
+# Schema explícito do job de carga. Definido à mão para que o BigQuery não infira
+# tipos errados a partir do DataFrame (ex.: prazo em dias virar FLOAT).
+# Precisa continuar espelhando as colunas de `domain/models.py::Aporte`.
+_SCHEMA_BIGQUERY = [
+    bigquery.SchemaField("id_aporte_uuid", "STRING"),
+    bigquery.SchemaField("documento_investidor_cpf_cnpj", "STRING"),
+    bigquery.SchemaField("fundo_origem_id", "STRING"),
+    bigquery.SchemaField("nome_fundo_investidor", "STRING"),
+    bigquery.SchemaField("empresa_sacada_nome", "STRING"),
+    bigquery.SchemaField("cnpj_sacado_limpo", "STRING"),
+    bigquery.SchemaField("valor_aporte_compra", "FLOAT"),
+    bigquery.SchemaField("valor_mercado_atual", "FLOAT"),
+    bigquery.SchemaField("quantidade_papeis_adquiridos", "FLOAT"),
+    bigquery.SchemaField("data_vencimento", "STRING"),
+    bigquery.SchemaField("data_referencia_competencia", "STRING"),
+    bigquery.SchemaField("prazo_vencimento_dias", "INTEGER"),
+    bigquery.SchemaField("status_prazo_vencimento", "STRING"),
+    bigquery.SchemaField("taxa_retorno_pre_fixada", "FLOAT"),
+    bigquery.SchemaField("bloco_liquidez_setorial", "STRING"),
+    bigquery.SchemaField("categoria_tecnica_ativo", "STRING"),
+    bigquery.SchemaField("codigo_identificacao_isin", "STRING"),
+    bigquery.SchemaField("score_risco_interno", "FLOAT"),
+    bigquery.SchemaField("flag_outlier_valor", "STRING"),
+]
 
 
 def _preparar_registro(linha: dict[str, Any]) -> dict[str, Any]:
@@ -125,3 +156,51 @@ def ingerir_csv(
         quantidade_inserida=quantidade,
         registros_bigquery=registros_bigquery,
     )
+
+
+def enviar_ao_bigquery(registros: list[dict[str, Any]]) -> int:
+    """
+    Carrega no BigQuery os aportes já persistidos no PostgreSQL.
+
+    O schema da tabela analítica mora aqui: é o par do modelo em `domain/models.py`,
+    e os dois precisam ser alterados juntos.
+
+    COMO FUNCIONA:
+        1. Monta o DataFrame a partir dos registros já convertidos por `_para_bigquery`.
+        2. Configura o job com o schema explícito e `WRITE_APPEND` — acrescenta à
+           tabela, nunca substitui.
+        3. Aguarda a conclusão do job.
+
+    É I/O de rede bloqueante: chame dentro de `asyncio.to_thread` a partir de
+    código assíncrono.
+
+    A exceção SOBE em vez de virar log: quem chama é que sabe se ainda dá tempo de
+    avisar o usuário. A implementação anterior engolia a falha em silêncio, e é
+    justamente essa janela de divergência entre Postgres e BigQuery que o padrão
+    outbox precisa fechar.
+
+    Args:
+        registros (list[dict]): Aportes no formato do BigQuery, com datas em ISO.
+
+    Returns:
+        int: Quantidade de registros enviados.
+
+    Raises:
+        Exception: Qualquer falha de credencial, schema ou rede do BigQuery.
+    """
+    if not registros:
+        return 0
+
+    cliente = criar_cliente_bigquery(project_id=_PROJETO_BIGQUERY)
+    configuracao = bigquery.LoadJobConfig(
+        schema=_SCHEMA_BIGQUERY,
+        write_disposition="WRITE_APPEND",
+    )
+
+    job = cliente.load_table_from_dataframe(
+        pd.DataFrame(registros), _TABELA_BIGQUERY, job_config=configuracao
+    )
+    job.result()  # Aguarda a conclusão do job de carga.
+
+    logger.info("%d aportes enviados ao BigQuery.", len(registros))
+    return len(registros)

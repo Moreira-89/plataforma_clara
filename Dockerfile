@@ -1,4 +1,4 @@
-# Imagem da aplicação Reflex (frontend compilado + backend FastAPI no mesmo processo).
+# Imagem do backend da Plataforma Clara.
 #
 # Python 3.12 é deliberado: o requirements.txt fixa pandas~=2.3.3, que ainda não tem
 # wheel para 3.14 (a build de dependências transitivas falha). Manter alinhado com a
@@ -14,13 +14,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# curl e unzip são exigidos pelo Reflex para baixar o Bun na primeira execução
-# (ele compila o frontend React); build-essential cobre pacotes sem wheel pronta.
+# build-essential cobre os pacotes sem wheel pronta. O curl e o unzip saíram junto
+# com o Reflex — eram para baixar o Bun e compilar o frontend React.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential \
-        curl \
-        unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiamos apenas os requirements antes do código-fonte: enquanto as dependências
@@ -30,7 +28,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# 3000 = frontend Reflex, 8000 = backend FastAPI/WebSocket.
-EXPOSE 3000 8000
+EXPOSE 8000
 
-CMD ["reflex", "run", "--env", "prod", "--backend-host", "0.0.0.0"]
+# SEM COMANDO DE EXECUÇÃO AINDA: o entry point saiu junto com o Reflex e o novo
+# depende da estrutura de pastas a definir. Assim que o módulo da API existir,
+# esta linha vira algo como:
+#
+#   CMD ["uvicorn", "<pacote>.main:app", "--host", "0.0.0.0", "--port", "8000"]
+#
+# Até lá a imagem constrói e serve para rodar a suíte e os comandos do Alembic,
+# mas não sobe servidor nenhum.
+CMD ["python", "-c", "raise SystemExit('Defina o entry point da API antes de subir o container.')"]

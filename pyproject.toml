@@ -1,5 +1,5 @@
 # Configuração de ferramentas de desenvolvimento.
-# O projeto em si não é empacotado (é uma aplicação Reflex), então não há
+# O projeto não é empacotado (é uma aplicação, não uma biblioteca), então não há
 # seção [project] nem build-system — apenas configuração de tooling.
 
 [tool.pytest.ini_options]
@@ -21,7 +21,7 @@ filterwarnings = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-exclude = [".venv", ".web", "alembic/versions"]
+exclude = [".venv", "alembic/versions"]
 
 [tool.ruff.lint]
 # E/F = pyflakes+pycodestyle, I = isort, UP = pyupgrade, B = bugbear.
@@ -30,7 +30,3 @@ ignore = [
     "E501",  # comprimento de linha: o código legado tem várias linhas longas de query SQL.
     "B008",  # chamada de função em default de argumento (padrão comum em FastAPI/Depends).
 ]
-
-[tool.ruff.lint.per-file-ignores]
-# Imports de efeito colateral: o decorador @rx.page registra a página ao importar.
-"plataforma_clara/plataforma_clara.py" = ["F401"]

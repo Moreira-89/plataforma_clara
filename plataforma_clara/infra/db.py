@@ -1,10 +1,8 @@
 """
 Conexão com o PostgreSQL, independente de framework.
 
-Substitui o `rx.session()` do Reflex, que era o último fio prendendo a camada de
-dados ao framework de UI. A engine é criada uma única vez, sob demanda, a partir da
-`DATABASE_URL` — a mesma variável que o `rxconfig.py` já usa, então os dois caminhos
-apontam para o mesmo banco enquanto o Reflex continuar de pé.
+A engine é criada uma única vez, sob demanda, a partir da `DATABASE_URL`. Este é o
+único ponto do projeto que abre conexão com o PostgreSQL.
 
 DUAS FORMAS DE OBTER UMA SESSÃO:
     - `sessao()` — gerenciador de contexto, para código síncrono chamado de dentro
