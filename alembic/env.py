@@ -1,8 +1,13 @@
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
+from sqlmodel import SQLModel
 
 from alembic import context
+
+# Importar os modelos registra as tabelas em SQLModel.metadata. Sem este import o
+# autogenerate enxerga um metadata vazio e propõe apagar o banco inteiro.
+from plataforma_clara.domain import models  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -13,11 +18,16 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+# Metadados usados pelo autogenerate. Antes da Fase 1 os modelos herdavam de
+# `rx.Model` e as migrações eram geradas pelo `reflex db migrate`; agora são
+# SQLModel puro e o Alembic é usado direto.
+#
+# AVISO: o histórico em versions/ NÃO reproduz o schema atual — a migração que cria
+# `tb_usuario` declara as colunas `nome`, `email` e `senha_hash`, e nenhuma migração
+# posterior as renomeia para `nome_usuario`, `email_usuario` e `senha_hash_usuario`.
+# Um autogenerate contra um banco vazio vai propor mudanças que não batem com o
+# Supabase em uso. Confira o diff proposto antes de aplicar qualquer migração nova.
+target_metadata = SQLModel.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

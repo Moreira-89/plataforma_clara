@@ -1,286 +1,285 @@
 """
-Camada de serviço responsável pelas consultas analíticas no banco operacional.
+Serviço de consultas analíticas dos dashboards.
 
-Todas as funções utilizam o ORM/SQL do Reflex (SQLAlchemy por baixo) para consultar
-a tabela `tb_aporte` no PostgreSQL (Supabase). Um cache em memória com TTL de 5 minutos
-evita consultas repetidas durante a mesma sessão de uso.
+Depois da extração do domínio, este módulo faz três coisas e só essas: decide o
+escopo da sessão de banco, aplica o cache e traduz falha de infraestrutura em
+resposta vazia. O SQL foi para `infra/repositorios/aporte.py` e a formatação para
+`domain/metricas.py`.
+
+A sessão entra por injeção: cada função recebe uma FÁBRICA de sessão, não uma
+sessão pronta. É o que permite devolver dado cacheado sem abrir conexão com o
+banco — e o que faz os testes rodarem sem Postgres nenhum.
+
+O cache é em memória e por processo. Com múltiplos workers Uvicorn, cada um terá o
+seu (D4 no roadmap); a Fase 3 troca esta classe por Redis sem tocar no resto.
 """
 
 import logging
 import time
+from collections.abc import Callable
+from contextlib import AbstractContextManager
 from typing import Any
 
-import reflex as rx
-import sqlalchemy as sa
+from sqlmodel import Session
 
-# -----------------------------------------------------------------------------
-# INICIALIZAÇÃO
-# -----------------------------------------------------------------------------
+from plataforma_clara.domain import metricas
+from plataforma_clara.domain.schemas import (
+    LinhaTabelaGestora,
+    LinhaTransparencia,
+    MetricaBloco,
+)
+from plataforma_clara.infra.db import sessao as sessao_padrao
+from plataforma_clara.infra.repositorios.aporte import AporteRepositorio
 
 logger = logging.getLogger(__name__)
 
-# Cache em memória para reduzir consultas repetidas na mesma janela de uso.
-# Estrutura: { cpf_investidor: (timestamp, lista_de_dados) }
-_cache_investidor: dict[str, tuple[float, list[dict[str, Any]]]] = {}
+# Tipo da fábrica de sessão: qualquer coisa que, chamada, devolva um gerenciador
+# de contexto de Session. `infra.db.sessao` é a implementação real; os testes
+# passam um substituto.
+FabricaDeSessao = Callable[[], AbstractContextManager[Session]]
 
-# Cache para visão da gestora (sem filtro de investidor).
-_cache_gestora: list[dict[str, Any]] = []
-_cache_gestora_timestamp: float = 0.0
-
-# TTL (Time-To-Live) do cache em segundos. Após 5 minutos, os dados são recarregados.
+# TTL do cache em segundos. Após 5 minutos, os dados são recarregados do banco.
 _CACHE_TTL_SEGUNDOS: float = 300.0
 
 
 # -----------------------------------------------------------------------------
-# CONSULTAS DO INVESTIDOR
+# CACHE EM MEMÓRIA
 # -----------------------------------------------------------------------------
+
+
+class _CacheComTTL:
+    """
+    Cache simples de processo, com expiração por tempo.
+
+    Substitui os cinco globais de módulo que existiam antes (um par
+    valor/timestamp para cada consulta). Usa `time.monotonic`, que nunca anda para
+    trás — um ajuste de relógio do sistema não faz o cache expirar cedo demais nem
+    tarde demais.
+    """
+
+    def __init__(self, ttl_segundos: float) -> None:
+        self.ttl_segundos = ttl_segundos
+        self._entradas: dict[str, tuple[float, Any]] = {}
+
+    def obter(self, chave: str) -> Any | None:
+        """Devolve o valor guardado se ainda estiver dentro do TTL, senão None."""
+        entrada = self._entradas.get(chave)
+        if entrada is None:
+            return None
+
+        gravado_em, valor = entrada
+        idade = time.monotonic() - gravado_em
+        if idade >= self.ttl_segundos:
+            return None
+
+        logger.debug("Cache hit para '%s' (idade: %.1fs).", chave, idade)
+        return valor
+
+    def guardar(self, chave: str, valor: Any) -> None:
+        """Guarda o valor com o instante atual."""
+        self._entradas[chave] = (time.monotonic(), valor)
+
+    def limpar(self) -> None:
+        """
+        Descarta tudo.
+
+        Hoje só os testes chamam. O gancho natural é invalidar o cache logo após
+        uma ingestão bem-sucedida — sem isso, a gestora que acaba de subir um CSV
+        continua vendo os números antigos por até cinco minutos, a menos que a tela
+        peça `force_refresh`. Ligar isso é mudança de comportamento e ficou de fora
+        desta fase de propósito; na Fase 3 vira um consumidor de evento.
+        """
+        self._entradas.clear()
+
+
+_cache = _CacheComTTL(_CACHE_TTL_SEGUNDOS)
+
+
+# -----------------------------------------------------------------------------
+# CONSULTAS
+# -----------------------------------------------------------------------------
+
+
+def _consultar_com_cache(
+    chave: str,
+    consulta: Callable[[AporteRepositorio], Any],
+    *,
+    force_refresh: bool,
+    sessao_factory: FabricaDeSessao,
+    vazio: Any,
+) -> Any:
+    """
+    Executa uma consulta com cache e tratamento de falha padronizados.
+
+    COMO FUNCIONA:
+        1. Cache — Fora do `force_refresh`, um valor válido é devolvido sem abrir
+           conexão com o banco.
+        2. Consulta — Abre a sessão, monta o repositório e executa.
+        3. Gravação — Só um resultado bem-sucedido entra no cache. Uma falha NÃO é
+           cacheada: fosse cacheada, uma indisponibilidade de segundos esconderia
+           os dados por cinco minutos.
+        4. Falha — A exceção é registrada e engolida, devolvendo o valor vazio.
+
+    CARACTERIZAÇÃO DE COMPORTAMENTO DISCUTÍVEL: para quem está na tela, banco fora
+    do ar é indistinguível de "não há aportes" — aparecem zeros, não um aviso de
+    erro. Na Fase 2 isso deve virar um 5xx explícito no endpoint.
+
+    Args:
+        chave (str): Chave de cache da consulta.
+        consulta (Callable): Recebe o repositório e devolve o resultado.
+        force_refresh (bool): Ignora o cache quando True.
+        sessao_factory (FabricaDeSessao): De onde vem a sessão de banco.
+        vazio (Any): O que devolver em caso de falha.
+
+    Returns:
+        Any: O resultado da consulta, o valor cacheado, ou `vazio` em caso de falha.
+    """
+    # --- 1. CACHE ---
+    if not force_refresh:
+        cacheado = _cache.obter(chave)
+        if cacheado is not None:
+            return cacheado
+
+    try:
+        # --- 2. CONSULTA ---
+        with sessao_factory() as sessao:
+            resultado = consulta(AporteRepositorio(sessao))
+
+        # --- 3. GRAVAÇÃO ---
+        _cache.guardar(chave, resultado)
+        return resultado
+
+    except Exception as exc:
+        # --- 4. FALHA ---
+        logger.error("Falha na consulta '%s': %s", chave, exc, exc_info=True)
+        return vazio
 
 
 def buscar_metricas_blocos_liquidez(
-    *, cpf_investidor: str, force_refresh: bool = False
-) -> list[dict[str, Any]]:
+    *,
+    documento_investidor: str,
+    force_refresh: bool = False,
+    sessao_factory: FabricaDeSessao = sessao_padrao,
+) -> list[MetricaBloco]:
     """
-    Busca um resumo financeiro e de risco agrupado por Bloco de Liquidez,
-    filtrado pelo documento do investidor logado.
-
-    COMO FUNCIONA:
-        1. Verificação de Cache — Checa se há dados recentes para este CPF no cache
-           em memória. Se sim e dentro do TTL, retorna imediatamente sem tocar o banco.
-        2. Execução da Query — Consulta a tb_aporte via rx.session() agrupando por bloco,
-           filtrando documentos apenas com dígitos (REGEXP_REPLACE).
-        3. Atualização do Cache — Salva o resultado no cache com o timestamp atual.
-        4. Retorno — Devolve a lista de dicts com as métricas por bloco.
+    Busca as métricas por Bloco de Liquidez da carteira de um investidor.
 
     Args:
-        cpf_investidor (str): CPF/CNPJ do investidor (somente dígitos) para filtro.
-        force_refresh (bool): Se True, ignora o cache e busca dados frescos do banco.
+        documento_investidor (str): CPF/CNPJ do investidor, somente com dígitos.
+        force_refresh (bool): Ignora o cache — usar após uma ingestão.
+        sessao_factory (FabricaDeSessao): Fábrica de sessão de banco.
 
     Returns:
-        list[dict[str, Any]]: Lista de dicts com as métricas por bloco de liquidez.
-                              Retorna lista vazia em caso de erro.
+        list[MetricaBloco]: Blocos do investidor. Lista vazia em caso de falha.
     """
-    global _cache_investidor
+    return _consultar_com_cache(
+        f"blocos_investidor:{documento_investidor}",
+        lambda repositorio: repositorio.metricas_por_bloco(
+            documento_investidor=documento_investidor
+        ),
+        force_refresh=force_refresh,
+        sessao_factory=sessao_factory,
+        vazio=[],
+    )
 
-    # --- 1. VERIFICAÇÃO DE CACHE ---
-    agora = time.monotonic()
-    if not force_refresh and cpf_investidor in _cache_investidor:
-        ts, dados = _cache_investidor[cpf_investidor]
-        if (agora - ts) < _CACHE_TTL_SEGUNDOS:
-            logger.debug(
-                "Cache hit para investidor %s (idade: %.1fs).", cpf_investidor, agora - ts
+
+def buscar_metricas_gerais_gestora(
+    *,
+    force_refresh: bool = False,
+    sessao_factory: FabricaDeSessao = sessao_padrao,
+) -> list[MetricaBloco]:
+    """
+    Busca as métricas por Bloco de Liquidez de toda a carteira (visão da gestora).
+
+    Args:
+        force_refresh (bool): Ignora o cache.
+        sessao_factory (FabricaDeSessao): Fábrica de sessão de banco.
+
+    Returns:
+        list[MetricaBloco]: Todos os blocos. Lista vazia em caso de falha.
+    """
+    return _consultar_com_cache(
+        "blocos_gestora",
+        lambda repositorio: repositorio.metricas_por_bloco(),
+        force_refresh=force_refresh,
+        sessao_factory=sessao_factory,
+        vazio=[],
+    )
+
+
+def buscar_tabela_aportes_gestora(
+    *,
+    force_refresh: bool = False,
+    sessao_factory: FabricaDeSessao = sessao_padrao,
+) -> list[LinhaTabelaGestora]:
+    """
+    Busca a tabela de empresas sacadas do dashboard da gestora.
+
+    A classificação de risco e o status de adimplência, que antes vinham de um
+    `CASE WHEN` na query, agora são calculados em `domain/metricas.py` sobre o
+    score médio devolvido pelo banco. As faixas são as mesmas.
+
+    Args:
+        force_refresh (bool): Ignora o cache.
+        sessao_factory (FabricaDeSessao): Fábrica de sessão de banco.
+
+    Returns:
+        list[LinhaTabelaGestora]: Até 50 empresas, já formatadas. Vazia em falha.
+    """
+    return _consultar_com_cache(
+        "tabela_gestora",
+        lambda repositorio: metricas.montar_tabela_gestora(repositorio.empresas_sacadas()),
+        force_refresh=force_refresh,
+        sessao_factory=sessao_factory,
+        vazio=[],
+    )
+
+
+def buscar_tabela_transparencia_investidor(
+    *,
+    documento_investidor: str,
+    sessao_factory: FabricaDeSessao = sessao_padrao,
+) -> list[LinhaTransparencia]:
+    """
+    Busca a tabela de transparência do investidor (empresas por bloco).
+
+    Sem cache, por simetria com o comportamento anterior — esta consulta era feita
+    direto no state, a cada carregamento do dashboard.
+
+    Args:
+        documento_investidor (str): CPF/CNPJ do investidor, somente com dígitos.
+        sessao_factory (FabricaDeSessao): Fábrica de sessão de banco.
+
+    Returns:
+        list[LinhaTransparencia]: Linhas formatadas. Lista vazia em caso de falha.
+    """
+    try:
+        with sessao_factory() as sessao:
+            agregados = AporteRepositorio(sessao).empresas_por_bloco_do_investidor(
+                documento_investidor
             )
-            return dados
-
-    # --- 2. EXECUÇÃO DA QUERY ---
-    try:
-        # REGEXP_REPLACE remove qualquer caractere não numérico antes de comparar,
-        # garantindo que CPFs com ou sem formatação (ex: "123.456.789-00") sejam
-        # tratados de forma uniforme.
-        query = sa.text("""
-            SELECT
-                bloco_liquidez_setorial,
-                SUM(valor_mercado_atual)      AS total_alocado,
-                AVG(score_risco_interno)      AS score_medio_reputacao,
-                COUNT(id_aporte_uuid)         AS quantidade_aportes
-            FROM tb_aporte
-            WHERE bloco_liquidez_setorial IS NOT NULL
-              AND REGEXP_REPLACE(documento_investidor_cpf_cnpj, '[^0-9]', '', 'g') = :cpf_investidor
-            GROUP BY bloco_liquidez_setorial
-            ORDER BY total_alocado DESC
-        """)
-
-        with rx.session() as session:
-            result = session.execute(query, {"cpf_investidor": cpf_investidor}).mappings().fetchall()
-
-        dados_dashboard: list[dict[str, Any]] = [dict(row) for row in result]
-
-        # --- 3. ATUALIZAÇÃO DO CACHE ---
-        _cache_investidor[cpf_investidor] = (agora, dados_dashboard)
-
-        logger.info(
-            "Dados do investidor carregados: %d blocos para CPF=%s.",
-            len(dados_dashboard),
-            cpf_investidor,
-        )
-        # --- 4. RETORNO ---
-        return dados_dashboard
-
     except Exception as exc:
-        logger.error(
-            "Erro ao buscar métricas para investidor %s: %s", cpf_investidor, exc, exc_info=True
-        )
+        logger.error("Falha ao buscar tabela de transparência: %s", exc, exc_info=True)
         return []
 
-
-# -----------------------------------------------------------------------------
-# CONSULTAS DA GESTORA
-# -----------------------------------------------------------------------------
+    return metricas.montar_tabela_transparencia(agregados)
 
 
-def buscar_metricas_gerais_gestora(*, force_refresh: bool = False) -> list[dict[str, Any]]:
+def buscar_patrimonio_total(
+    *, sessao_factory: FabricaDeSessao = sessao_padrao
+) -> float:
     """
-    Busca todos os dados agregados dos blocos, sem filtro de investidor (Visão Gestora).
-
-    COMO FUNCIONA:
-        1. Verificação de Cache — Usa um cache global (sem chave de CPF) com TTL de 5 min.
-        2. Execução da Query — Agrega toda a tb_aporte por bloco de liquidez.
-        3. Atualização do Cache — Persiste resultado e timestamp no cache global.
-        4. Retorno — Lista de dicts com métricas de todos os blocos ativos.
+    Soma o valor de mercado de todos os aportes sob gestão.
 
     Args:
-        force_refresh (bool): Se True, ignora o cache e recarrega do banco.
+        sessao_factory (FabricaDeSessao): Fábrica de sessão de banco.
 
     Returns:
-        list[dict[str, Any]]: Lista de métricas por bloco. Lista vazia em caso de erro.
+        float: Patrimônio total. Zero em caso de falha.
     """
-    global _cache_gestora, _cache_gestora_timestamp
-
-    # --- 1. VERIFICAÇÃO DE CACHE ---
-    agora = time.monotonic()
-    if not force_refresh and _cache_gestora and (agora - _cache_gestora_timestamp) < _CACHE_TTL_SEGUNDOS:
-        logger.debug("Cache hit para gestora (idade: %.1fs).", agora - _cache_gestora_timestamp)
-        return _cache_gestora
-
-    # --- 2. EXECUÇÃO DA QUERY ---
     try:
-        query = sa.text("""
-            SELECT
-                bloco_liquidez_setorial,
-                SUM(valor_mercado_atual)      AS total_alocado,
-                AVG(score_risco_interno)      AS score_medio_reputacao,
-                COUNT(id_aporte_uuid)         AS quantidade_aportes
-            FROM tb_aporte
-            WHERE bloco_liquidez_setorial IS NOT NULL
-            GROUP BY bloco_liquidez_setorial
-            ORDER BY total_alocado DESC
-        """)
-
-        with rx.session() as session:
-            result = session.execute(query).mappings().fetchall()
-
-        dados_dashboard: list[dict[str, Any]] = [dict(row) for row in result]
-
-        # --- 3. ATUALIZAÇÃO DO CACHE ---
-        _cache_gestora = dados_dashboard
-        _cache_gestora_timestamp = agora
-
-        logger.info("Dados da gestora carregados: %d blocos.", len(dados_dashboard))
-        # --- 4. RETORNO ---
-        return dados_dashboard
-
+        with sessao_factory() as sessao:
+            return AporteRepositorio(sessao).patrimonio_total()
     except Exception as exc:
-        logger.error("Erro ao buscar métricas da gestora: %s", exc, exc_info=True)
-        return []
-
-
-# -----------------------------------------------------------------------------
-# TABELA DE APORTES (GESTORA)
-# -----------------------------------------------------------------------------
-
-# Cache específico para a tabela de aportes (ranking de empresas sacadas).
-_cache_tabela_aportes: list[dict[str, Any]] = []
-_cache_tabela_aportes_timestamp: float = 0.0
-
-
-def buscar_tabela_aportes_gestora(*, force_refresh: bool = False) -> list[dict[str, Any]]:
-    """
-    Busca dados agregados por empresa sacada para a tabela de aportes da Gestora.
-
-    Retorna empresa, CNPJ formatado, valor alocado, classificação de risco (derivada
-    do score ML com escala A+ → C-) e status de adimplência.
-
-    COMO FUNCIONA:
-        1. Verificação de Cache — TTL de 5 minutos para a tabela de empresas.
-        2. Execução da Query — Agrega tb_aporte por empresa/CNPJ, usando CASE WHEN
-           para traduzir o score numérico em nota de crédito e status de adimplência.
-        3. Formatação — Converte valores numéricos em strings no padrão brasileiro
-           (R$ 1.234.567,89) e formata CNPJs com máscara (XX.XXX.XXX/XXXX-XX).
-        4. Atualização do Cache e Retorno.
-
-    Args:
-        force_refresh (bool): Se True, ignora o cache e recarrega do banco.
-
-    Returns:
-        list[dict[str, Any]]: Lista de dicts com chaves: empresa, cnpj, valor, risco, status.
-                              Retorna lista vazia em caso de erro.
-    """
-    global _cache_tabela_aportes, _cache_tabela_aportes_timestamp
-
-    # --- 1. VERIFICAÇÃO DE CACHE ---
-    agora = time.monotonic()
-    if (
-        not force_refresh
-        and _cache_tabela_aportes
-        and (agora - _cache_tabela_aportes_timestamp) < _CACHE_TTL_SEGUNDOS
-    ):
-        logger.debug(
-            "Cache hit para tabela aportes gestora (idade: %.1fs).",
-            agora - _cache_tabela_aportes_timestamp,
-        )
-        return _cache_tabela_aportes
-
-    # --- 2. EXECUÇÃO DA QUERY ---
-    try:
-        query = sa.text("""
-            SELECT
-                empresa_sacada_nome,
-                cnpj_sacado_limpo,
-                SUM(valor_mercado_atual)  AS valor_total_alocado,
-                AVG(score_risco_interno)  AS score_medio,
-                CASE
-                    WHEN AVG(score_risco_interno) >= 80 THEN 'A+'
-                    WHEN AVG(score_risco_interno) >= 70 THEN 'A'
-                    WHEN AVG(score_risco_interno) >= 60 THEN 'A-'
-                    WHEN AVG(score_risco_interno) >= 50 THEN 'B+'
-                    WHEN AVG(score_risco_interno) >= 40 THEN 'B'
-                    ELSE 'C-'
-                END AS classificacao_risco,
-                CASE
-                    WHEN AVG(score_risco_interno) >= 60 THEN 'Adimplente'
-                    WHEN AVG(score_risco_interno) >= 40 THEN 'Atenção'
-                    ELSE 'Inadimplente'
-                END AS status_atual
-            FROM tb_aporte
-            WHERE empresa_sacada_nome IS NOT NULL
-            GROUP BY empresa_sacada_nome, cnpj_sacado_limpo
-            ORDER BY valor_total_alocado DESC
-            LIMIT 50
-        """)
-
-        with rx.session() as session:
-            result = session.execute(query).mappings().fetchall()
-
-        dados_tabela = [dict(row) for row in result]
-
-        # --- 3. FORMATAÇÃO ---
-
-        def formatar_cnpj(cnpj: str) -> str:
-            """Aplica a máscara XX.XXX.XXX/XXXX-XX ao CNPJ."""
-            cnpj = str(cnpj).zfill(14)
-            if len(cnpj) == 14 and cnpj.isdigit():
-                return f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:]}"
-            return cnpj
-
-        dados: list[dict[str, Any]] = []
-        for row in dados_tabela:
-            v = float(row["valor_total_alocado"]) if row["valor_total_alocado"] else 0.0
-            # Converte para o padrão brasileiro: 1.234.567,89
-            v_str = f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            dados.append({
-                "empresa": str(row["empresa_sacada_nome"]),
-                "cnpj": formatar_cnpj(str(row["cnpj_sacado_limpo"])),
-                "valor": f"R$ {v_str}",
-                "risco": str(row["classificacao_risco"]),
-                "status": str(row["status_atual"]),
-            })
-
-        # --- 4. ATUALIZAÇÃO DO CACHE E RETORNO ---
-        _cache_tabela_aportes = dados
-        _cache_tabela_aportes_timestamp = agora
-
-        logger.info("Tabela de aportes da gestora carregada: %d registros.", len(dados))
-        return dados
-
-    except Exception as exc:
-        logger.error("Erro ao buscar tabela de aportes da gestora: %s", exc, exc_info=True)
-        return []
+        logger.error("Falha ao buscar patrimônio total: %s", exc, exc_info=True)
+        return 0.0
