@@ -97,7 +97,7 @@ Dentro do backend a direção das dependências é regra dura: **`api/` → `age
 | Frontend | Vite, servido por nginx |
 | Autenticação | Firebase Auth *(a implementar)* |
 | Dados operacionais | Firestore *(a implementar)* |
-| Dados analíticos | Google BigQuery — `dados_fidc.tb_aporte` |
+| Dados analíticos | Google BigQuery — dataset em `BIGQUERY_DATASET` |
 | Cache | Redis *(a implementar)* |
 | LLM | ChatGroq via Langchain |
 | PDF | `markdown-pdf` |
@@ -111,6 +111,8 @@ Copie o `.env.example` de cada serviço (`backend/` e `frontend/`). O `.env` rea
 
 ```
 GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account", ...}   # ou caminho de um arquivo
+PROJECT_ID=plataforma-clara
+BIGQUERY_DATASET=dados_cvm
 REDIS_URL=redis://localhost:6379/0
 GROQ_API_KEY=gsk_...
 LLM_MODEL_NAME="groq:openai/gpt-oss-120b"

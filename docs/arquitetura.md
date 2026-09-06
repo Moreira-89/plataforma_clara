@@ -49,7 +49,7 @@ api/ ──▶ agents/ · ingestion/ · storage/ ──▶ domain/
 **Firestore** guarda o operacional: o vínculo entre o usuário do Firebase e o
 CPF/CNPJ do investidor, e os aportes que o dashboard lê.
 
-**BigQuery** (`dados_fidc.tb_aporte`) guarda o analítico. É de lá que o relatório
+**BigQuery** guarda o analítico (dataset em `BIGQUERY_DATASET`). É de lá que o relatório
 por IA puxa a carteira do investidor.
 
 **Redis** guarda o que é caro de recalcular e barato de ficar desatualizado por

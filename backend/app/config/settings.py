@@ -36,6 +36,8 @@ class Configuracao(BaseSettings):
 
     # JSON da service account inline, ou caminho de arquivo.
     google_application_credentials: str = ""
+    project_id: str = "plataforma-clara"
+    bigquery_dataset: str = "dados_cvm"
 
     redis_url: str = ""
 

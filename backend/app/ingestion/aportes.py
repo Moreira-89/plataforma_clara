@@ -20,6 +20,7 @@ import pandas as pd
 from google.cloud import bigquery
 
 from app.api.schemas.contratos import ResultadoIngestao
+from app.config.settings import settings
 from app.ingestion.csv_processor import COLUNAS_OBRIGATORIAS, processar_arquivo_csv
 from app.storage.bigquery import criar_cliente_bigquery
 
@@ -28,8 +29,8 @@ logger = logging.getLogger(__name__)
 # Datas que o BigQuery recebe como string ISO 8601.
 _COLUNAS_DATA_BIGQUERY = ("data_vencimento", "data_referencia_competencia")
 
-_PROJETO_BIGQUERY = "plataforma-clara"
-_TABELA_BIGQUERY = "plataforma-clara.dados_fidc.tb_aporte"
+_PROJETO_BIGQUERY = settings.project_id
+_TABELA_BIGQUERY = f"{settings.project_id}.{settings.bigquery_dataset}.tb_aporte"
 
 # Schema explícito do job: sem ele o BigQuery infere tipo errado do DataFrame.
 _SCHEMA_BIGQUERY = [

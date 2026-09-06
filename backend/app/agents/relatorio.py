@@ -27,6 +27,7 @@ from langchain_groq import ChatGroq
 from markdown_pdf import MarkdownPdf, Section
 from pydantic import SecretStr
 
+from app.config.settings import settings
 from app.domain import identidade
 from app.storage.bigquery import criar_cliente_bigquery
 
@@ -36,8 +37,8 @@ from app.storage.bigquery import criar_cliente_bigquery
 
 logger = logging.getLogger(__name__)
 
-_PROJETO_ID = "plataforma-clara"
-_TABELA_APORTES_BQ = f"{_PROJETO_ID}.dados_fidc.tb_aporte"
+_PROJETO_ID = settings.project_id
+_TABELA_APORTES_BQ = f"{_PROJETO_ID}.{settings.bigquery_dataset}.tb_aporte"
 _ROOT_DIR = Path(__file__).resolve().parents[2]
 _PDF_REFERENCIA_PATH = _ROOT_DIR / "Relatório de Insights Financeiros FIDC - Google Gemini.pdf"
 _MAX_REF_CHARS = 5000

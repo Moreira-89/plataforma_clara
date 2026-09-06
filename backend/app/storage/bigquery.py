@@ -14,6 +14,8 @@ from pathlib import Path
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
+from app.config.settings import settings
+
 # -----------------------------------------------------------------------------
 # INICIALIZAÇÃO
 # -----------------------------------------------------------------------------
@@ -21,7 +23,7 @@ from google.oauth2 import service_account
 logger = logging.getLogger(__name__)
 
 # ID padrão do projeto GCP utilizado pela plataforma.
-_PROJETO_ID = "plataforma-clara"
+_PROJETO_ID = settings.project_id
 
 
 # -----------------------------------------------------------------------------
@@ -97,7 +99,7 @@ def criar_cliente_bigquery(project_id: str | None = None) -> bigquery.Client:
            Credentials do ambiente (útil no Cloud Run, GKE, etc).
 
     Args:
-        project_id (Optional[str]): ID do projeto GCP. Padrão: "plataforma-clara".
+        project_id (Optional[str]): ID do projeto GCP. Padrão: settings.project_id.
 
     Returns:
         bigquery.Client: Cliente BigQuery autenticado e pronto para uso.
