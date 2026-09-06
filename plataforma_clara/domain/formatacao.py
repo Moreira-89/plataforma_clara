@@ -11,25 +11,8 @@ do cliente: a API entrega número, a UI decide como exibir. Até lá, o formato
 precisa continuar idêntico ao que o investidor vê hoje.
 """
 
-from typing import Any
 
 
-def para_float(valor: Any) -> float:
-    """
-    Conversão tolerante de qualquer valor para float.
-
-    Usada nos dados vindos de agregações SQL, onde `None` e `Decimal` convivem.
-
-    Args:
-        valor (Any): Valor a converter. `None`, "" e 0 viram 0.0.
-
-    Returns:
-        float: O valor convertido, ou 0.0 quando a conversão é impossível.
-    """
-    try:
-        return float(valor or 0)
-    except (TypeError, ValueError):
-        return 0.0
 
 
 def formatar_numero(valor: float) -> str:
@@ -83,19 +66,6 @@ def formatar_milhoes(valor: float) -> str:
     return f"R$ {f'{valor / 1_000_000:,.1f}'.replace('.', ',')}M"
 
 
-def para_milhoes(valor: float) -> float:
-    """
-    Converte um valor em reais para milhões, arredondado em duas casas.
-
-    Usada nos gráficos, que plotam a escala em milhões para caber no eixo.
-
-    Args:
-        valor (float): Valor em reais.
-
-    Returns:
-        float: Valor dividido por 1.000.000 — ex: 12.35.
-    """
-    return round(valor / 1_000_000, 2)
 
 
 def formatar_cnpj(cnpj: str) -> str:

@@ -126,15 +126,6 @@ class LinhaTransparencia(BaseModel):
 # -----------------------------------------------------------------------------
 
 
-class CardBloco(BaseModel):
-    """Um card da página Explorar Blocos, com os filtros já aplicados."""
-
-    id_bloco: str = Field(description="Nome do bloco em URL-encode, para a rota dinâmica")
-    nome: str
-    setor: str
-    volume: str = Field(description="Já formatado: R$ 12,3M")
-    score_literal: str
-    rentabilidade: str
 
 
 class EmpresaDoBloco(BaseModel):
@@ -153,7 +144,6 @@ class DetalheBloco(BaseModel):
     volume_total: str = "R$ 0,00"
     score_medio: str = "N/A"
     prazo_medio: str = "N/A"
-    rentabilidade_alvo: str = "N/A"
     empresas: list[EmpresaDoBloco] = Field(default_factory=list)
 
 

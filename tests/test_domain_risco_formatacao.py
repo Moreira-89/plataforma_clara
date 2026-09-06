@@ -56,32 +56,6 @@ def test_formato_da_pagina_de_detalhes(score, esperado):
 
 
 @pytest.mark.parametrize(
-    ("score", "esperado"),
-    [
-        (85.0, "Baixo (A+)"),
-        (75.0, "Baixo (A)"),
-        (65.0, "Moderado (A-)"),
-        (55.0, "Médio (B+)"),
-        (45.0, "Alto (B)"),
-        (10.0, "Crítico (C-)"),
-    ],
-)
-def test_formato_do_kpi_do_dashboard(score, esperado):
-    """
-    CARACTERIZAÇÃO DE INCONSISTÊNCIA CONHECIDA: o vocabulário de nível aqui NÃO é o
-    mesmo da página de detalhes. Um score de 45 é 'Médio Risco' no bloco e 'Alto' no
-    KPI; 65 é 'Baixo' lá e 'Moderado' aqui. A divergência é anterior à Fase 1 e foi
-    preservada de propósito — unificar é decisão de produto.
-    """
-    assert risco.classificar_nivel_com_nota(score) == esperado
-
-
-def test_score_zerado_no_kpi_vira_na_em_vez_de_critico():
-    """Sem dados, a plataforma não afirma que o risco é crítico — mostra 'N/A'."""
-    assert risco.classificar_nivel_com_nota(0.0) == "N/A"
-
-
-@pytest.mark.parametrize(
     ("score", "status"),
     [
         (85.0, "Adimplente"),
@@ -155,11 +129,3 @@ def test_valor_em_milhoes_acima_de_um_bilhao_sai_errado():
     o atual da tela e foi preservado; corrigir é mudança de UI, prevista para a Fase 5.
     """
     assert formatacao.formatar_milhoes(1_500_000_000.0) == "R$ 1,500,0M"
-
-
-@pytest.mark.parametrize(
-    ("entrada", "esperado"), [(None, 0.0), ("", 0.0), ("abc", 0.0), ("12.5", 12.5)]
-)
-def test_conversao_tolerante_para_float(entrada, esperado):
-    """Agregações SQL devolvem None e Decimal; nada disso pode derrubar a tela."""
-    assert formatacao.para_float(entrada) == esperado

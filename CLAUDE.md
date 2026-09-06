@@ -101,14 +101,13 @@ domain/                    # camada pura — proibido importar framework de entr
   formatacao.py            #   moeda, CNPJ e percentual no padrão BR
   identidade.py            #   normalização/validação de CPF, CNPJ e e-mail
   seguranca.py             #   hash bcrypt — único lugar que lida com senha
-  projecoes.py             #   séries SIMULADAS dos gráficos (dado inventado)
   erros.py                 #   exceções de negócio
 infra/
   db.py                    #   engine, sessão e dependência de sessão
   repositorios/            #   todo o SQL (aporte.py, usuario.py)
 services/                  # orquestração: dashboard, bloco, ingestão, auth, IA, BigQuery
 alembic/                   # migrações (ver aviso acima sobre o histórico)
-assets/                    # logos; a clara é lida pelo gerador de PDF, não é só decoração
+assets/                    # a logo lida pelo gerador de PDF do relatório
 ```
 
 ## Convenções de Código
@@ -123,7 +122,7 @@ assets/                    # logos; a clara é lida pelo gerador de PDF, não é
 
 - Nunca commitar `.env` ou credenciais de service account — ambos já cobertos por `.gitignore`, não recriar arquivos de credencial na raiz do projeto.
 - Nunca alterar o schema de `tb_aporte` só no PostgreSQL ou só no BigQuery — as duas tabelas precisam ficar sincronizadas manualmente (não há migração automática entre elas).
-- Nunca apresentar como real o que vem de `domain/projecoes.py` ou de `metricas.rentabilidade_estavel`: são números simulados. A tela que os exibia sem rótulo foi removida — não recriar o problema na próxima.
+- Nunca reintroduzir número inventado como se fosse dado. A evolução do AUM, o rendimento projetado e a rentabilidade dos blocos eram fatores fixos e um hash do nome do bloco, exibidos ao lado de números reais sem rótulo. Foram removidos. Se a tela nova precisar desses campos, ou vêm de dado real, ou vão rotulados como estimativa.
 - Nunca usar hash de senha fora do padrão bcrypt de `domain/seguranca.py` — é o único módulo autorizado a gerar ou conferir hash, e o cost factor 12 não pode ser reduzido (hashes antigos seguiriam válidos, e só as senhas novas ficariam fracas).
 - Nunca escrever SQL fora de `infra/repositorios/`, e nunca concatenar valor de usuário na query — documento sempre como bind parameter.
 - Nunca reintroduzir `reflex` no projeto, e nunca importar o framework de entrega (hoje nenhum, amanhã `fastapi`) dentro de `domain/` ou `infra/`. É essa regra que faz trocar de camada de entrega ser uma troca, e não uma reescrita.

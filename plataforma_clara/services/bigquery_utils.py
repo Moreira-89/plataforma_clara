@@ -9,7 +9,6 @@ Suporta dois modos de configuração da variável GOOGLE_APPLICATION_CREDENTIALS
 import json
 import logging
 import os
-import tempfile
 from pathlib import Path
 
 from google.cloud import bigquery
@@ -135,84 +134,5 @@ def criar_cliente_bigquery(project_id: str | None = None) -> bigquery.Client:
     return bigquery.Client(project=project_id)
 
 
-def salvar_credenciais_em_arquivo_temporario() -> Path | None:
-    """
-    Salva as credenciais em um arquivo temporário no disco.
-
-    COMO FUNCIONA:
-        1. Leitura — Obtém o dicionário de credenciais via _parsear_credenciais_do_env().
-        2. Escrita — Cria um arquivo temporário com sufixo .json e serializa o dict.
-        3. Retorno do Caminho — Devolve o Path para o arquivo, útil para ferramentas
-           que exigem um arquivo físico (ex: bibliotecas legadas).
-
-    Returns:
-        Optional[Path]: Caminho do arquivo temporário ou None se não houver credenciais.
-
-    Raises:
-        OSError: Indiretamente, em caso de falha na criação do arquivo temporário.
-    """
-    # --- 1. LEITURA ---
-    credenciais_dict = _parsear_credenciais_do_env()
-
-    if not credenciais_dict:
-        return None
-
-    # --- 2. ESCRITA ---
-    try:
-        # delete=False é necessário para que o arquivo persista após o fechamento,
-        # permitindo que outras ferramentas o leiam pelo caminho retornado.
-        temp_file = tempfile.NamedTemporaryFile(
-            mode="w",
-            suffix=".json",
-            delete=False,
-            encoding="utf-8",
-        )
-        json.dump(credenciais_dict, temp_file)
-        temp_file.close()
-
-        # --- 3. RETORNO DO CAMINHO ---
-        logger.debug("Credenciais salvas em arquivo temporário: %s", temp_file.name)
-        return Path(temp_file.name)
-    except Exception as e:
-        logger.error("Falha ao salvar credenciais em arquivo temporário: %s", e)
-        return None
 
 
-def obter_info_credenciais() -> dict:
-    """
-    Retorna um dicionário de diagnóstico sobre as credenciais configuradas.
-
-    Útil para logs de saúde da aplicação — nunca expõe dados sensíveis.
-
-    COMO FUNCIONA:
-        1. Inspecão do Env — Verifica o tipo da variável (JSON inline ou arquivo).
-        2. Extração de Metadados — Lê project_id e client_email do dict de credenciais.
-        3. Retorno — Devolve o dict de diagnóstico sem expor segredos.
-
-    Returns:
-        dict: Informações de diagnóstico com chaves: configurada, tipo, projeto,
-              email_servico.
-    """
-    # --- 1. INSPEÇÃO DO ENV ---
-    env_cred = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip()
-    credenciais_dict = _parsear_credenciais_do_env()
-
-    info: dict = {
-        "configurada": bool(env_cred),
-        "tipo": None,
-        "projeto": None,
-        "email_servico": None,
-    }
-
-    if env_cred.startswith("{"):
-        info["tipo"] = "string_json"
-    elif Path(env_cred).is_file():
-        info["tipo"] = "arquivo"
-
-    # --- 2. EXTRAÇÃO DE METADADOS ---
-    if credenciais_dict:
-        info["projeto"] = credenciais_dict.get("project_id", "desconhecido")
-        info["email_servico"] = credenciais_dict.get("client_email", "desconhecido")
-
-    # --- 3. RETORNO ---
-    return info

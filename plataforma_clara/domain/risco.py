@@ -86,24 +86,6 @@ def classificar_nota_com_nivel(score: float) -> str:
     return f"{faixa.nota} ({faixa.nivel_detalhe} Risco)"
 
 
-def classificar_nivel_com_nota(score: float) -> str:
-    """
-    Traduz o score no nível acompanhado da nota — ex: 'Baixo (A+)'.
-
-    Formato usado no KPI de risco médio do dashboard. Um score zerado (ou ausente)
-    devolve 'N/A' em vez de 'Crítico (C-)': sem dados, a plataforma não afirma que
-    o risco é crítico.
-
-    Args:
-        score (float): Score de risco interno, de 0 a 100.
-
-    Returns:
-        str: Nível e nota — ex: 'Moderado (A-)' — ou 'N/A' quando o score é zero.
-    """
-    if not score:
-        return "N/A"
-    faixa = _faixa_de(score)
-    return f"{faixa.nivel_kpi} ({faixa.nota})"
 
 
 def classificar_adimplencia(score: float) -> str:

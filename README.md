@@ -112,4 +112,4 @@ Nunca versionar o `.env` nem o arquivo de credencial da service account.
 
 - **Dupla escrita sem transação.** O aporte é gravado no PostgreSQL e depois no BigQuery, fora de qualquer transação. Uma falha no segundo passo diverge os dados em silêncio.
 - **Schema em dois lugares.** Mudar `tb_aporte` exige alterar o modelo (`domain/models.py`), o schema do job (`services/ingestao_service.py`) e o contrato do CSV (`services/csv_processor.py`). Não há migração automática entre Postgres e BigQuery.
-- **Números simulados.** `domain/projecoes.py` e `metricas.rentabilidade_estavel` produzem séries inventadas (fatores fixos e um hash do nome do bloco). A tela que os exibia sem rótulo, ao lado de dados reais, foi removida junto com o Reflex — não recriar o problema na próxima.
+- **Números simulados, removidos.** A evolução do AUM, o rendimento projetado e a rentabilidade por bloco eram inventados (fatores fixos e um hash do nome do bloco) e apareciam ao lado de dados reais sem rótulo. Saíram junto com a UI. Se voltarem, que venham de dado real ou rotulados como estimativa.

@@ -96,14 +96,3 @@ def obter_sessao() -> Iterator[Session]:
         yield sessao_ativa
 
 
-def redefinir_engine() -> None:
-    """
-    Descarta a engine atual, forçando a recriação na próxima chamada.
-
-    Existe para os testes, que trocam a `DATABASE_URL` entre casos. Em produção
-    não deve ser chamada: descartar a engine descarta o pool de conexões junto.
-    """
-    global _engine
-    if _engine is not None:
-        _engine.dispose()
-    _engine = None
