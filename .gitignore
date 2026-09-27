@@ -217,3 +217,6 @@ __marimo__/
 
 # Build da documentação (mkdocs)
 site/
+
+# Notas privadas de planejamento (não vai pro GitHub)
+/notas-planejamento/
