@@ -2,6 +2,7 @@
 
 Como a plataforma é construída. Para o que ela faz, sem tecnologia, ver
 [Produto](../produto/index.md). Para o que falta implementar, ver [Roadmap](../roadmap/index.md).
+Para rodar o projeto localmente, ver [Desenvolvimento](desenvolvimento.md).
 
 ## Visão geral
 
