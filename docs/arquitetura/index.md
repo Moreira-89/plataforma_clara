@@ -1,7 +1,7 @@
 # Arquitetura
 
 Como a plataforma é construída. Para o que ela faz, sem tecnologia, ver
-[Produto](produto.md). Para o que falta implementar, ver [Roadmap](roadmap.md).
+[Produto](../produto/index.md). Para o que falta implementar, ver [Roadmap](../roadmap/index.md).
 
 ## Visão geral
 
@@ -66,6 +66,6 @@ api/ ──▶ agents/ · storage/ ──▶ domain/
 !!! danger "Nada escreve em tb_aporte hoje"
     O fluxo que gravava aportes (upload manual pela gestora) foi removido de
     propósito — não é assim que a plataforma vai operar. O que o substitui
-    ainda não foi desenhado (ver [Roadmap](roadmap.md)). Até essa decisão
+    ainda não foi desenhado (ver [Roadmap](../roadmap/index.md)). Até essa decisão
     existir, o relatório por IA sempre falha ao buscar a carteira do
     investidor: a tabela está vazia e ninguém a alimenta.

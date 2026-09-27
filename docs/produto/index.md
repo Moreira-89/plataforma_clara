@@ -1,7 +1,7 @@
 # Produto
 
 Como a plataforma funciona do ponto de vista de quem usa — sem entrar em qual
-tecnologia resolve cada parte. Para isso, ver [Arquitetura](arquitetura.md).
+tecnologia resolve cada parte. Para isso, ver [Arquitetura](../arquitetura/index.md).
 
 Dois perfis usam a plataforma: **investidor** e **gestora**. Cada um vê uma
 versão diferente dos mesmos dados.
@@ -39,7 +39,7 @@ versão diferente dos mesmos dados.
     removido de propósito: não é assim que a plataforma vai operar com
     usuários reais. A ideia é que os dados venham de uma consulta direta a
     algum sistema que já os tenha, mas **isso ainda não foi desenhado**. É a
-    decisão mais urgente do projeto. Ver [Roadmap](roadmap.md).
+    decisão mais urgente do projeto. Ver [Roadmap](../roadmap/index.md).
 
 ## O que o score de risco é — e o que não é
 

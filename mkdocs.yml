@@ -25,10 +25,11 @@ theme:
     - search.suggest
 
 nav:
-  - Visão Geral: index.md
-  - Produto: produto.md
-  - Arquitetura: arquitetura.md
-  - Roadmap: roadmap.md
+  - Início: index.md
+  - Visão Geral: visao-geral/index.md
+  - Produto: produto/index.md
+  - Arquitetura: arquitetura/index.md
+  - Roadmap: roadmap/index.md
   - Desenvolvimento: desenvolvimento.md
 
 markdown_extensions:
