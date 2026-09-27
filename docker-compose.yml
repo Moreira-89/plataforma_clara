@@ -1,60 +1,55 @@
-# Ambiente de desenvolvimento local completo.
-#
-# O Redis já entra aqui, embora ainda não seja usado pela aplicação: a Fase 3 do
-# roadmap (event-driven) vai precisar dele para cache distribuído e, dependendo da
-# decisão AD-2, também como broker via Redis Streams. Subir junto agora evita mexer
-# no compose depois.
+# Ambiente de desenvolvimento local. Não vai para produção — ver docs/desenvolvimento.md.
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: clara
-      POSTGRES_PASSWORD: clara
-      POSTGRES_DB: plataforma_clara
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      # A aplicação só sobe depois que o banco aceita conexões, senão o Reflex
-      # falha no primeiro rx.session() e derruba o container.
-      test: ["CMD-SHELL", "pg_isready -U clara -d plataforma_clara"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack:latest
     ports:
-      - "6379:6379"
+      - "6379:6379"   # servidor
+      - "8001:8001"   # RedisInsight
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
+    volumes:
+      - redis_data:/data
 
-  app:
-    build: .
+  backend:
+    build: ./backend
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
+    env_file:
+      - ./backend/.env
     environment:
-      DATABASE_URL: postgresql://clara:clara@postgres:5432/plataforma_clara
+      # Na rede do compose o Redis é 'redis', não localhost.
       REDIS_URL: redis://redis:6379/0
-      # Credenciais externas vêm do .env local e nunca são versionadas.
-      GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS:-}
-      GROQ_API_KEY: ${GROQ_API_KEY:-}
     ports:
-      - "3000:3000"
       - "8000:8000"
     volumes:
-      # Bind mount para hot reload: alterações no código refletem sem rebuild.
-      - .:/app
-      # Volume anônimo protege o .web do container de ser sobrescrito pelo host.
-      - /app/.web
+      - ./backend:/app
+    # --reload só aqui; o CMD do Dockerfile é o de produção.
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # O Vite embute a URL no bundle em tempo de build.
+        VITE_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+    environment:
+      PORT: 8080
+    ports:
+      - "5173:8080"
+
+  docs:
+    image: squidfunk/mkdocs-material:latest
+    ports:
+      - "8080:8000"
+    volumes:
+      - .:/docs
 
 volumes:
-  postgres_data:
+  redis_data:

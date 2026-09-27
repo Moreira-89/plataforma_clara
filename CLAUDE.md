@@ -2,139 +2,175 @@
 
 ## Visão Geral
 
-A Plataforma Clara reduz a assimetria de informação entre gestoras e investidores em FIDCs (Fundos de Investimento em Direitos Creditórios). Gestoras fazem upload de aportes via CSV; investidores acessam dashboard com score de risco preditivo (Score Nuclea), visualização de Blocos de Liquidez e relatórios em PDF gerados por IA. Projeto acadêmico (FIAP), com foco em robustez e baixo custo para MVP.
+A Plataforma Clara reduz a assimetria de informação entre gestoras e investidores em FIDCs (Fundos de Investimento em Direitos Creditórios). Investidores acessam dashboard com score de risco, visualização de Blocos de Liquidez e relatórios em PDF gerados por IA. Projeto acadêmico (FIAP).
+
+**Como os dados dos aportes chegam à plataforma ainda não foi decidido.** O upload manual de CSV pela gestora foi removido de propósito — não faz sentido operacionalmente. A ideia é consultar direto algum serviço que já tenha esses dados, mas isso não está desenhado. Não invente esse fluxo.
+
+**Monorepo em reconstrução.** O projeto nasceu como monolito Reflex; o Reflex e o Postgres foram removidos, e a aplicação está sendo remontada como backend FastAPI + frontend Vite, sobre GCP.
 
 ## Comandos
 
 ```bash
-# Setup
-python -m venv .venv
-source .venv/bin/activate
+# Backend
+cd backend
+python -m venv .venv && source .venv/bin/activate   # Python 3.12
 pip install -r requirements.txt
-cp .env.example .env   # preencher DATABASE_URL, GOOGLE_APPLICATION_CREDENTIALS, GROQ_API_KEY
+cp .env.example .env          # preencher antes de subir
+uvicorn main:app --reload     # http://localhost:8000/docs
 
-# Dev
-reflex run              # http://localhost:3000
+pytest                        # suíte
+pytest -m "not integracao"    # o que a CI roda
+ruff check ..                 # lint (config no pyproject.toml da raiz)
 
-# Banco de dados (Alembic direto — os modelos não usam mais rx.Model)
-alembic revision --autogenerate -m "descricao"
-alembic upgrade head
+# Frontend
+cd frontend
+npm install
+npm run dev                   # http://localhost:5173
 
-# Testes
-pip install -r requirements-dev.txt
-pytest                      # suíte completa
-pytest -m "not integracao"  # o que a CI roda
-ruff check .                # lint
-
-# Docker (app + postgres + redis)
+# Tudo junto: backend (8000), frontend (5173), RedisInsight (8001), docs (8080)
 docker compose up --build
+docker compose up docs      # só a documentação
 ```
 
 Use Python 3.12. O `requirements.txt` fixa `pandas~=2.3.3`, que não tem wheel para 3.14 — a instalação falha ao compilar dependências transitivas.
 
-A suíte é de **caracterização**: documenta o comportamento atual (incluindo bugs conhecidos, marcados como tal nas docstrings), não o comportamento desejado. Um teste que quebra numa refatoração é uma pergunta ("essa mudança foi intencional?"), não necessariamente um erro. Não "consertar" um teste marcado como CARACTERIZAÇÃO DE BUG sem corrigir o código junto.
+A suíte é de **caracterização**: documenta o comportamento atual (incluindo bugs conhecidos, marcados nas docstrings), não o desejado. Um teste que quebra numa refatoração é uma pergunta ("essa mudança foi intencional?"), não necessariamente um erro.
 
-Os testes não tocam em Postgres, BigQuery nem Groq — as dependências externas são substituídas por fakes em `tests/conftest.py`. Os serviços recebem a sessão de banco por injeção (`sessao_factory=`), então testar não exige monkeypatch.
-
-**O histórico do Alembic não reproduz o schema atual**: a migração que cria `tb_usuario` declara as colunas `nome`, `email` e `senha_hash`, e nenhuma migração posterior as renomeia para os nomes que o código usa (`nome_usuario`, `email_usuario`, `senha_hash_usuario`). O banco em uso foi ajustado por fora do histórico. Confira o diff de qualquer `--autogenerate` antes de aplicar.
+Os testes não tocam em BigQuery, Groq nem Firebase: a suíte cobre só as funções puras (normalização, agregação, formatação), nunca as que fazem I/O de rede. `backend/tests/conftest.py` está vazio no momento — sem fixture nem fake nenhum.
 
 ## Arquitetura
 
-Full-stack Python único: Reflex compila o frontend em React + WebSocket e expõe o backend via FastAPI. Estado reativo (`rx.State`) sincroniza servidor e browser automaticamente. Toda operação de I/O (Postgres, BigQuery, Groq) roda em `asyncio.to_thread` para não bloquear o event loop.
-
-O código está organizado em camadas, e a direção das dependências é regra dura:
+Dois serviços independentes no mesmo repositório, cada um com o seu `Dockerfile`, para virarem dois serviços separados no Railway. O frontend fala com o backend por HTTP, usando a URL pública do serviço. Em desenvolvimento, o proxy do Vite atende `/api` — não há CORS configurado ainda.
 
 ```
-pages/ ──▶ states/ ──▶ services/ ──▶ infra/ ──▶ domain/
- (UI)     (Reflex)    (orquestração)  (banco)   (regras puras)
+┌──────────────┐        HTTP        ┌──────────────┐
+│  frontend/   │ ─────────────────▶ │  backend/    │
+│  Vite+nginx  │                    │  FastAPI     │
+└──────────────┘                    └──────┬───────┘
+                                           │
+        ┌──────────────┬─────────────┬─────┴────────┐
+        ▼              ▼             ▼              ▼
+   Firebase Auth   Firestore     BigQuery        Redis
+   (identidade)   (operacional)  (analítico)     (cache)
+                                      │
+                                      ▼
+                                 ChatGroq → relatório PDF
 ```
 
-- **`domain/`** — regras de negócio, modelos de tabela e contratos Pydantic. **Não pode importar `reflex`, `fastapi` nem `services/`.** É o que atravessa a migração intacto.
-- **`infra/`** — engine, sessão e repositórios. Todo o SQL vive aqui.
-- **`services/`** — orquestra domínio + infra, decide escopo de transação, cache e tratamento de falha. Recebe a sessão por injeção (`sessao_factory=`).
-- **`states/`** — só o que é de tela: ler campo, exibir mensagem, redirecionar. Nenhum cálculo novo.
+Dentro do backend a direção das dependências é regra dura:
 
 ```
-Frontend (Reflex/React) ⇄ WebSocket ⇄ Backend (Reflex Server/FastAPI)
-                                            │
-                    ┌───────────────────────┼────────────────────────┐
-                    ▼                                                 ▼
-         PostgreSQL (Supabase)                              Google BigQuery
-         tb_usuario, tb_aporte                              dados_fidc.tb_aporte
-         (OLTP, autenticação)                                (OLAP, analytics)
-                                                                       │
-                                                                       ▼
-                                                              ChatGroq (LLaMA 3 70B)
-                                                              → geração de relatório PDF
+api/ ──▶ agents/ · storage/ ──▶ domain/
+(entrega)  (orquestração/IO)  (regras puras)
 ```
 
-Dupla persistência: cada aporte é gravado no PostgreSQL **e** no BigQuery em `WRITE_APPEND`. Qualquer mudança de schema em `tb_aporte` precisa ser replicada nos dois lados — no modelo (`domain/models.py`), no schema do job (`states/ingestao_dados_state.py::_SCHEMA_BIGQUERY`) e no contrato do CSV (`services/csv_processor.py::COLUNAS_OBRIGATORIAS`). O `tests/test_domain_models.py` trava a correspondência.
+- **`domain/`** — regras de negócio puras. **Não pode importar `fastapi`, nem `agents/`, `api/` ou `storage/`.** É o que atravessa qualquer troca de stack intacto.
+- **`api/`** — endpoints, schemas de entrada/saída e dependências do FastAPI. Só orquestra.
+- **`agents/`** — tudo de IA: prompt, chamada ao LLM, montagem do relatório.
+- **`storage/`** — clientes de persistência e credenciais (BigQuery hoje; Firestore e Redis a entrar).
+- **`config/`** — `settings.py` é o **único** lugar que lê variável de ambiente.
+- **`jobs/`** — tarefas de fundo e agendadas.
 
 ## Stack
 
 | Camada | Tecnologia |
 |---|---|
-| Framework | Reflex (Python → React + FastAPI) |
-| DB operacional | PostgreSQL via Supabase, ORM SQLAlchemy |
-| DB analítico | Google BigQuery (`dados_fidc.tb_aporte`) |
-| LLM | ChatGroq — `llama-3.3-70b-versatile`, temperatura 0.1, `max_tokens=900` |
-| PDF | `markdown-pdf` (Markdown → PDF) |
-| Dados | Pandas |
-| Auth | bcrypt (12 rounds) |
-| UI | Radix UI / `rx.color()`, ícones Lucide |
-| ML | Nenhum modelo treinado no repositório — o `score_risco_interno` chega pronto como coluna do CSV de ingestão |
-| Orquestração de IA | Langchain (prompt + invocação do Groq). `langgraph` está no `requirements.txt` mas ainda não é usado |
+| Hospedagem | Railway (dois serviços: backend e frontend) |
+| API | FastAPI + uvicorn |
+| Frontend | Vite, servido por nginx |
+| Autenticação | Firebase Auth *(a implementar)* |
+| Dados operacionais | Firestore *(a implementar)* |
+| Dados analíticos | Google BigQuery (dataset em `BIGQUERY_DATASET`) |
+| Cache | Redis *(a implementar)* |
+| LLM | ChatGroq via Langchain |
+| PDF | `markdown-pdf` |
+| Dados | pandas |
+| ML | Nenhum modelo no repositório — `score_risco_interno` chega pronto, calculado por fora |
 
 ## Estrutura de Diretórios
 
 ```
-plataforma_clara.py       # entry point: rotas e instanciação do app
-rxconfig.py                # config Reflex (db_url, app_name)
-domain/                    # camada pura — proibido importar reflex/fastapi
-  models.py                #   tabelas SQLModel: tb_usuario, tb_aporte
-  schemas.py               #   contratos Pydantic v2 (entrada/saída)
-  metricas.py              #   KPIs, filtros e montagem das visões
-  risco.py                 #   escada de classificação de risco (fonte única)
-  formatacao.py            #   moeda, CNPJ e percentual no padrão BR
-  identidade.py            #   normalização/validação de CPF, CNPJ e e-mail
-  seguranca.py             #   hash bcrypt — único lugar que lida com senha
-  projecoes.py             #   séries SIMULADAS dos gráficos (dado inventado)
-  erros.py                 #   exceções de negócio
-infra/
-  db.py                    #   engine, sessão e dependência de sessão
-  repositorios/            #   todo o SQL (aporte.py, usuario.py)
-services/                  # orquestração: dashboard, bloco, ingestão, auth, IA, BigQuery
-states/                    # um State por página/fluxo (herda rx.State)
-components/sidebar.py      # sidebars reutilizáveis (gestora/investidor)
-pages/                     # uma página por rota
+backend/
+  main.py                  # cria o app e monta o lifespan. Só montagem.
+  Dockerfile
+  pytest.ini
+  requirements.txt
+  .env.example
+  app/
+    agents/                #   IA: relatorio.py e os assets do PDF
+    api/lifespan.py        #   ciclo de vida da aplicação
+    api/endpoints/         #   authentication.py, register.py (vazios ainda)
+    api/schemas/           #   contratos Pydantic de entrada e saída
+    config/                #   settings.py (env) e logging.py
+    domain/                #   risco, metricas, formatacao, identidade, erros
+    jobs/                  #   tarefas de fundo (vazio)
+    storage/               #   bigquery.py (Firestore e Redis a entrar)
+  tests/
+frontend/
+  Dockerfile               # build Node → nginx
+  vite.config.js           # proxy /api para o backend em desenvolvimento
+  src/                     # css, js, img
+  .env.example
+docs/                      # documentação MkDocs
+mkdocs.yml
+docker-compose.yml         # backend + frontend + redis-stack + docs
+pyproject.toml             # config do ruff, repositório inteiro
+pyrightconfig.json         # extraPaths para o editor resolver `from app...`
+.vscode/settings.json      # interpretador e pytest
 ```
+
+## Pontos de Atenção
+
+Instruções do dono do projeto. Valem sobre qualquer padrão default.
+
+- **Comentário no código é curto** — no máximo uma linha, dizendo o que aquele trecho faz. Explicação longa (o porquê de uma decisão, histórico, armadilha conhecida) vai para markdown em `docs/`. Não encher arquivo de comentário.
+- **Mudanças grandes estão autorizadas.** O projeto é acadêmico, ainda sem usuários. Apagar pasta, remover biblioteca, refazer camada inteira: pode. Não travar pedindo confirmação a cada passo, não repetir aviso de risco já respondido, e não tratar como perda o trabalho que vai ser refeito.
+- **Conferir o disco, não só o Git.** `git ls-files` não mostra diretório vazio, porque o Git não versiona diretório. Depois de remover coisa, verificar com `find`/`ls` — é o que o editor mostra.
+- **O `.env` fica em `backend/`**, não na raiz. Junto com o `.env.example` de cada serviço.
+- **`docs/` é MkDocs**, servido em <http://localhost:8080>. A organização atual é provisória e vai mudar.
 
 ## Convenções de Código
 
-- **Docstrings obrigatórias** em todo módulo, padrão `@user_global`: resumo, seção "COMO FUNCIONA" com passos numerados, `Args`, `Returns`, `Raises`. Comentários inline explicam o *porquê*, não o *o quê*.
+- **Docstrings obrigatórias** em todo módulo: resumo, seção "COMO FUNCIONA" com passos numerados, `Args`, `Returns`, `Raises`. A restrição de tamanho acima vale para comentários, não para docstrings.
 - **Logs**: sempre `logging.getLogger(__name__)`. Nunca `print()`.
-- **Cores de UI**: sempre `rx.color("gray", 12)` ou tokens equivalentes. Nunca hex hardcoded.
-- **Sidebars**: importar de `components/sidebar.py`. Nunca duplicar a implementação em uma página.
-- **Badges reativos**: usar `rx.cond` para `color_scheme` dinâmico, não lógica condicional fora do fluxo reativo do Reflex.
-- **I/O bloqueante** (queries, BigQuery, chamadas Groq): sempre dentro de `asyncio.to_thread`, nunca direto num handler `@rx.event` síncrono.
-- **Sessão de banco**: nunca `rx.session()`. Serviços recebem `sessao_factory=` (padrão `infra.db.sessao`); repositórios recebem a `Session` pronta e não a fecham.
-- **Regra de negócio**: mora em `domain/`. Um `rx.State` ou um endpoint só orquestra — se um cálculo aparece dentro de um `@rx.var`, ele está no lugar errado.
+- **I/O bloqueante** (BigQuery, Groq, Firestore): sempre dentro de `asyncio.to_thread` quando chamado de código assíncrono.
+- **Regra de negócio**: mora em `domain/`. Endpoint só orquestra — se um cálculo aparece dentro de um handler, está no lugar errado.
+- **Configuração**: só `config/settings.py` lê o ambiente. Nenhum `os.getenv` espalhado.
 
 ## Restrições Rígidas
 
-- Nunca commitar `.env` ou credenciais de service account — ambos já cobertos por `.gitignore`, não recriar arquivos de credencial na raiz do projeto.
-- Nunca alterar o schema de `tb_aporte` só no PostgreSQL ou só no BigQuery — as duas tabelas precisam ficar sincronizadas manualmente (não há migração automática entre elas).
-- Nunca apresentar como real o que vem de `domain/projecoes.py` ou de `metricas.rentabilidade_estavel`: são números simulados, exibidos hoje ao lado de dados verdadeiros e sem rótulo que os distinga.
-- Nunca usar hash de senha fora do padrão bcrypt de `domain/seguranca.py` — é o único módulo autorizado a gerar ou conferir hash, e o cost factor 12 não pode ser reduzido (hashes antigos seguiriam válidos, e só as senhas novas ficariam fracas).
-- Nunca escrever SQL fora de `infra/repositorios/`, e nunca concatenar valor de usuário na query — documento sempre como bind parameter.
-- Nunca importar `reflex` dentro de `domain/` ou `infra/`. É essa regra que faz a migração para FastAPI ser uma troca de camada de entrega, e não uma reescrita.
-- Nunca chamar a API do Groq fora de `services/relatorio_ia_service.py` — é o único lugar com o retry progressivo (5 tentativas com cortes crescentes na amostra de aportes, nos grupos de empresa e no texto de referência) tratado para `APIStatusError` 413.
+- Nunca commitar `.env` ou credenciais de service account. Não manter arquivo de credencial na raiz do repositório — o `COPY . .` do Docker o levaria para dentro da imagem.
+- Nunca reintroduzir número inventado como se fosse dado. A evolução do AUM, o rendimento projetado e a rentabilidade por bloco eram fatores fixos e um hash do nome do bloco, exibidos ao lado de números reais sem rótulo. Foram removidos. Se a tela nova precisar desses campos, ou vêm de dado real, ou vão rotulados como estimativa.
+- Nunca implementar autenticação própria: quem cuida de identidade e senha é o Firebase. O backend verifica o token e lê as claims.
+- Nunca chamar a API do Groq fora de `agents/relatorio.py` — é o único lugar com o retry progressivo (5 tentativas com cortes crescentes na amostra de aportes, nos grupos de empresa e no texto de referência) tratado para `APIStatusError` 413.
+- Nunca importar camada de entrega dentro de `domain/`. É essa regra que faz trocar de stack ser uma troca, e não uma reescrita.
 - Nunca assumir que existe modelo de ML no projeto: o score de risco é um dado de entrada, não um cálculo da plataforma.
 
 ## Variáveis de Ambiente
 
+Cada serviço tem o seu modelo: `backend/.env.example` e `frontend/.env.example`. O `.env` real nunca entra no repositório.
+
 ```
-DATABASE_URL=postgresql://...                    # Supabase
-GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account", ...}  # ou caminho de arquivo local
+GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account", ...}  # ou caminho de arquivo
+PROJECT_ID=plataforma-clara
+BIGQUERY_DATASET=dados_cvm
+REDIS_URL=redis://localhost:6379/0
 GROQ_API_KEY=gsk_...
+LLM_MODEL_NAME="groq:openai/gpt-oss-120b"
+LLM_TEMPERATURE=0.1
 ```
+
+Não criar variável de ambiente nova sem que algo a consuma.
+
+## O Que Ainda Não Existe
+
+Não invente que existe. Nesta ordem:
+
+1. **Fonte dos dados de aportes.** O upload de CSV foi removido de propósito (não é assim que a plataforma vai operar). Não existe, ainda, nenhum mecanismo que alimente `tb_aporte` no BigQuery — nem CSV, nem consulta a serviço externo, nada. É a decisão mais urgente em aberto.
+2. **`agents/relatorio.py` está com uma dependência quebrada.** Ele consulta `tb_aporte` no BigQuery para montar o relatório do investidor — tabela que nada mais escreve, desde a remoção do CSV. Hoje a função sempre vai levantar `ValueError("Nenhum investimento encontrado...")`. Não "conserte" isso inventando uma fonte de dados; é o item 1 que resolve.
+3. **Firebase Auth** — não há verificação de token nem rota protegida.
+4. **Endpoints** — nenhum. Nem `/health`. `api/endpoints/authentication.py` e `register.py` existem como arquivo, vazios.
+5. **Firestore** — nada implementado.
+6. **Redis** — declarado no compose, sem cliente na aplicação.
+7. **CORS** — sem middleware. Precisa entrar quando o frontend chamar a API de outro domínio.
+8. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.

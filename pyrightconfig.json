@@ -1,0 +1,15 @@
+// Config do Pylance/Pyright. extraPaths é necessário: a raiz de imports é backend/.
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": ["backend"],
+  "include": ["backend"],
+  "exclude": [
+    "**/__pycache__",
+    "**/node_modules",
+    ".venv",
+    "frontend/dist"
+  ],
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic"
+}

@@ -1,0 +1,28 @@
+# Dependências do backend. Python 3.12 (pandas 2.3.3 não tem wheel para 3.14).
+# O que ainda vai entrar e por quê: docs/pendencias.md
+
+# --- API ---
+fastapi~=0.141.1
+uvicorn[standard]~=0.52.4
+pydantic-settings~=2.15.0
+
+# --- Domínio e dados ---
+pydantic~=2.13.5
+python-dotenv~=1.2.2
+pandas~=2.3.3               # exigido pelo .to_dataframe() do relatorio.py, não por CSV
+
+# --- Google Cloud e IA ---
+google-cloud-bigquery~=3.40.1
+google-auth~=2.57.1
+db-dtypes~=1.5.1           # exigido pelo .to_dataframe() em colunas DATE/NUMERIC
+groq~=0.37.1
+langchain-core~=1.6.2
+langchain-groq~=1.1.2
+markdown-pdf~=1.13.1
+PyPDF2~=3.0.1              # descontinuado; sucessor é pypdf
+
+# --- Desenvolvimento e CI ---
+pytest~=8.4.2
+pytest-cov~=6.3.0
+ruff~=0.16.6
+httpx~=0.28.1

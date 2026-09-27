@@ -1,0 +1,53 @@
+# `docker compose up docs` → http://localhost:8080
+
+site_name: Plataforma Clara
+site_description: Transparência e análise de risco para FIDCs
+docs_dir: docs
+
+theme:
+  name: material
+  language: pt-BR
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Tema escuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Tema claro
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+
+nav:
+  - Visão Geral: index.md
+  - Produto: produto/index.md
+  - Arquitetura:
+      - arquitetura/index.md
+      - Desenvolvimento: arquitetura/desenvolvimento.md
+  - Roadmap:
+      - roadmap/index.md
+      - Em andamento: roadmap/em-andamento.md
+      - Backlog: roadmap/backlog.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+plugins:
+  - search:
+      lang: pt
