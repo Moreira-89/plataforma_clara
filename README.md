@@ -4,8 +4,7 @@
 
 Projeto acadêmico (FIAP).
 
-📖 **[Documentação completa](docs/index.md)** — problema, produto, arquitetura e roadmap.
-*(link temporário para a pasta do repositório; troca pelo GitHub Pages assim que a branch existir.)*
+📖 **[Documentação completa](https://moreira-89.github.io/plataforma_clara/)** — problema, produto, arquitetura e roadmap.
 
 ---
 
@@ -22,7 +21,7 @@ O nome é literal: transparência sem intermediário escondendo a informação.
 
 Para o detalhe — o problema por completo, como cada perfil usa a plataforma,
 a arquitetura escolhida e por quê, e o que falta implementar — ver a
-[documentação](docs/index.md).
+[documentação](https://moreira-89.github.io/plataforma_clara/).
 
 ---
 
@@ -36,10 +35,10 @@ MkDocs:
 docker compose up docs   # http://localhost:8080
 ```
 
-- **[Visão Geral](docs/index.md)** — o problema, a ideia, os stakeholders.
-- **[Produto](docs/produto/index.md)** — como a plataforma funciona, sem tecnologia.
-- **[Arquitetura](docs/arquitetura/index.md)** — stack, infraestrutura, diagrama, backend, e como rodar o projeto.
-- **[Roadmap](docs/roadmap/index.md)** — o que está em andamento e o que é backlog.
+- **[Visão Geral](https://moreira-89.github.io/plataforma_clara/)** — o problema, a ideia, os stakeholders.
+- **[Produto](https://moreira-89.github.io/plataforma_clara/produto/)** — como a plataforma funciona, sem tecnologia.
+- **[Arquitetura](https://moreira-89.github.io/plataforma_clara/arquitetura/)** — stack, infraestrutura, diagrama, backend, e como rodar o projeto.
+- **[Roadmap](https://moreira-89.github.io/plataforma_clara/roadmap/)** — o que está em andamento e o que é backlog.
 
 ## Como rodar
 
@@ -48,4 +47,4 @@ docker compose up --build
 ```
 
 Detalhes de setup, variáveis de ambiente e comandos de teste estão em
-[Arquitetura → Desenvolvimento](docs/arquitetura/desenvolvimento.md).
+[Arquitetura → Desenvolvimento](https://moreira-89.github.io/plataforma_clara/arquitetura/desenvolvimento/).
