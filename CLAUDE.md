@@ -2,7 +2,9 @@
 
 ## Visão Geral
 
-A Plataforma Clara reduz a assimetria de informação entre gestoras e investidores em FIDCs (Fundos de Investimento em Direitos Creditórios). Gestoras enviam aportes via CSV; investidores acessam dashboard com score de risco, visualização de Blocos de Liquidez e relatórios em PDF gerados por IA. Projeto acadêmico (FIAP).
+A Plataforma Clara reduz a assimetria de informação entre gestoras e investidores em FIDCs (Fundos de Investimento em Direitos Creditórios). Investidores acessam dashboard com score de risco, visualização de Blocos de Liquidez e relatórios em PDF gerados por IA. Projeto acadêmico (FIAP).
+
+**Como os dados dos aportes chegam à plataforma ainda não foi decidido.** O upload manual de CSV pela gestora foi removido de propósito — não faz sentido operacionalmente. A ideia é consultar direto algum serviço que já tenha esses dados, mas isso não está desenhado. Não invente esse fluxo.
 
 **Monorepo em reconstrução.** O projeto nasceu como monolito Reflex; o Reflex e o Postgres foram removidos, e a aplicação está sendo remontada como backend FastAPI + frontend Vite, sobre GCP.
 
@@ -34,7 +36,7 @@ Use Python 3.12. O `requirements.txt` fixa `pandas~=2.3.3`, que não tem wheel p
 
 A suíte é de **caracterização**: documenta o comportamento atual (incluindo bugs conhecidos, marcados nas docstrings), não o desejado. Um teste que quebra numa refatoração é uma pergunta ("essa mudança foi intencional?"), não necessariamente um erro.
 
-Os testes não tocam em BigQuery, Groq nem Firebase — as dependências externas são substituídas por fakes em `backend/tests/conftest.py`.
+Os testes não tocam em BigQuery, Groq nem Firebase: a suíte cobre só as funções puras (normalização, agregação, formatação), nunca as que fazem I/O de rede. `backend/tests/conftest.py` está vazio no momento — sem fixture nem fake nenhum.
 
 ## Arquitetura
 
@@ -58,14 +60,13 @@ Dois serviços independentes no mesmo repositório, cada um com o seu `Dockerfil
 Dentro do backend a direção das dependências é regra dura:
 
 ```
-api/ ──▶ agents/ · ingestion/ · storage/ ──▶ domain/
-(entrega)      (orquestração/IO)          (regras puras)
+api/ ──▶ agents/ · storage/ ──▶ domain/
+(entrega)  (orquestração/IO)  (regras puras)
 ```
 
-- **`domain/`** — regras de negócio puras. **Não pode importar `fastapi`, nem `agents/`, `api/`, `ingestion/` ou `storage/`.** É o que atravessa qualquer troca de stack intacto.
+- **`domain/`** — regras de negócio puras. **Não pode importar `fastapi`, nem `agents/`, `api/` ou `storage/`.** É o que atravessa qualquer troca de stack intacto.
 - **`api/`** — endpoints, schemas de entrada/saída e dependências do FastAPI. Só orquestra.
 - **`agents/`** — tudo de IA: prompt, chamada ao LLM, montagem do relatório.
-- **`ingestion/`** — entrada de dados: validação do CSV e preparo dos registros.
 - **`storage/`** — clientes de persistência e credenciais (BigQuery hoje; Firestore e Redis a entrar).
 - **`config/`** — `settings.py` é o **único** lugar que lê variável de ambiente.
 - **`jobs/`** — tarefas de fundo e agendadas.
@@ -84,7 +85,7 @@ api/ ──▶ agents/ · ingestion/ · storage/ ──▶ domain/
 | LLM | ChatGroq via Langchain |
 | PDF | `markdown-pdf` |
 | Dados | pandas |
-| ML | Nenhum modelo no repositório — `score_risco_interno` chega pronto no CSV |
+| ML | Nenhum modelo no repositório — `score_risco_interno` chega pronto, calculado por fora |
 
 ## Estrutura de Diretórios
 
@@ -98,10 +99,10 @@ backend/
   app/
     agents/                #   IA: relatorio.py e os assets do PDF
     api/lifespan.py        #   ciclo de vida da aplicação
+    api/endpoints/         #   authentication.py, register.py (vazios ainda)
     api/schemas/           #   contratos Pydantic de entrada e saída
     config/                #   settings.py (env) e logging.py
     domain/                #   risco, metricas, formatacao, identidade, erros
-    ingestion/             #   csv_processor.py e aportes.py
     jobs/                  #   tarefas de fundo (vazio)
     storage/               #   bigquery.py (Firestore e Redis a entrar)
   tests/
@@ -139,7 +140,6 @@ Instruções do dono do projeto. Valem sobre qualquer padrão default.
 ## Restrições Rígidas
 
 - Nunca commitar `.env` ou credenciais de service account. Não manter arquivo de credencial na raiz do repositório — o `COPY . .` do Docker o levaria para dentro da imagem.
-- Nunca alterar o schema dos aportes só de um lado — o schema do job (`ingestion/aportes.py::_SCHEMA_BIGQUERY`) e o contrato do CSV (`ingestion/csv_processor.py::COLUNAS_OBRIGATORIAS`) precisam ficar sincronizados na mão.
 - Nunca reintroduzir número inventado como se fosse dado. A evolução do AUM, o rendimento projetado e a rentabilidade por bloco eram fatores fixos e um hash do nome do bloco, exibidos ao lado de números reais sem rótulo. Foram removidos. Se a tela nova precisar desses campos, ou vêm de dado real, ou vão rotulados como estimativa.
 - Nunca implementar autenticação própria: quem cuida de identidade e senha é o Firebase. O backend verifica o token e lê as claims.
 - Nunca chamar a API do Groq fora de `agents/relatorio.py` — é o único lugar com o retry progressivo (5 tentativas com cortes crescentes na amostra de aportes, nos grupos de empresa e no texto de referência) tratado para `APIStatusError` 413.
@@ -166,9 +166,11 @@ Não criar variável de ambiente nova sem que algo a consuma.
 
 Não invente que existe. Nesta ordem:
 
-1. **Firestore** — a persistência operacional. `ingestion/aportes.py` processa o CSV e carrega no BigQuery, mas **não grava em lugar nenhum de leitura rápida**.
-2. **Firebase Auth** — não há verificação de token nem rota protegida.
-3. **Endpoints** — só existe `/health`. Nenhuma rota de aporte, dashboard, bloco ou relatório.
-4. **Redis** — declarado no compose, sem cliente na aplicação.
-5. **CORS** — sem middleware. Precisa entrar quando o frontend chamar a API de outro domínio.
-6. **Agregações do dashboard** — as consultas eram SQL e saíram com o Postgres. `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta.
+1. **Fonte dos dados de aportes.** O upload de CSV foi removido de propósito (não é assim que a plataforma vai operar). Não existe, ainda, nenhum mecanismo que alimente `tb_aporte` no BigQuery — nem CSV, nem consulta a serviço externo, nada. É a decisão mais urgente em aberto.
+2. **`agents/relatorio.py` está com uma dependência quebrada.** Ele consulta `tb_aporte` no BigQuery para montar o relatório do investidor — tabela que nada mais escreve, desde a remoção do CSV. Hoje a função sempre vai levantar `ValueError("Nenhum investimento encontrado...")`. Não "conserte" isso inventando uma fonte de dados; é o item 1 que resolve.
+3. **Firebase Auth** — não há verificação de token nem rota protegida.
+4. **Endpoints** — nenhum. Nem `/health`. `api/endpoints/authentication.py` e `register.py` existem como arquivo, vazios.
+5. **Firestore** — nada implementado.
+6. **Redis** — declarado no compose, sem cliente na aplicação.
+7. **CORS** — sem middleware. Precisa entrar quando o frontend chamar a API de outro domínio.
+8. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.

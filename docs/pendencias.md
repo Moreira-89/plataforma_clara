@@ -3,48 +3,59 @@
 Lista honesta do que **não existe** no repositório hoje. Está aqui para ninguém —
 pessoa ou assistente — assumir que existe.
 
-## 1. Firestore
+## 1. Fonte dos dados de aportes
 
-**O buraco mais importante.** A ingestão processa o CSV e carrega no BigQuery, mas
-**não grava em nenhum banco de leitura rápida**. `ingerir_csv` devolve os
-registros prontos nos dois formatos; falta quem os persista.
+**O buraco mais importante — e o mais urgente de decidir.** O upload manual de
+CSV pela gestora foi removido de propósito: não é assim que a plataforma vai
+operar quando tiver usuários de verdade. Em vez disso, a ideia é consultar
+direto algum serviço que já tenha esses dados — mas isso não está desenhado.
 
-Sem isso, o dashboard não tem de onde ler sem varrer o analítico — que é lento e
-cobrado por byte lido.
+Consequência concreta: `tb_aporte` no BigQuery não recebe escrita de lugar
+nenhum hoje, e `agents/relatorio.py` (que consulta essa tabela) sempre falha
+com "nenhum investimento encontrado".
 
-## 2. Firebase Auth
+## 2. Agregação do dashboard (BigQuery) — AD-6
+
+Decisão registrada no roadmap do Notion: uma tabela gold por consulta vs. uma
+gold única e granular, e se a recriação roda automática após cada carga de
+dado ou só sob demanda. Adiada de propósito — o time vai mexer bastante no
+dashboard, então desenhar a agregação antes disso estabilizar seria trabalho
+jogado fora. `domain/metricas.py` já tem as regras de consolidação; falta
+decidir o que as alimenta. Depende do item 1.
+
+## 3. Firebase Auth
 
 Não há verificação de token nem rota protegida. Falta o Firebase Admin no
 lifespan, a dependência que valida o token e a leitura das claims.
 
-## 3. Endpoints
+## 4. Endpoints
 
-Só existe `/health`. Nenhuma rota de aporte, dashboard, bloco ou relatório.
+Nenhum — nem `/health`. `api/endpoints/authentication.py` e `register.py`
+existem como arquivo, vazios.
 
 O que já está pronto para ser chamado por eles:
 
-- `ingestion.ingerir_csv` — validação e preparo dos registros
-- `ingestion.enviar_ao_bigquery` — carga analítica
 - `agents.relatorio.gerar_relatorio_consolidado_investidor` — PDF por IA
-- `domain.metricas` — consolidação de KPIs e montagem das visões
+  (hoje sempre falha, ver item 1)
+- `domain.metricas` — consolidação de KPIs e montagem das visões (sem quem as
+  alimente, ver item 2)
 
-## 4. Redis
+## 5. Firestore
+
+Nada implementado. Reservado para o vínculo Firebase UID ↔ CPF/CNPJ do
+investidor — e pode nem precisar de banco separado, se esse vínculo virar
+custom claim no próprio token do Firebase.
+
+## 6. Redis
 
 Sobe no compose, com interface em <http://localhost:8001>, mas **não há cliente na
 aplicação**. Nada é cacheado.
 
-## 5. Agregações do dashboard
+## 7. CORS
 
-`domain/metricas.py` tem as regras de consolidação, mas nada as alimenta: as
-consultas eram SQL e saíram com o Postgres.
+Sem middleware. Precisa entrar quando o frontend chamar a API de outro domínio.
 
-!!! note "Um detalhe que vai reaparecer"
-    As funções de métricas foram escritas assumindo linhas vindas de um `GROUP BY`.
-    Quando o Firestore entrar, a forma dos dados de entrada muda — elas podem
-    precisar de ajuste, ou de descarte, se a agregação passar a ser feita no
-    BigQuery.
-
-## 6. Frontend
+## 8. Frontend
 
 Existe a casca: Vite, Dockerfile, nginx e o proxy de desenvolvimento. Nenhuma tela.
 

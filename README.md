@@ -10,19 +10,19 @@ Projeto acadêmico (FIAP).
 
 **Monorepo em reconstrução.** O projeto nasceu como monolito Reflex sobre PostgreSQL. O Reflex e o Postgres saíram; o que está de pé é o esqueleto de dois serviços independentes — `backend/` (FastAPI) e `frontend/` (Vite) — sobre o ecossistema Google Cloud.
 
-Já existe: o processamento e a validação do CSV de aportes, a carga no BigQuery, o gerador de relatório por IA e as regras de negócio (classificação de risco, KPIs, formatação, validação de CPF/CNPJ).
+Já existe: o gerador de relatório por IA e as regras de negócio (classificação de risco, KPIs, formatação, validação de CPF/CNPJ).
 
-Ainda não existe: Firestore, Firebase Auth, Redis e os endpoints. A API sobe e responde `/health`, nada além disso.
+Ainda não existe: **nenhum mecanismo que alimente os dados dos aportes** (o upload manual de CSV foi removido de propósito — não é assim que a plataforma vai operar; o que substitui isso não está decidido), Firestore, Firebase Auth, Redis, CORS e os endpoints. A API não expõe nenhuma rota, nem `/health`.
 
 ---
 
 ## O que a plataforma faz
 
-**Gestora** envia um CSV de aportes. Cada linha é validada, normalizada e gravada em dois lugares: PostgreSQL (operacional) e BigQuery (analítico).
-
 **Investidor** enxerga a carteira agregada por Bloco de Liquidez — volume alocado, score médio de risco, empresas sacadas por trás de cada bloco — e pode gerar um relatório consolidado em PDF, escrito por um LLM a partir dos dados reais da própria carteira.
 
-O `score_risco_interno` **chega pronto como coluna do CSV**. Não há modelo de ML no repositório; a plataforma classifica e apresenta o score, não o calcula.
+O `score_risco_interno` **chega pronto**, calculado por fora. Não há modelo de ML no repositório; a plataforma classifica e apresenta o score, não o calcula.
+
+> ⚠️ `agents/relatorio.py` consulta `tb_aporte` no BigQuery para montar o relatório, mas nada escreve nessa tabela hoje — a função sempre retorna "nenhum investimento encontrado" até a fonte de dados ser decidida.
 
 ---
 
@@ -59,7 +59,7 @@ docker compose up --build
 | RedisInsight | <http://localhost:8001> |
 | Documentação | <http://localhost:8080> |
 
-A suíte não toca em BigQuery, Groq nem Firebase: as dependências externas são substituídas por fakes em `backend/tests/conftest.py`.
+A suíte não toca em BigQuery, Groq nem Firebase: cobre só as funções puras. `backend/tests/conftest.py` está vazio hoje.
 
 ---
 
@@ -69,13 +69,13 @@ Dois serviços, cada um com o seu `Dockerfile`, para virarem dois serviços sepa
 
 ```
 backend/
-  main.py              # cria o app, lifespan e CORS
+  main.py              # cria o app e monta o lifespan
   app/
     agents/            # IA: prompt, LLM, montagem do relatório
     api/schemas/       # contratos Pydantic de entrada e saída
+    api/endpoints/     # vazio ainda
     config/            # settings (env) e logging
     domain/            # regras puras: risco, métricas, formatação, identidade
-    ingestion/         # validação do CSV e preparo dos registros
     jobs/              # tarefas de fundo
     storage/           # clientes de persistência e credenciais
   tests/
@@ -84,7 +84,7 @@ frontend/
   vite.config.js       # proxy /api para o backend em desenvolvimento
 ```
 
-Dentro do backend a direção das dependências é regra dura: **`api/` → `agents/`, `ingestion/`, `storage/` → `domain/`**, nunca ao contrário. `domain/` não importa framework nenhum.
+Dentro do backend a direção das dependências é regra dura: **`api/` → `agents/`, `storage/` → `domain/`**, nunca ao contrário. `domain/` não importa framework nenhum.
 
 ---
 
@@ -123,6 +123,6 @@ LLM_TEMPERATURE=0.1
 
 ## Pontos de atenção
 
-- **Falta a persistência operacional.** A ingestão processa o CSV e carrega no BigQuery, mas não grava em nenhum banco de leitura rápida. O Firestore ainda não foi implementado.
-- **Schema em dois lugares.** Mudar as colunas do aporte exige alterar o schema do job (`backend/app/ingestion/aportes.py`) e o contrato do CSV (`backend/app/ingestion/csv_processor.py`) juntos.
+- **Não existe fonte de dados de aportes.** O upload manual de CSV foi removido — não é assim que a plataforma vai operar em produção. O que substitui isso (consulta a um serviço externo, provavelmente) ainda não foi desenhado. É a decisão mais urgente do projeto agora.
+- **`agents/relatorio.py` depende disso e está quebrado por consequência.** Consulta `tb_aporte` no BigQuery, mas nada mais escreve nessa tabela.
 - **Números simulados, removidos.** A evolução do AUM, o rendimento projetado e a rentabilidade por bloco eram inventados (fatores fixos e um hash do nome do bloco) e apareciam ao lado de dados reais sem rótulo. Saíram junto com a UI. Se voltarem, que venham de dado real ou rotulados como estimativa.

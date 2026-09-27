@@ -12,8 +12,8 @@ propósito, porque é o que está na tela hoje: um score de 45 aparece como
 dashboard. Unificar isso é decisão de produto, não de refatoração — por isso as
 duas colunas de rótulo ficam explícitas na tabela `_FAIXAS`.
 
-O `score_risco_interno` chega pronto como coluna do CSV de ingestão — a plataforma
-não treina nem executa nenhum modelo. Estas funções apenas TRADUZEM o número.
+O `score_risco_interno` chega pronto, calculado por fora — a plataforma não
+treina nem executa nenhum modelo. Estas funções apenas TRADUZEM o número.
 """
 
 from typing import Final, NamedTuple

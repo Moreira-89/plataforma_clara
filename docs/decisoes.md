@@ -26,22 +26,59 @@ desses itens é trabalho e risco que não agregam nada ao produto.
 hash. O registro do usuário fica só com o vínculo entre o `uid` do Firebase e o
 CPF/CNPJ do investidor, que é a chave dos aportes.
 
-## Firestore em vez de PostgreSQL
+## PostgreSQL sai, sem Firestore no lugar dos aportes
 
-**Decisão:** o banco operacional passa a ser o Firestore.
+**Decisão:** o banco operacional (Postgres) saiu e **não foi substituído por
+Firestore** para os dados de aportes. Firestore, se entrar, fica restrito ao
+vínculo Firebase UID ↔ CPF/CNPJ do investidor — e pode nem precisar de banco
+separado, se esse vínculo virar custom claim no próprio token do Firebase.
 
-**Por quê:** concentrar o ecossistema no Google Cloud, junto do Firebase e do
-BigQuery, simplificando credenciais e integrações.
+**Por quê:** Firestore não agrega no servidor (sem `GROUP BY`); a consulta
+central do produto é exatamente agregação — soma de volume e média de score
+por bloco. Faria o time reimplementar em Python o que SQL já faz bem.
 
-**Consequência:** saíram o Alembic e todo o histórico de migrações, o SQLModel, o
-SQLAlchemy, o psycopg2 e os repositórios. As agregações do dashboard, que eram
-`GROUP BY` em SQL, precisam ser refeitas.
+**Consequência:** saíram o Alembic e todo o histórico de migrações, o SQLModel,
+o SQLAlchemy, o psycopg2 e os repositórios. **BigQuery vira a ferramenta de
+consulta do dashboard** — ver a decisão seguinte sobre como.
 
-!!! warning "O que reconsiderar"
-    A consulta central do produto é agregação: soma de volume e média de score por
-    bloco. Isso é o que SQL faz bem e o que Firestore não faz — lá a agregação
-    vira código na aplicação ou consulta ao BigQuery. Se o dashboard ficar lento
-    ou o código de agregação ficar complexo, esta é a decisão a revisitar.
+## CSV removido; fonte dos dados de aportes em aberto
+
+**Decisão:** o fluxo de a gestora subir um CSV foi removido do projeto por
+completo — código, testes, documentação.
+
+**Por quê:** não é assim que a plataforma vai operar com usuários reais. Pedir
+para a gestora repetir um processo manual toda vez não escala nem faz sentido
+operacional; a ideia é consultar direto algum serviço que já tenha esses
+dados.
+
+**Consequência:** `ingestion/` (processamento e carga do CSV) foi apagado
+inteiro. Nada escreve mais em `tb_aporte` no BigQuery — inclusive
+`agents/relatorio.py`, que consulta essa tabela, está com uma dependência
+quebrada até essa decisão ser tomada.
+
+!!! warning "Decisão em aberto — a mais urgente do projeto"
+    Como os dados chegam à plataforma ainda não foi desenhado: qual serviço
+    consultar, com que frequência, e como esses dados viram consulta no
+    BigQuery. Nada deve ser implementado por cima disso (endpoints, dashboard)
+    antes de resolver este ponto.
+
+## BigQuery como ferramenta de consulta — AD-6
+
+**Decisão:** o dashboard lê o BigQuery via tabela(s) "gold", recriadas sob
+demanda (não em tempo real, não por job agendado sozinho). Registrado como
+**AD-6** no roadmap do Notion.
+
+**Por quê:** BigQuery faz `GROUP BY` de verdade, no banco — é o que ele foi
+feito para fazer. Recriar sob demanda evita depender de agendamento (menos
+infraestrutura a configurar) e ainda assim mantém uma cópia agregada barata
+de ler, em vez de agregar a base inteira a cada carregamento de tela.
+
+**Deliberadamente não decidido ainda:** quantas tabelas gold (uma por
+consulta vs. uma granular com `GROUP BY` leve por cima) e se a recriação
+também dispara automaticamente depois de cada carga de dado nova. Adiado de
+propósito — o time vai mexer bastante no dashboard, e desenhar isso antes
+disso estabilizar seria trabalho jogado fora. Depende da decisão anterior
+(fonte dos dados) estar resolvida primeiro.
 
 ## Railway para hospedagem
 

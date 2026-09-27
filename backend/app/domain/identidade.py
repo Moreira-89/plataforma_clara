@@ -1,11 +1,11 @@
 """
 Regras de identidade: normalização e validação de documentos e e-mail.
 
-Extraídas de `CadastroUsuarioState`. A normalização de documento é a regra mais
-crítica da plataforma inteira em silêncio: o CPF/CNPJ normalizado é a chave que
-liga o usuário logado aos seus aportes, no Postgres e no BigQuery. Se as três
-normalizações que existiam (cadastro, login e CSV) divergirem, o investidor vê um
-dashboard vazio mesmo tendo aportes. Agora é uma função só.
+A normalização de documento é a regra mais crítica da plataforma inteira em
+silêncio: o CPF/CNPJ normalizado é a chave que liga o usuário logado aos seus
+aportes no BigQuery. Se as normalizações usadas em cadastro, login e consulta
+divergirem, o investidor vê um dashboard vazio mesmo tendo aportes. Agora é
+uma função só.
 """
 
 import re
@@ -29,8 +29,8 @@ def normalizar_documento(documento: str | None) -> str:
     """
     Reduz um CPF/CNPJ a somente dígitos.
 
-    É a chave de ligação entre usuário e aportes. Usada no cadastro, no login, no
-    processamento do CSV e nas consultas ao BigQuery — todas precisam concordar.
+    É a chave de ligação entre usuário e aportes. Usada no cadastro, no login e
+    nas consultas ao BigQuery — todas precisam concordar.
 
     Args:
         documento (str | None): Documento em qualquer formato, ou None.

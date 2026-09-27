@@ -145,23 +145,3 @@ class DetalheBloco(BaseModel):
     score_medio: str = "N/A"
     prazo_medio: str = "N/A"
     empresas: list[EmpresaDoBloco] = Field(default_factory=list)
-
-
-# -----------------------------------------------------------------------------
-# INGESTÃO
-# -----------------------------------------------------------------------------
-
-
-class ResultadoIngestao(BaseModel):
-    """
-    O que a ingestão de um CSV produziu.
-
-    Os dois destinos querem formatos diferentes dos mesmos dados: `registros` traz
-    as datas como `datetime.date`, para a persistência operacional, e
-    `registros_bigquery` traz as mesmas datas como string ISO, que é o que o schema
-    da tabela analítica declara.
-    """
-
-    quantidade_inserida: int
-    registros: list[dict] = Field(default_factory=list)
-    registros_bigquery: list[dict] = Field(default_factory=list)

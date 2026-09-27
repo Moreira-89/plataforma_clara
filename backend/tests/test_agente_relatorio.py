@@ -38,7 +38,7 @@ from app.agents import relatorio as servico  # noqa: E402
 )
 def test_normalizacao_de_documento(entrada, esperado):
     """
-    O documento é normalizado em 3 lugares (login, CSV, relatório) e todos precisam
+    O documento é normalizado em cadastro, login e relatório, e todos precisam
     concordar — senão o investidor recebe um relatório vazio apesar de ter aportes.
     """
     assert servico._normalizar_documento(entrada) == esperado

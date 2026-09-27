@@ -5,12 +5,11 @@
 fastapi~=0.141.1
 uvicorn[standard]~=0.52.4
 pydantic-settings~=2.15.0
-python-multipart~=0.0.32
 
 # --- Domínio e dados ---
 pydantic~=2.13.5
 python-dotenv~=1.2.2
-pandas~=2.3.3
+pandas~=2.3.3               # exigido pelo .to_dataframe() do relatorio.py, não por CSV
 
 # --- Google Cloud e IA ---
 google-cloud-bigquery~=3.40.1
