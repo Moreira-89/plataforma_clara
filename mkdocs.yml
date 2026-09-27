@@ -25,11 +25,11 @@ theme:
     - search.suggest
 
 nav:
-  - Início: index.md
+  - Visão Geral: index.md
+  - Produto: produto.md
   - Arquitetura: arquitetura.md
+  - Roadmap: roadmap.md
   - Desenvolvimento: desenvolvimento.md
-  - Decisões: decisoes.md
-  - O que falta: pendencias.md
 
 markdown_extensions:
   - admonition
