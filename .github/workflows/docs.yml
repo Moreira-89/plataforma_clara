@@ -1,0 +1,45 @@
+name: Publicar documentação
+
+# Só dispara em push na main, e só quando algo em docs/ ou no próprio
+# mkdocs.yml muda — commit que não toca documentação não builda nada.
+# workflow_dispatch permite forçar uma republicação manual, se precisar.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+# gh-pages é atualizada por push direto (mkdocs gh-deploy), não por PR — o
+# GITHUB_TOKEN precisa de permissão de escrita no conteúdo do repositório.
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    name: Build e publica no GitHub Pages
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar MkDocs
+        run: pip install mkdocs-material
+
+      - name: Identidade do Git para o commit em gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Build e deploy
+        # --force sobrescreve a gh-pages com o build atual; ela é conteúdo
+        # gerado, ninguém edita essa branch na mão.
+        run: mkdocs gh-deploy --force --clean
