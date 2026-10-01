@@ -1,0 +1,20 @@
+:root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+body { margin: 0; }
+main { max-width: 28rem; margin: 2rem auto; padding: 0 1rem; }
+form { display: grid; gap: 0.75rem; }
+label { display: grid; gap: 0.25rem; font-size: 0.9rem; }
+input, button { font: inherit; padding: 0.5rem; }
+button { cursor: pointer; }
+.abas { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.abas button { flex: 1; }
+.abas .ativa { font-weight: 700; border-width: 2px; }
+.aviso { opacity: 0.7; font-size: 0.85rem; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; }
+dt { opacity: 0.7; }
+dd { margin: 0; }
+#rotas { display: grid; gap: 0.5rem; margin-bottom: 1rem; }
+#rotas button { text-align: left; }
+#mensagem { min-height: 1.5rem; font-weight: 600; }
+.erro { color: #c62828; }
+.ok { color: #2e7d32; }
+pre { overflow-x: auto; padding: 0.75rem; background: rgba(127, 127, 127, 0.15); }
