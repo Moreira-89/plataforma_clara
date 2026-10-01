@@ -36,7 +36,7 @@ Use Python 3.12. O `requirements.txt` fixa `pandas~=2.3.3`, que não tem wheel p
 
 A suíte é de **caracterização**: documenta o comportamento atual (incluindo bugs conhecidos, marcados nas docstrings), não o desejado. Um teste que quebra numa refatoração é uma pergunta ("essa mudança foi intencional?"), não necessariamente um erro.
 
-Os testes não tocam em BigQuery, Groq nem Firebase: a suíte cobre só as funções puras (normalização, agregação, formatação), nunca as que fazem I/O de rede. `backend/tests/conftest.py` está vazio no momento — sem fixture nem fake nenhum.
+Os testes não tocam em BigQuery, Groq nem Firebase: a suíte cobre só as funções puras (normalização, agregação, formatação), nunca as que fazem I/O de rede. `backend/tests/conftest.py` tem só o necessário para a autenticação: um verificador de token e um cadastro em memória, ligados ao app por `dependency_overrides`.
 
 ## Arquitetura
 
@@ -67,7 +67,7 @@ api/ ──▶ agents/ · storage/ ──▶ domain/
 - **`domain/`** — regras de negócio puras. **Não pode importar `fastapi`, nem `agents/`, `api/` ou `storage/`.** É o que atravessa qualquer troca de stack intacto.
 - **`api/`** — endpoints, schemas de entrada/saída e dependências do FastAPI. Só orquestra.
 - **`agents/`** — tudo de IA: prompt, chamada ao LLM, montagem do relatório.
-- **`storage/`** — clientes de persistência e credenciais (BigQuery hoje; Firestore e Redis a entrar).
+- **`storage/`** — clientes de persistência e credenciais (BigQuery, Firebase e Firestore; Redis a entrar).
 - **`config/`** — `settings.py` é o **único** lugar que lê variável de ambiente.
 - **`jobs/`** — tarefas de fundo e agendadas.
 
@@ -78,8 +78,8 @@ api/ ──▶ agents/ · storage/ ──▶ domain/
 | Hospedagem | Railway (dois serviços: backend e frontend) |
 | API | FastAPI + uvicorn |
 | Frontend | Vite, servido por nginx |
-| Autenticação | Firebase Auth *(a implementar)* |
-| Dados operacionais | Firestore *(a implementar)* |
+| Autenticação | Firebase Auth (perfil na claim `perfil`) |
+| Dados operacionais | Firestore (só identidade: perfil e CPF/CNPJ) |
 | Dados analíticos | Google BigQuery (dataset em `BIGQUERY_DATASET`) |
 | Cache | Redis *(a implementar)* |
 | LLM | ChatGroq via Langchain |
@@ -100,11 +100,12 @@ backend/
     agents/                #   IA: relatorio.py e os assets do PDF
     api/lifespan.py        #   ciclo de vida da aplicação
     api/endpoints/         #   saude, auth, dashboard, blocos, relatorios
+    api/dependencias.py    #   usuário do token e controle de acesso por perfil
     api/schemas/           #   contratos Pydantic de entrada e saída
     config/                #   settings.py (env) e logging.py
     domain/                #   risco, metricas, formatacao, identidade, erros
-    jobs/                  #   tarefas de fundo (vazio)
-    storage/               #   bigquery.py (Firestore e Redis a entrar)
+    jobs/                  #   criar_gestora.py (CLI do cadastro da gestora)
+    storage/               #   bigquery, firebase (token + Firestore), usuarios, credenciais
   tests/
 frontend/
   Dockerfile               # build Node → nginx
@@ -167,9 +168,7 @@ Não criar variável de ambiente nova sem que algo a consuma.
 Não invente que existe. Nesta ordem:
 
 1. **Fonte dos dados de aportes.** O upload de CSV foi removido de propósito (não é assim que a plataforma vai operar). Ainda não existe nenhum mecanismo que traga esses dados para a plataforma — nem CSV, nem consulta a serviço externo, nada. É a decisão mais urgente em aberto.
-2. **Firebase Auth** — não há verificação de token nem rota protegida.
-3. **Endpoints** — só `GET /health` funciona. Os demais (`/auth`, `/dashboard`, `/blocos`, `/relatorios`) existem como esqueleto e respondem 501 até terem fonte de dados e autenticação.
-4. **Firestore** — nada implementado.
-5. **Redis** — declarado no compose, sem cliente na aplicação.
-6. **CORS** — sem middleware. Precisa entrar quando o frontend chamar a API de outro domínio.
-7. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.
+2. **Endpoints do produto** — só `GET /health` e `/auth/*` funcionam. `/dashboard`, `/blocos` e `/relatorios` exigem o perfil certo, mas depois da checagem respondem 501 até terem fonte de dados.
+3. **Redis** — declarado no compose, sem cliente na aplicação.
+4. **CORS** — sem middleware. Precisa entrar quando o frontend chamar a API de outro domínio.
+5. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.

@@ -6,15 +6,13 @@ Suporta dois modos de configuração da variável GOOGLE_APPLICATION_CREDENTIALS
     2. Caminho para arquivo .json (formato legado, para desenvolvimento local)
 """
 
-import json
 import logging
-import os
-from pathlib import Path
 
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
 from app.config.settings import settings
+from app.storage.credenciais import carregar_credenciais
 
 # -----------------------------------------------------------------------------
 # INICIALIZAÇÃO
@@ -24,60 +22,6 @@ logger = logging.getLogger(__name__)
 
 # ID padrão do projeto GCP utilizado pela plataforma.
 _PROJETO_ID = settings.project_id
-
-
-# -----------------------------------------------------------------------------
-# FUNÇÕES INTERNAS (PRIVADAS)
-# -----------------------------------------------------------------------------
-
-
-def _parsear_credenciais_do_env() -> dict | None:
-    """
-    Tenta obter credenciais do BigQuery da variável de ambiente.
-
-    COMO FUNCIONA:
-        1. Leitura da Variável — Obtém o valor de GOOGLE_APPLICATION_CREDENTIALS.
-        2. Tentativa JSON — Se o valor começa com '{', tenta parsear como JSON string
-           diretamente (ideal para produção/nuvem onde não há sistema de arquivos).
-        3. Tentativa de Arquivo — Caso contrário, trata o valor como caminho para
-           um arquivo .json no disco (fluxo de desenvolvimento local).
-        4. Retorno — Devolve o dict de credenciais ou None se nenhum formato funcionou.
-
-    Returns:
-        Optional[dict]: Dicionário com credenciais ou None se não encontrado/inválido.
-    """
-    # --- 1. LEITURA DA VARIÁVEL ---
-    env_cred = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip()
-
-    if not env_cred:
-        logger.debug("GOOGLE_APPLICATION_CREDENTIALS não configurada.")
-        return None
-
-    # --- 2. TENTATIVA JSON ---
-    # Se começa com '{', é uma string JSON inline (comum em variáveis de ambiente
-    # em containers Docker ou pipelines de CI/CD).
-    if env_cred.startswith("{"):
-        try:
-            credenciais_dict = json.loads(env_cred)
-            logger.info("✓ Credenciais do BigQuery carregadas de string JSON no .env")
-            return credenciais_dict
-        except json.JSONDecodeError as e:
-            logger.warning("Falha ao parsear GOOGLE_APPLICATION_CREDENTIALS como JSON: %s", e)
-
-    # --- 3. TENTATIVA DE ARQUIVO ---
-    # Trata a string como caminho para um arquivo JSON no disco.
-    caminho = Path(env_cred)
-    if caminho.is_file():
-        try:
-            with open(caminho, encoding="utf-8") as f:
-                credenciais_dict = json.load(f)
-            logger.info("✓ Credenciais do BigQuery carregadas de arquivo: %s", caminho)
-            return credenciais_dict
-        except (OSError, json.JSONDecodeError) as e:
-            logger.warning("Falha ao carregar credenciais de arquivo %s: %s", caminho, e)
-
-    # --- 4. RETORNO NULO ---
-    return None
 
 
 # -----------------------------------------------------------------------------
@@ -91,7 +35,7 @@ def criar_cliente_bigquery(project_id: str | None = None) -> bigquery.Client:
 
     COMO FUNCIONA:
         1. Resolução do Projeto — Usa o project_id fornecido ou o padrão da plataforma.
-        2. Carregamento de Credenciais — Chama _parsear_credenciais_do_env() para
+        2. Carregamento de Credenciais — Chama carregar_credenciais() para
            tentar obter credenciais explícitas (JSON string ou arquivo).
         3. Cliente com Credenciais Explícitas — Se encontradas, cria o cliente usando
            service_account.Credentials para autenticação determinística.
@@ -113,7 +57,7 @@ def criar_cliente_bigquery(project_id: str | None = None) -> bigquery.Client:
         project_id = _PROJETO_ID
 
     # --- 2. CARREGAMENTO DE CREDENCIAIS ---
-    credenciais_dict = _parsear_credenciais_do_env()
+    credenciais_dict = carregar_credenciais()
 
     # --- 3. CLIENTE COM CREDENCIAIS EXPLÍCITAS ---
     if credenciais_dict:

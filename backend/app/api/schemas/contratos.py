@@ -19,36 +19,6 @@ Os DTOs se dividem em duas famílias:
 from pydantic import BaseModel, ConfigDict, Field
 
 # -----------------------------------------------------------------------------
-# USUÁRIO
-# -----------------------------------------------------------------------------
-
-
-class UsuarioCriacao(BaseModel):
-    """Dados de entrada para cadastrar um usuário, já normalizados e validados."""
-
-    tipo_usuario: str = Field(description="'gestora' ou 'investidor'")
-    nome_usuario: str
-    email_usuario: str
-    identificador_usuario: str = Field(description="CPF/CNPJ somente com dígitos")
-    senha: str = Field(description="Senha em texto plano — só existe em memória")
-
-
-class UsuarioAutenticado(BaseModel):
-    """
-    Identidade devolvida após um login bem-sucedido.
-
-    Deliberadamente NÃO carrega o hash da senha nem o e-mail: é o objeto que a
-    camada de entrega pode manipular à vontade. Na Fase 2 vira o payload do JWT.
-    """
-
-    model_config = ConfigDict(frozen=True)
-
-    tipo_usuario: str
-    nome_usuario: str
-    documento: str = Field(description="CPF/CNPJ somente com dígitos")
-
-
-# -----------------------------------------------------------------------------
 # MÉTRICAS DE BLOCO
 # -----------------------------------------------------------------------------
 

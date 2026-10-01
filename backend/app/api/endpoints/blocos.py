@@ -4,7 +4,7 @@ Router dos Blocos de Liquidez.
 COMO FUNCIONA:
     1. `GET /blocos` lista as métricas por bloco.
     2. `GET /blocos/{bloco_id}` devolve KPIs e carteira de um bloco.
-    3. Hoje respondem 501: dependem da fonte dos aportes.
+    3. Exigem qualquer perfil autenticado; hoje respondem 501 por falta da fonte dos aportes.
 
 Args:
     Nenhum.
@@ -13,15 +13,19 @@ Returns:
     APIRouter: o `router` deste módulo.
 
 Raises:
-    HTTPException: 501 em todas as rotas, por enquanto.
+    TokenInvalidoError: Sem token ou token inválido (401).
+    HTTPException: 501 depois da checagem de acesso, por enquanto.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.api.dependencias import obter_usuario_atual
 from app.api.erros import nao_implementado
 from app.api.schemas.contratos import DetalheBloco, MetricaBloco
 
-router = APIRouter(prefix="/blocos", tags=["blocos"])
+router = APIRouter(
+    prefix="/blocos", tags=["blocos"], dependencies=[Depends(obter_usuario_atual)]
+)
 
 
 @router.get("", response_model=list[MetricaBloco])

@@ -4,7 +4,7 @@ Router dos relatórios em PDF por IA.
 COMO FUNCIONA:
     1. `POST /relatorios` pede a geração; `GET /relatorios/{id}` consulta o estado.
     2. A geração vai chamar `agents.relatorio`, sempre via `asyncio.to_thread`.
-    3. Hoje respondem 501: faltam a fonte dos aportes e a autenticação.
+    3. Só o investidor acessa; hoje respondem 501 por falta da fonte dos aportes.
 
 Args:
     Nenhum.
@@ -13,15 +13,22 @@ Returns:
     APIRouter: o `router` deste módulo.
 
 Raises:
-    HTTPException: 501 em todas as rotas, por enquanto.
+    AcessoNegadoError: Perfil diferente de investidor (403).
+    HTTPException: 501 depois da checagem de acesso, por enquanto.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.api.dependencias import exigir_perfil
 from app.api.erros import nao_implementado
 from app.api.schemas.relatorio import RelatorioStatus
+from app.domain.perfis import Perfil
 
-router = APIRouter(prefix="/relatorios", tags=["relatorios"])
+router = APIRouter(
+    prefix="/relatorios",
+    tags=["relatorios"],
+    dependencies=[Depends(exigir_perfil(Perfil.INVESTIDOR))],
+)
 
 
 @router.post("", response_model=RelatorioStatus)

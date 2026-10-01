@@ -24,15 +24,7 @@ desenhar a agregação antes disso estabilizar seria trabalho jogado fora.
 `domain.metricas` já tem as regras de consolidação e montagem das visões —
 falta só quem as alimente.
 
-## 3. Firebase Auth
-
-Não há verificação de token nem rota protegida ainda. Autorização por
-perfil — gestora vs. investidor — depende disso.
-
-Rotas planejadas: `POST /auth/login`, `POST /auth/register`.
-As duas já existem em `api/endpoints/auth.py`, respondendo 501.
-
-## 4. Endpoints do produto
+## 3. Endpoints do produto
 
 `GET /health` funciona. As demais rotas já existem no contrato e respondem
 501 até terem implementação. Planejadas:
@@ -48,26 +40,28 @@ O que já está pronto para eles chamarem:
 - `domain.metricas` — consolidação de KPIs e montagem das visões (sem quem
   as alimente, ver item 2)
 
-## 5. Firestore
+## 4. Firestore
 
-Nada implementado. Reservado para o vínculo Firebase UID ↔ CPF/CNPJ do
-investidor — pode nem precisar de banco separado, se virar *custom claim*
-no token.
+Já em uso só para identidade: `usuarios/{uid}` e o índice `documentos/{documento}`
+que garante um CPF/CNPJ por conta (ver [Autenticação](../arquitetura/autenticacao.md)).
+Dados de aporte continuam fora dele. Falta uma dependência que leia o documento
+do usuário para filtrar os aportes dele, que entra com o primeiro endpoint real
+do dashboard.
 
-## 6. Redis
+## 5. Redis
 
 Sobe no `docker-compose`, sem cliente na aplicação ainda.
 
-## 7. CORS
+## 6. CORS
 
 Sem middleware. Necessário assim que o frontend chamar a API de outro
 domínio.
 
-## 8. Frontend
+## 7. Frontend
 
 Só a casca hoje (Vite, Dockerfile, proxy de desenvolvimento). Nenhuma tela.
 
-## 9. Lock file de dependências
+## 8. Lock file de dependências
 
 `requirements.txt` usa faixas de versão (`~=`), sem lock file fixando a
 árvore inteira de dependências transitivas.

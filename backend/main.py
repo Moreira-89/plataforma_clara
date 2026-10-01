@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.api.erros import registrar_handlers
 from app.api.lifespan import lifespan
 from app.api.router import router
 
@@ -10,4 +11,5 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+registrar_handlers(app)
 app.include_router(router)

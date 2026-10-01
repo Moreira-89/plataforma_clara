@@ -31,7 +31,7 @@ cada requisição.
 | Frontend | Vite | Separado do backend de propósito, consumindo a API por HTTP — a mesma razão que tirou o Reflex. Não React/Next: o escopo do frontend é uma SPA simples servida como estático, sem exigir um framework de aplicação completo. |
 | Autenticação | Firebase Auth | A implementação anterior guardava hash bcrypt numa tabela própria, sem token, sem refresh, sem recuperação de senha e sem login social — cada um desses itens é trabalho e risco que não agregam nada ao produto. O backend não guarda senha nenhuma: só verifica a assinatura do token e lê as claims. |
 | Dados analíticos | BigQuery | Usado como **ferramenta de consulta**, não como destino de escrita do sistema. É de lá que o relatório por IA busca a carteira do investidor. |
-| Dados operacionais | Nenhum banco próprio ainda | Postgres saiu do projeto e **não foi substituído por um banco operacional novo**. Firestore foi cogitado, mas rejeitado para os dados de aporte: ele não agrupa no servidor (sem `GROUP BY`), e a consulta central do produto é exatamente agregação — soma de volume, média de score por bloco. Reimplementar isso em Python é reimplementar o que SQL já faz bem. Se Firestore entrar, fica restrito ao vínculo Firebase UID ↔ CPF/CNPJ do investidor — e talvez nem precise de banco separado, se esse vínculo virar *custom claim* no próprio token do Firebase. |
+| Dados operacionais | Nenhum banco próprio ainda | Postgres saiu do projeto e **não foi substituído por um banco operacional novo**. Firestore foi cogitado, mas rejeitado para os dados de aporte: ele não agrupa no servidor (sem `GROUP BY`), e a consulta central do produto é exatamente agregação — soma de volume, média de score por bloco. Reimplementar isso em Python é reimplementar o que SQL já faz bem. O Firestore entrou, mas restrito à identidade: perfil e CPF/CNPJ de cada usuário e o índice que garante um documento por conta. O perfil vai numa *custom claim* do token; o documento fica só no Firestore. |
 | Cache | Redis | Ainda não implementado. Reservado para o que for caro de recalcular e barato de ficar desatualizado por alguns minutos — a leitura agregada do dashboard, quando existir. |
 | IA | Groq + Langchain | Gera o relatório em PDF a partir dos dados reais da carteira do investidor. |
 
@@ -39,7 +39,7 @@ cada requisição.
 
 **Railway**, com dois serviços — um para `backend/`, um para `frontend/` — porque já existe plano contratado, e cada serviço aponta direto para a pasta correspondente do monorepo, sem infraestrutura extra a configurar.
 
-**Google Cloud** hospeda os dados: BigQuery para consulta, e (quando implementado) Firestore para o vínculo de identidade.
+**Google Cloud** hospeda os dados: BigQuery para consulta, e Firestore para a identidade (ver [Autenticação](autenticacao.md)).
 
 ## Camadas do backend
 
@@ -69,13 +69,19 @@ api/ ──▶ agents/ · storage/ ──▶ domain/
 `main.py` só cria o app e acopla o router agregador de `api/router.py`. Cada
 recurso tem o seu arquivo em `api/endpoints/` com um `APIRouter` próprio.
 
-| Rota | Estado |
-| --- | --- |
-| `GET /health` | funciona; não consulta serviço externo |
-| `POST /auth/login`, `POST /auth/register` | 501, até o Firebase Auth entrar |
-| `GET /dashboard/gestora`, `GET /dashboard/investidor` | 501, dependem da fonte dos aportes |
-| `GET /blocos`, `GET /blocos/{bloco_id}` | 501, dependem da fonte dos aportes |
-| `POST /relatorios`, `GET /relatorios/{id}` | 501, dependem da fonte dos aportes |
+| Rota | Acesso | Estado |
+| --- | --- | --- |
+| `GET /health` | aberta | funciona; não consulta serviço externo |
+| `POST /auth/register` | aberta | funciona (investidor) |
+| `POST /auth/register/gestora` | gestora | funciona |
+| `GET /auth/me` | qualquer perfil | funciona |
+| `GET /dashboard/gestora` | gestora | 501, depende da fonte dos aportes |
+| `GET /dashboard/investidor` | investidor | 501, depende da fonte dos aportes |
+| `GET /blocos`, `GET /blocos/{bloco_id}` | qualquer perfil | 501, dependem da fonte dos aportes |
+| `POST /relatorios`, `GET /relatorios/{id}` | investidor | 501, dependem da fonte dos aportes |
+
+O acesso por perfil já é aplicado: sem token a rota responde 401, com perfil errado
+403, e só depois chega ao 501. Ver [Autenticação](autenticacao.md).
 
 Convenções:
 
