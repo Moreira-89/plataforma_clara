@@ -12,7 +12,7 @@ CORPO = {
     "senha": "senha-segura",
     "documento": "123.456.789-09",
 }
-CNPJ = "12.345.678/0001-90"
+CNPJ = "11.222.333/0001-81"
 
 
 def test_me_sem_token_responde_401(client):

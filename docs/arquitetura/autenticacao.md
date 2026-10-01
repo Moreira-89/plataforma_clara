@@ -29,7 +29,8 @@ Para o frontend saber quem está logado e com qual perfil, existe `GET /auth/me`
 backend faz, nesta ordem:
 
 1. Valida nome, e-mail e CPF/CNPJ (`domain/perfis.py`, que reusa `domain/identidade.py`).
-   Falha: 422.
+   O documento tem a máscara removida e os dígitos verificadores conferidos
+   (`validate-docbr`); sequências como `000.000.000-00` são recusadas. Falha: 422.
 2. **Reserva o documento** em `documentos/{documento}` com `create()`, que falha se
    já existir. Falha: 409.
 3. Cria o usuário no Firebase Auth. E-mail repetido: 409, e a reserva é desfeita.
@@ -48,6 +49,14 @@ no Firestore permite, e `create()` torna a checagem atômica.
 
 O acesso ao Firestore é só pelo Admin SDK do backend. As regras (`firestore.rules`)
 negam qualquer leitura ou escrita vinda do navegador.
+
+!!! warning "CNPJ alfanumérico ainda não é aceito"
+    Desde julho de 2026 a Receita emite CNPJ com letras. A validação da lib já os
+    entende, mas `identificar_documento` os recusa de propósito: o documento
+    normalizado é a chave que liga o usuário aos aportes, e `normalizar_documento`
+    só mantém dígitos. Aceitar letras exige mudar as duas regras juntas e conferir
+    como a fonte dos aportes (ainda a definir) representa o CNPJ. **Decisão em aberto,
+    a ser tomada com o grupo** junto com a definição da fonte dos aportes.
 
 ## Gestora
 

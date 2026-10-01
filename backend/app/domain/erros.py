@@ -16,7 +16,7 @@ class EmailJaCadastradoError(ErroDeNegocio):
 
 
 class DocumentoInvalidoError(ErroDeNegocio):
-    """O CPF/CNPJ informado não passou na validação estrutural."""
+    """O CPF/CNPJ informado não passou na validação (tamanho e dígitos verificadores)."""
 
 
 class DadosIncompletosError(ErroDeNegocio):

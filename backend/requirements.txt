@@ -5,6 +5,7 @@
 fastapi~=0.141.1
 uvicorn[standard]~=0.52.4
 pydantic-settings~=2.15.0
+validate-docbr~=2.0.1       # dígitos verificadores de CPF/CNPJ
 firebase-admin~=7.7.0      # Auth (verifica token, claims) e Firestore (índice de documento)
 
 # --- Domínio e dados ---

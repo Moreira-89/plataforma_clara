@@ -15,7 +15,7 @@ from app.domain.erros import (
 from app.domain.perfis import Perfil, perfil_de_claims, validar_cadastro
 
 CPF = "123.456.789-09"
-CNPJ = "12.345.678/0001-90"
+CNPJ = "11.222.333/0001-81"
 
 
 @pytest.mark.parametrize(
@@ -46,7 +46,7 @@ def test_cadastro_de_investidor_aceita_cnpj():
 
 
 def test_cadastro_de_gestora_aceita_cnpj():
-    assert validar_cadastro("Núclea", "n@exemplo.com", CNPJ, Perfil.GESTORA).documento == "12345678000190"
+    assert validar_cadastro("Núclea", "n@exemplo.com", CNPJ, Perfil.GESTORA).documento == "11222333000181"
 
 
 def test_cadastro_de_gestora_recusa_cpf():
