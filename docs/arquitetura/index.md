@@ -64,9 +64,29 @@ api/ ──▶ agents/ · storage/ ──▶ domain/
     sobreviveu intacto foi exatamente o que não importava o framework. Manter
     `domain/` puro é o que faz a próxima troca ser uma troca, e não uma reescrita.
 
-!!! danger "Nada escreve em tb_aporte hoje"
-    O fluxo que gravava aportes (upload manual pela gestora) foi removido de
-    propósito — não é assim que a plataforma vai operar. O que o substitui
-    ainda não foi desenhado (ver [Roadmap](../roadmap/index.md)). Até essa decisão
-    existir, o relatório por IA sempre falha ao buscar a carteira do
-    investidor: a tabela está vazia e ninguém a alimenta.
+## Esqueleto da API
+
+`main.py` só cria o app e acopla o router agregador de `api/router.py`. Cada
+recurso tem o seu arquivo em `api/endpoints/` com um `APIRouter` próprio.
+
+| Rota | Estado |
+| --- | --- |
+| `GET /health` | funciona; não consulta serviço externo |
+| `POST /auth/login`, `POST /auth/register` | 501, até o Firebase Auth entrar |
+| `GET /dashboard/gestora`, `GET /dashboard/investidor` | 501, dependem da fonte dos aportes |
+| `GET /blocos`, `GET /blocos/{bloco_id}` | 501, dependem da fonte dos aportes |
+| `POST /relatorios`, `GET /relatorios/{id}` | 501, dependem da fonte dos aportes |
+
+Convenções:
+
+- **Sem `/api` no prefixo.** O proxy do Vite remove esse prefixo em desenvolvimento,
+  então `/api/health` chega ao backend como `/health`.
+- **Handler só orquestra.** Cálculo mora em `domain/`; I/O bloqueante vai em
+  `asyncio.to_thread`.
+- **501 explícito.** Rota sem implementação levanta `nao_implementado(...)` de
+  `api/erros.py`, dizendo o que falta. Os testes dessas rotas estão em
+  `tests/test_api_rotas_esqueleto.py`.
+- **Teste de rota usa `with TestClient(app)`.** Sem o `with`, o lifespan não roda.
+- **`.env` em `backend/`.** `config/settings.py` resolve o caminho a partir do
+  próprio arquivo, então o comando pode rodar de qualquer diretório. Na subida,
+  o lifespan avisa no log quando faltam a chave do Groq ou a credencial GCP.

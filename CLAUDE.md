@@ -99,7 +99,7 @@ backend/
   app/
     agents/                #   IA: relatorio.py e os assets do PDF
     api/lifespan.py        #   ciclo de vida da aplicação
-    api/endpoints/         #   authentication.py, register.py (vazios ainda)
+    api/endpoints/         #   saude, auth, dashboard, blocos, relatorios
     api/schemas/           #   contratos Pydantic de entrada e saída
     config/                #   settings.py (env) e logging.py
     domain/                #   risco, metricas, formatacao, identidade, erros
@@ -166,11 +166,10 @@ Não criar variável de ambiente nova sem que algo a consuma.
 
 Não invente que existe. Nesta ordem:
 
-1. **Fonte dos dados de aportes.** O upload de CSV foi removido de propósito (não é assim que a plataforma vai operar). Não existe, ainda, nenhum mecanismo que alimente `tb_aporte` no BigQuery — nem CSV, nem consulta a serviço externo, nada. É a decisão mais urgente em aberto.
-2. **`agents/relatorio.py` está com uma dependência quebrada.** Ele consulta `tb_aporte` no BigQuery para montar o relatório do investidor — tabela que nada mais escreve, desde a remoção do CSV. Hoje a função sempre vai levantar `ValueError("Nenhum investimento encontrado...")`. Não "conserte" isso inventando uma fonte de dados; é o item 1 que resolve.
-3. **Firebase Auth** — não há verificação de token nem rota protegida.
-4. **Endpoints** — nenhum. Nem `/health`. `api/endpoints/authentication.py` e `register.py` existem como arquivo, vazios.
-5. **Firestore** — nada implementado.
-6. **Redis** — declarado no compose, sem cliente na aplicação.
-7. **CORS** — sem middleware. Precisa entrar quando o frontend chamar a API de outro domínio.
-8. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.
+1. **Fonte dos dados de aportes.** O upload de CSV foi removido de propósito (não é assim que a plataforma vai operar). Ainda não existe nenhum mecanismo que traga esses dados para a plataforma — nem CSV, nem consulta a serviço externo, nada. É a decisão mais urgente em aberto.
+2. **Firebase Auth** — não há verificação de token nem rota protegida.
+3. **Endpoints** — só `GET /health` funciona. Os demais (`/auth`, `/dashboard`, `/blocos`, `/relatorios`) existem como esqueleto e respondem 501 até terem fonte de dados e autenticação.
+4. **Firestore** — nada implementado.
+5. **Redis** — declarado no compose, sem cliente na aplicação.
+6. **CORS** — sem middleware. Precisa entrar quando o frontend chamar a API de outro domínio.
+7. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.

@@ -1,10 +1,7 @@
-import logging
-
 from fastapi import FastAPI
 
 from app.api.lifespan import lifespan
-
-logger = logging.getLogger(__name__)
+from app.api.router import router
 
 app = FastAPI(
     title="Plataforma Clara — API",
@@ -12,3 +9,5 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+app.include_router(router)

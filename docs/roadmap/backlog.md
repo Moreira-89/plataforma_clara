@@ -37,7 +37,7 @@ nunca entrou no `requirements.txt`.
 ## Operação
 
 - Logging estruturado com correlation ID atravessando os eventos.
-- Health checks: `/health` e `/ready`.
+- Health check de dependências: `/ready` (o `/health` já existe e não consulta serviço externo).
 - Métricas (Prometheus) e tracing (OpenTelemetry).
 - Deploy e gestão de secrets.
 - Runbook de rollback.

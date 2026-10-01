@@ -5,7 +5,7 @@ Roda uma vez na subida e uma vez no encerramento. É onde entram a configuraçã
 logging e, quando existirem, os clientes de Firestore e Redis.
 
 COMO FUNCIONA:
-    1. Subida — Configura o logging antes de qualquer trabalho.
+    1. Subida — Configura o logging e avisa das integrações sem configuração.
     2. `yield` — A aplicação atende requisições enquanto está parada nesta linha.
     3. Encerramento — O que vier depois do yield roda no shutdown.
 
@@ -23,6 +23,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.config.logging import configurar_logging
+from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """
     configurar_logging()
     logger.info("Backend iniciando.")
+
+    # Só o nome da integração vai para o log, nunca o valor.
+    if not settings.groq_api_key.get_secret_value():
+        logger.warning("Groq sem chave configurada: a geração de relatório vai falhar.")
+    if not settings.google_application_credentials:
+        logger.warning("Sem credencial GCP no ambiente: BigQuery usa as credenciais padrão.")
 
     # Clientes de Firestore, Redis e Firebase Admin entram aqui.
 
