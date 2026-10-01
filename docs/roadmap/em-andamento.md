@@ -11,6 +11,11 @@ não é assim que a plataforma vai operar com usuários reais. Falta decidir de
 onde os dados vêm (provavelmente consulta a um serviço externo que já os
 tenha) e como chegam ao BigQuery.
 
+Junto com isso, decidir o **CNPJ alfanumérico** (emitido desde julho de 2026):
+hoje o cadastro o recusa, porque o documento normalizado, que liga o usuário
+aos aportes, só mantém dígitos. Depende de como a fonte representa o CNPJ.
+Decisão a ser tomada com o grupo. Ver [Autenticação](../arquitetura/autenticacao.md).
+
 ## 2. Agregação do dashboard (BigQuery)
 
 Depende do item 1. A ideia é o dashboard ler o BigQuery via tabela(s)
