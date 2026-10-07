@@ -205,3 +205,83 @@ def test_montagem_de_investimentos_usa_defaults_para_campos_ausentes():
             "valor_investido": 0.0,
         }
     ]
+
+
+# -----------------------------------------------------------------------------
+# CONFIGURAÇÃO DO LLM
+# -----------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("configurado", "esperado"),
+    [
+        ("groq:openai/gpt-oss-120b", "openai/gpt-oss-120b"),
+        ('"groq:openai/gpt-oss-120b"', "openai/gpt-oss-120b"),
+        ("openai/gpt-oss-120b", "openai/gpt-oss-120b"),
+    ],
+)
+def test_nome_do_modelo_remove_prefixo_do_provedor(configurado, esperado):
+    """O `.env` usa `provedor:modelo`; o Groq só entende o id do modelo."""
+    assert servico._nome_modelo_groq(configurado) == esperado
+
+
+def test_nome_do_modelo_vazio_falha_cedo():
+    with pytest.raises(RuntimeError):
+        servico._nome_modelo_groq("groq:")
+
+
+def test_llm_usa_modelo_da_configuracao(monkeypatch):
+    monkeypatch.setattr(servico.settings, "groq_api_key", "gsk_teste")
+    monkeypatch.setattr(servico.settings, "llm_model_name", "groq:openai/gpt-oss-120b")
+
+    llm = servico._criar_llm()
+
+    assert llm.model_name == "openai/gpt-oss-120b"
+    assert llm.reasoning_effort == "low"
+    assert llm.max_tokens is not None and llm.max_tokens >= 2048
+
+
+def test_llm_sem_api_key_falha_com_mensagem_clara(monkeypatch):
+    monkeypatch.setattr(servico.settings, "groq_api_key", "")
+    with pytest.raises(RuntimeError, match="GROQ_API_KEY"):
+        servico._criar_llm()
+
+
+# -----------------------------------------------------------------------------
+# TÍTULO PRINCIPAL DO PDF
+# -----------------------------------------------------------------------------
+
+
+def test_titulo_principal_e_adicionado_quando_o_texto_comeca_com_subtitulo():
+    """
+    O markdown_pdf exige que o primeiro título do índice seja nível 1. O gpt-oss
+    costuma começar com `##`, o que quebrava a geração do PDF.
+    """
+    resultado = servico._garantir_titulo_principal("## Resumo\ntexto", "Fulano")
+
+    assert resultado.startswith("# Relatório Consolidado de Investimentos — Fulano")
+    assert "## Resumo" in resultado
+
+
+def test_titulo_principal_e_adicionado_quando_nao_ha_titulo():
+    resultado = servico._garantir_titulo_principal("só texto", "Fulano")
+
+    assert resultado.startswith("# ")
+
+
+def test_texto_que_ja_comeca_com_titulo_principal_nao_muda():
+    markdown = "# Meu Relatório\n\n## Resumo\ntexto"
+
+    assert servico._garantir_titulo_principal(markdown, "Fulano") == markdown
+
+
+@pytest.mark.parametrize(
+    "markdown",
+    ["## Resumo\ntexto", "só texto", "# Título\n\n## Resumo\ntexto"],
+)
+def test_pdf_e_gerado_qualquer_que_seja_o_primeiro_titulo(markdown):
+    """Gera o PDF de verdade (sem rede): trava a regressão do erro de índice."""
+    conteudo, nome = servico._gerar_pdf_e_ler_bytes("Fulano", markdown)
+
+    assert conteudo.startswith(b"%PDF-")
+    assert nome == "Relatorio_Consolidado_Fulano.pdf"

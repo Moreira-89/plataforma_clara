@@ -5,7 +5,7 @@ Fluxo principal:
     1. Busca o nome do investidor no PostgreSQL.
     2. Busca os aportes do investidor no BigQuery (tb_aporte).
     3. Compacta os dados para caber no limite de tokens do provedor Groq.
-    4. Envia o prompt institucional ao LLM (llama-3.3-70b-versatile via Groq).
+    4. Envia o prompt institucional ao LLM via Groq (modelo em `settings.llm_model_name`).
     5. Converte o Markdown gerado em PDF e retorna os bytes para download.
 """
 
@@ -385,6 +385,33 @@ def _ler_pdf_referencia(max_chars: int = _MAX_REF_CHARS) -> str:
         return ""
     return texto_pdf_extraido
 
+_PREFIXO_PROVEDOR = "groq:"
+_MAX_TOKENS_RESPOSTA = 4096
+_ESFORCO_RACIOCINIO = "low"
+
+
+def _nome_modelo_groq(nome_configurado: str) -> str:
+    """Converte "groq:openai/gpt-oss-120b" em "openai/gpt-oss-120b"."""
+    nome = nome_configurado.strip().strip('"')
+    if nome.startswith(_PREFIXO_PROVEDOR):
+        nome = nome[len(_PREFIXO_PROVEDOR) :]
+    if not nome:
+        raise RuntimeError("LLM_MODEL_NAME está vazio.")
+    return nome
+
+
+def _criar_llm() -> ChatGroq:
+    """Monta o cliente do LLM a partir de `settings`."""
+    if not settings.groq_api_key:
+        raise RuntimeError("GROQ_API_KEY não encontrada no ambiente.")
+
+    return ChatGroq(
+        api_key=SecretStr(settings.groq_api_key),
+        model=_nome_modelo_groq(settings.llm_model_name),
+        temperature=settings.llm_temperature,
+        max_tokens=_MAX_TOKENS_RESPOSTA,
+        reasoning_effort=_ESFORCO_RACIOCINIO,
+    )
 
 def _gerar_markdown_chatgroq(
     *,
@@ -393,16 +420,7 @@ def _gerar_markdown_chatgroq(
     dados_bq: list[dict[str, Any]],
     dados_invest: list[dict[str, Any]],
 ) -> str:
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise RuntimeError("GROQ_API_KEY não encontrada no ambiente.")
-
-    llm = ChatGroq(
-        api_key=SecretStr(api_key),
-        model="llama-3.3-70b-versatile",
-        temperature=0.1,
-        max_tokens=900,
-    )
+    llm = _criar_llm()
 
     prompt = ChatPromptTemplate.from_messages([("system", _SYSTEM_TEMPLATE), ("user", _USER_TEMPLATE)])
 
@@ -458,7 +476,8 @@ def _gerar_markdown_chatgroq(
             resposta = llm.invoke(prompt_formatado)
             conteudo = getattr(resposta, "content", "") or ""
             if not str(conteudo).strip():
-                raise RuntimeError("A IA retornou uma resposta vazia.")
+                motivo = getattr(resposta, "response_metadata", {}).get("finish_reason")
+                raise RuntimeError(f"A IA retornou uma resposta vazia (finish_reason={motivo}).")
             return str(conteudo)
         except APIStatusError as exc:
             ultimo_erro = exc
@@ -476,6 +495,19 @@ def _gerar_markdown_chatgroq(
     raise RuntimeError("Falha inesperada ao gerar relatório com ChatGroq.")
 
 
+def _garantir_titulo_principal(markdown: str, nome_investidor: str) -> str:
+    """
+    Garante que o primeiro título do Markdown seja `#` (nível 1).
+
+    O markdown_pdf monta o índice do PDF a partir dos títulos e exige que o
+    primeiro seja nível 1. O gpt-oss costuma começar direto com `##`.
+    """
+    primeiro_titulo = re.search(r"^(#{1,2})\s", markdown, flags=re.MULTILINE)
+    if primeiro_titulo and primeiro_titulo.group(1) == "#":
+        return markdown
+    return f"# Relatório Consolidado de Investimentos — {nome_investidor}\n\n{markdown}"
+
+
 def _gerar_pdf_e_ler_bytes(nome_investidor: str, markdown: str) -> tuple[bytes, str]:
     nome_limpo = re.sub(r"[^a-zA-Z0-9_-]+", "_", nome_investidor).strip("_") or "investidor"
     nome_arquivo = f"Relatorio_Consolidado_{nome_limpo}.pdf"
@@ -488,6 +520,7 @@ def _gerar_pdf_e_ler_bytes(nome_investidor: str, markdown: str) -> tuple[bytes, 
 
     caminho_logo = _ROOT_DIR / "assets" / "logo_para_usar_fundo_claro.png"
     # Adicionando a logo no topo do relatório
+    markdown = _garantir_titulo_principal(markdown, nome_investidor)
     markdown_com_logo = f'<img src="file://{caminho_logo.absolute()}" class="logo-relatorio" />\n\n' + markdown
 
     css_estilo = """
