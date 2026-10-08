@@ -11,7 +11,9 @@ from app.domain.erros import DocumentoJaCadastradoError
 from app.domain.perfis import DadosCadastro, Perfil
 from app.storage import usuarios
 
-DADOS = DadosCadastro(nome="Ana", email="ana@exemplo.com", documento="12345678909", tipo_documento="CPF")
+DADOS = DadosCadastro(
+    nome="Ana", email="ana@exemplo.com", documento="12345678909", tipo_documento="CPF"
+)
 
 
 class DocFalso:
@@ -39,7 +41,9 @@ class FirestoreFalso:
 
     def collection(self, nome):
         falhar = self.falhar_usuarios and nome == "usuarios"
-        return type("Col", (), {"document": lambda _, id_: DocFalso(self.banco, (nome, id_), falhar)})()
+        return type(
+            "Col", (), {"document": lambda _, id_: DocFalso(self.banco, (nome, id_), falhar)}
+        )()
 
 
 class AuthFalso:

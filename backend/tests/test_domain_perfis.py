@@ -42,11 +42,16 @@ def test_cadastro_de_investidor_com_cpf_normaliza_os_dados():
 
 
 def test_cadastro_de_investidor_aceita_cnpj():
-    assert validar_cadastro("Fundo", "f@exemplo.com", CNPJ, Perfil.INVESTIDOR).tipo_documento == "CNPJ"
+    assert (
+        validar_cadastro("Fundo", "f@exemplo.com", CNPJ, Perfil.INVESTIDOR).tipo_documento == "CNPJ"
+    )
 
 
 def test_cadastro_de_gestora_aceita_cnpj():
-    assert validar_cadastro("Núclea", "n@exemplo.com", CNPJ, Perfil.GESTORA).documento == "11222333000181"
+    assert (
+        validar_cadastro("Núclea", "n@exemplo.com", CNPJ, Perfil.GESTORA).documento
+        == "11222333000181"
+    )
 
 
 def test_cadastro_de_gestora_recusa_cpf():
