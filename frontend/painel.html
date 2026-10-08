@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/css/estilo.css" />
+    <title>Painel — Plataforma Clara</title>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container">
+        <a class="marca" href="/">Clara<small>Plataforma</small></a>
+        <div class="nav-acoes"><button class="btn btn-secundario" id="sair" type="button">Sair</button></div>
+      </div>
+    </header>
+    <main class="painel">
+      <span class="rotulo">Em construção</span>
+      <h1 style="font-size: 32px; margin-top: 16px">Painel</h1>
+      <dl>
+        <dt>E-mail</dt><dd id="usuario-email">...</dd>
+        <dt>Perfil</dt><dd id="usuario-perfil">...</dd>
+      </dl>
+      <p id="mensagem" class="mensagem" role="status"></p>
+      <p>As telas de cada perfil entram nas próximas etapas.</p>
+    </main>
+    <script type="module" src="/src/js/painel.js"></script>
+  </body>
+</html>

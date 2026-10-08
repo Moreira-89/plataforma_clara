@@ -3,52 +3,132 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Plataforma Clara</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/css/estilo.css" />
+    <title>Plataforma Clara — transparência para FIDCs</title>
+    <meta name="description" content="A Plataforma Clara abre a caixa-preta dos fundos de direitos creditórios: o investidor vê onde o dinheiro está e qual o risco." />
   </head>
   <body>
-    <main id="app">
-      <h1>Plataforma Clara</h1>
-      <p class="aviso">Tela de teste da autenticação.</p>
-
-      <section id="deslogado">
-        <nav class="abas">
-          <button type="button" id="aba-entrar" class="ativa">Entrar</button>
-          <button type="button" id="aba-cadastrar">Cadastrar investidor</button>
+    <header class="nav nav-escura">
+      <div class="container">
+        <a class="marca" href="/">Clara<small>Plataforma</small></a>
+        <nav class="nav-links" aria-label="Seções">
+          <a href="#problema">O problema</a>
+          <a href="#como-funciona">Como funciona</a>
+          <a href="#para-quem">Para quem</a>
         </nav>
+        <div class="nav-acoes" id="nav-acoes">
+          <a class="btn btn-contorno-escuro" href="/login.html">Entrar</a>
+          <a class="btn btn-primario" href="/cadastro.html">Criar conta</a>
+        </div>
+      </div>
+    </header>
 
-        <form id="form-entrar">
-          <label>E-mail <input name="email" type="email" required autocomplete="username" /></label>
-          <label>Senha <input name="senha" type="password" required autocomplete="current-password" /></label>
-          <button type="submit">Entrar</button>
-        </form>
+    <main>
+      <section class="hero secao-escura">
+        <div class="container">
+          <div>
+            <span class="rotulo">Transparência para FIDCs</span>
+            <h1 style="margin-top: 16px">Abra a caixa-preta do seu investimento.</h1>
+            <p>
+              A Plataforma Clara traz transparência total para a gestão e o acompanhamento dos fundos
+              de investimento em direitos creditórios. Veja onde o seu dinheiro está e qual é o risco real.
+            </p>
+            <div class="hero-acoes">
+              <a class="btn btn-primario btn-lg" href="/cadastro.html">Criar conta de investidor</a>
+              <a class="btn btn-contorno-escuro btn-lg" href="/login.html">Entrar</a>
+            </div>
+          </div>
 
-        <form id="form-cadastrar" hidden>
-          <label>Nome <input name="nome" required autocomplete="name" /></label>
-          <label>E-mail <input name="email" type="email" required autocomplete="username" /></label>
-          <label>CPF ou CNPJ <input name="documento" required inputmode="numeric" /></label>
-          <label>Senha (mín. 8) <input name="senha" type="password" required minlength="8" autocomplete="new-password" /></label>
-          <button type="submit">Cadastrar e entrar</button>
-        </form>
+          <aside class="cartao cartao-escuro" aria-label="Exemplo ilustrativo de um bloco">
+            <div class="exemplo-titulo">
+              <strong>Bloco de Liquidez</strong>
+              <span class="rotulo">Exemplo ilustrativo</span>
+            </div>
+            <div class="linha-exemplo"><div>Empresa A<small>Nota de crédito</small></div><span class="numero">A+</span></div>
+            <div class="linha-exemplo"><div>Empresa B<small>Nota de crédito</small></div><span class="numero">A-</span></div>
+            <div class="linha-exemplo"><div>Empresa C<small>Nota de crédito</small></div><span class="numero">B+</span></div>
+            <p class="nota-exemplo">Dados fictícios, só para ilustrar como a plataforma apresenta cada empresa.</p>
+          </aside>
+        </div>
       </section>
 
-      <section id="logado" hidden>
-        <h2>Sessão</h2>
-        <dl>
-          <dt>E-mail</dt><dd id="usuario-email"></dd>
-          <dt>Perfil</dt><dd id="usuario-perfil"></dd>
-        </dl>
-
-        <h2>Rotas protegidas</h2>
-        <p class="aviso">501 = acesso liberado (rota ainda sem dados). 403 = perfil sem acesso.</p>
-        <div id="rotas"></div>
-
-        <button type="button" id="sair">Sair</button>
+      <section class="secao" id="problema">
+        <div class="container">
+          <span class="rotulo">O problema</span>
+          <h2 class="titulo-secao">Acompanhar a saúde de um FIDC é difícil.</h2>
+          <p class="texto-secao">
+            Um único fundo pode reunir milhares de pagamentos de centenas de empresas e clientes.
+            Saber se estão pagando em dia, se o risco de calote aumentou ou qual é a saúde real do
+            investimento exige pilhas de planilhas, PDFs gigantescos e dados desatualizados.
+            Essa falta de clareza é a caixa-preta: o investidor fica inseguro, a checagem fica lenta
+            e o risco de erro aumenta.
+          </p>
+        </div>
       </section>
 
-      <p id="mensagem" role="status"></p>
-      <pre id="resposta" hidden></pre>
+      <section class="secao secao-suave" id="como-funciona">
+        <div class="container">
+          <span class="rotulo">Como funciona</span>
+          <h2 class="titulo-secao">Uma lente de aumento sobre o fundo.</h2>
+          <p class="texto-secao">
+            A plataforma se conecta às fontes de dados e transforma milhares de linhas em um painel
+            simples e visual, como o velocímetro de um carro.
+          </p>
+          <div class="grade-3">
+            <article class="cartao">
+              <h3>Blocos de Liquidez</h3>
+              <p>Veja o dinheiro agregado por bloco, com o volume alocado e as empresas por trás de cada um.</p>
+            </article>
+            <article class="cartao">
+              <h3>Score de risco</h3>
+              <p>Cada empresa tem uma nota de risco, numa escala de A+ a C-, fácil de comparar.</p>
+            </article>
+            <article class="cartao">
+              <h3>Relatório em PDF</h3>
+              <p>Um relatório em linguagem natural, gerado por IA a partir dos dados reais da sua carteira.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="secao" id="para-quem">
+        <div class="container">
+          <span class="rotulo">Para quem</span>
+          <h2 class="titulo-secao">Quem ganha com a transparência.</h2>
+          <div class="grade-3">
+            <article class="cartao">
+              <h3>Investidores</h3>
+              <p>Acompanhe o rendimento, confira se os pagamentos estão em dia e entenda o risco da aplicação sem ser especialista em finanças.</p>
+            </article>
+            <article class="cartao">
+              <h3>Gestora</h3>
+              <p>Reduza erros manuais e demonstre resultados de forma automática, transparente e confiável aos seus investidores.</p>
+            </article>
+            <article class="cartao">
+              <h3>Empresas cedentes</h3>
+              <p>Construa um histórico positivo, seja reconhecida como boa pagadora e tenha operações cada vez mais simples e ágeis.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="secao secao-escura faixa-cta">
+        <div class="container">
+          <h2>Veja o que a gestora já vê.</h2>
+          <a class="btn btn-primario btn-lg" href="/cadastro.html">Criar conta de investidor</a>
+        </div>
+      </section>
     </main>
-    <script type="module" src="/src/js/main.js"></script>
+
+    <footer class="rodape">
+      <div class="container">
+        <span>Plataforma Clara</span>
+        <span>Projeto acadêmico FIAP</span>
+      </div>
+    </footer>
+    <script type="module" src="/src/js/home.js"></script>
   </body>
 </html>

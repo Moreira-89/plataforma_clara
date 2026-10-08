@@ -1,4 +1,8 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
+
+// Site de várias páginas: cada HTML da raiz é uma entrada do build.
+const pagina = (nome) => fileURLToPath(new URL(`./${nome}.html`, import.meta.url))
 
 export default defineConfig({
   server: {
@@ -14,5 +18,13 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    rollupOptions: {
+      input: {
+        index: pagina('index'),
+        login: pagina('login'),
+        cadastro: pagina('cadastro'),
+        painel: pagina('painel'),
+      },
+    },
   },
 })

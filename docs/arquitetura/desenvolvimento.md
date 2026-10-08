@@ -79,8 +79,9 @@ que o BigQuery já usa.
 
 ### Testar o login no frontend
 
-O frontend tem uma tela de teste (login, cadastro de investidor e botões que chamam
-as rotas protegidas). Ela precisa da config web do Firebase:
+O frontend tem a home, o cadastro de investidor, o login e um painel provisório
+que mostra o e-mail e o perfil do usuário logado. O login e o cadastro precisam da
+config web do Firebase:
 
 1. No console do Firebase: **Configurações do projeto** → **Geral** → **Seus apps** →
    registrar um app da **Web** (`</>`). O console mostra `apiKey` e `authDomain`.
