@@ -386,8 +386,8 @@ def _ler_pdf_referencia(max_chars: int = _MAX_REF_CHARS) -> str:
     return texto_pdf_extraido
 
 _PREFIXO_PROVEDOR = "groq:"
-_MAX_TOKENS_RESPOSTA = 4096
-_ESFORCO_RACIOCINIO = "low"
+_MAX_TOKENS_RESPOSTA = 8192
+_ESFORCO_RACIOCINIO = "medium"
 
 
 def _nome_modelo_groq(nome_configurado: str) -> str:

@@ -237,7 +237,7 @@ def test_llm_usa_modelo_da_configuracao(monkeypatch):
     llm = servico._criar_llm()
 
     assert llm.model_name == "openai/gpt-oss-120b"
-    assert llm.reasoning_effort == "low"
+    assert llm.reasoning_effort == "medium"
     assert llm.max_tokens is not None and llm.max_tokens >= 2048
 
 
