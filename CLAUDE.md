@@ -11,9 +11,9 @@ A Plataforma Clara reduz a assimetria de informação entre gestoras e investido
 ## Comandos
 
 ```bash
-# Backend
-cd backend
+# Backend (o .venv fica na raiz do repositório, onde o editor o procura)
 python -m venv .venv && source .venv/bin/activate   # Python 3.12
+cd backend
 pip install -r requirements.txt
 cp .env.example .env          # preencher antes de subir
 uvicorn main:app --reload     # http://localhost:8000/docs

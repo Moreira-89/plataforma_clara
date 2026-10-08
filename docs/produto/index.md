@@ -43,10 +43,10 @@ versão diferente dos mesmos dados.
 
 ## O que o score de risco é — e o que não é
 
-O score de risco de cada empresa **chega pronto** de uma fonte externa (ex.:
-Núclea). A plataforma classifica esse número numa escala de nota (de A+ a C-)
-e num status de adimplência, mas **não calcula** o score. Não existe modelo
-de machine learning por trás disso.
+O score de risco de cada empresa é a **previsão de um modelo de machine
+learning**. A plataforma classifica esse número numa escala de nota (de A+ a C-)
+e num status de adimplência, mas hoje **não contém o modelo**: o score entra como
+dado pronto. Onde o modelo roda e quem o fornece ainda está a definir.
 
 ## Regra de produto: nunca simular sem avisar
 

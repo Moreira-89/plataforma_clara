@@ -35,9 +35,9 @@ Requer **Python 3.12** e **Node 22**.
     novas. A instalação falha ao compilar dependências transitivas.
 
 ```bash
-# Backend
-cd backend
+# Backend (o .venv fica na raiz do repositório, onde o editor o procura)
 python -m venv .venv && source .venv/bin/activate
+cd backend
 pip install -r requirements.txt
 cp .env.example .env
 uvicorn main:app --reload      # http://localhost:8000/docs
