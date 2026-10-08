@@ -29,6 +29,7 @@ nav:
   - Produto: produto/index.md
   - Arquitetura:
       - arquitetura/index.md
+      - Autenticação: arquitetura/autenticacao.md
       - Desenvolvimento: arquitetura/desenvolvimento.md
   - Roadmap:
       - roadmap/index.md

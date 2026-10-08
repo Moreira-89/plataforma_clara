@@ -9,8 +9,12 @@ item for resolvido.
 **A decisão mais urgente do projeto.** O upload manual de CSV foi removido —
 não é assim que a plataforma vai operar com usuários reais. Falta decidir de
 onde os dados vêm (provavelmente consulta a um serviço externo que já os
-tenha) e como chegam ao BigQuery. Nada escreve em `tb_aporte` hoje, e o
-relatório por IA já depende disso e está quebrado por consequência.
+tenha) e como chegam ao BigQuery.
+
+Junto com isso, decidir o **CNPJ alfanumérico** (emitido desde julho de 2026):
+hoje o cadastro o recusa, porque o documento normalizado, que liga o usuário
+aos aportes, só mantém dígitos. Depende de como a fonte representa o CNPJ.
+Decisão a ser tomada com o grupo. Ver [Autenticação](../arquitetura/autenticacao.md).
 
 ## 2. Agregação do dashboard (BigQuery)
 
@@ -25,23 +29,10 @@ desenhar a agregação antes disso estabilizar seria trabalho jogado fora.
 `domain.metricas` já tem as regras de consolidação e montagem das visões —
 falta só quem as alimente.
 
-## 3. Esqueleto da API
+## 3. Endpoints do produto
 
-`main.py`, routers, settings via `pydantic-settings`, lifespan. Hoje a API
-não expõe nenhuma rota.
-
-## 4. Firebase Auth
-
-Não há verificação de token nem rota protegida ainda. Autorização por
-perfil — gestora vs. investidor — depende disso.
-
-Rotas planejadas: `POST /auth/login`, `POST /auth/register`.
-`api/endpoints/authentication.py` e `register.py` já existem como arquivo,
-vazios.
-
-## 5. Endpoints do produto
-
-Nenhum implementado ainda. Planejados:
+`GET /health` funciona. As demais rotas já existem no contrato e respondem
+501 até terem implementação. Planejadas:
 
 - `GET /dashboard/gestora`, `GET /dashboard/investidor`
 - `GET /blocos`, `GET /blocos/{bloco_id}`
@@ -51,30 +42,31 @@ Nenhum implementado ainda. Planejados:
 O que já está pronto para eles chamarem:
 
 - `agents.relatorio.gerar_relatorio_consolidado_investidor` — PDF por IA
-  (hoje sempre falha, ver item 1)
 - `domain.metricas` — consolidação de KPIs e montagem das visões (sem quem
   as alimente, ver item 2)
 
-## 6. Firestore
+## 4. Firestore
 
-Nada implementado. Reservado para o vínculo Firebase UID ↔ CPF/CNPJ do
-investidor — pode nem precisar de banco separado, se virar *custom claim*
-no token.
+Já em uso só para identidade: `usuarios/{uid}` e o índice `documentos/{documento}`
+que garante um CPF/CNPJ por conta (ver [Autenticação](../arquitetura/autenticacao.md)).
+Dados de aporte continuam fora dele. Falta uma dependência que leia o documento
+do usuário para filtrar os aportes dele, que entra com o primeiro endpoint real
+do dashboard.
 
-## 7. Redis
+## 5. Redis
 
 Sobe no `docker-compose`, sem cliente na aplicação ainda.
 
-## 8. CORS
+## 6. CORS
 
 Sem middleware. Necessário assim que o frontend chamar a API de outro
 domínio.
 
-## 9. Frontend
+## 7. Frontend
 
 Só a casca hoje (Vite, Dockerfile, proxy de desenvolvimento). Nenhuma tela.
 
-## 10. Lock file de dependências
+## 8. Lock file de dependências
 
 `requirements.txt` usa faixas de versão (`~=`), sem lock file fixando a
 árvore inteira de dependências transitivas.

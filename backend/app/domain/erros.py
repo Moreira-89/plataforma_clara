@@ -16,8 +16,32 @@ class EmailJaCadastradoError(ErroDeNegocio):
 
 
 class DocumentoInvalidoError(ErroDeNegocio):
-    """O CPF/CNPJ informado não passou na validação estrutural."""
+    """O CPF/CNPJ informado não passou na validação (tamanho e dígitos verificadores)."""
 
 
 class DadosIncompletosError(ErroDeNegocio):
     """Faltam campos obrigatórios para concluir a operação."""
+
+
+class EmailInvalidoError(ErroDeNegocio):
+    """O e-mail informado não tem formato válido."""
+
+
+class DocumentoJaCadastradoError(ErroDeNegocio):
+    """O CPF/CNPJ informado já pertence a outro usuário."""
+
+
+class TokenInvalidoError(ErroDeNegocio):
+    """O token de acesso está ausente, malformado, expirado ou revogado."""
+
+
+class AutenticacaoIndisponivelError(ErroDeNegocio):
+    """O serviço de identidade não respondeu, então não dá para verificar o token."""
+
+
+class PerfilAusenteError(ErroDeNegocio):
+    """O token é válido, mas não traz um perfil conhecido (investidor ou gestora)."""
+
+
+class AcessoNegadoError(ErroDeNegocio):
+    """O perfil do usuário não tem permissão para esta operação."""

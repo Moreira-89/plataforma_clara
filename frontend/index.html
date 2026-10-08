@@ -4,9 +4,51 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Plataforma Clara</title>
+    <link rel="stylesheet" href="/src/css/estilo.css" />
   </head>
   <body>
-    <div id="app"></div>
+    <main id="app">
+      <h1>Plataforma Clara</h1>
+      <p class="aviso">Tela de teste da autenticação.</p>
+
+      <section id="deslogado">
+        <nav class="abas">
+          <button type="button" id="aba-entrar" class="ativa">Entrar</button>
+          <button type="button" id="aba-cadastrar">Cadastrar investidor</button>
+        </nav>
+
+        <form id="form-entrar">
+          <label>E-mail <input name="email" type="email" required autocomplete="username" /></label>
+          <label>Senha <input name="senha" type="password" required autocomplete="current-password" /></label>
+          <button type="submit">Entrar</button>
+        </form>
+
+        <form id="form-cadastrar" hidden>
+          <label>Nome <input name="nome" required autocomplete="name" /></label>
+          <label>E-mail <input name="email" type="email" required autocomplete="username" /></label>
+          <label>CPF ou CNPJ <input name="documento" required inputmode="numeric" /></label>
+          <label>Senha (mín. 8) <input name="senha" type="password" required minlength="8" autocomplete="new-password" /></label>
+          <button type="submit">Cadastrar e entrar</button>
+        </form>
+      </section>
+
+      <section id="logado" hidden>
+        <h2>Sessão</h2>
+        <dl>
+          <dt>E-mail</dt><dd id="usuario-email"></dd>
+          <dt>Perfil</dt><dd id="usuario-perfil"></dd>
+        </dl>
+
+        <h2>Rotas protegidas</h2>
+        <p class="aviso">501 = acesso liberado (rota ainda sem dados). 403 = perfil sem acesso.</p>
+        <div id="rotas"></div>
+
+        <button type="button" id="sair">Sair</button>
+      </section>
+
+      <p id="mensagem" role="status"></p>
+      <pre id="resposta" hidden></pre>
+    </main>
     <script type="module" src="/src/js/main.js"></script>
   </body>
 </html>

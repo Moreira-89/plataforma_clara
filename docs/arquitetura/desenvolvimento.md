@@ -51,6 +51,51 @@ npm run dev                    # http://localhost:5173
 Em desenvolvimento o Vite faz proxy de `/api` para `http://localhost:8000`, então
 o frontend funciona sem configurar CORS nem `VITE_API_URL`.
 
+## Firebase (autenticação)
+
+Passos manuais, uma vez por projeto GCP. Detalhes em [Autenticação](autenticacao.md).
+
+1. No console do Firebase, ativar o provedor **E-mail/senha** em Authentication.
+2. Criar o banco **Firestore** em modo Native.
+3. Publicar as regras do Firestore. No console do Firebase: **Firestore Database** →
+   aba **Regras** → apagar o conteúdo do editor → colar o conteúdo do
+   `firestore.rules` da raiz do repositório → **Publicar**.
+4. Dar à service account os papéis **Firebase Authentication Admin** e **Cloud Datastore User**.
+5. Criar a primeira gestora: `cd backend && python -m app.jobs.criar_gestora --nome ... --email ... --cnpj ...`.
+
+!!! info "Para que servem as regras"
+    As regras só valem para acesso vindo do navegador ou do SDK web. O backend usa
+    o Admin SDK, que as ignora, então o cadastro funciona com qualquer regra. A
+    regra `allow read, write: if false` existe para que ninguém leia ou grave
+    CPF/CNPJ direto do navegador.
+
+    Banco criado em **modo de produção** já nega tudo por padrão; em **modo de
+    teste** as regras padrão liberam tudo por 30 dias, então publicar é
+    necessário. Na dúvida, publique: o resultado é o mesmo. Depois de publicar, a
+    aba Regras mostra a data e o texto publicados.
+
+Sem variável nova: o Firebase usa o `PROJECT_ID` e o `GOOGLE_APPLICATION_CREDENTIALS`
+que o BigQuery já usa.
+
+### Testar o login no frontend
+
+O frontend tem uma tela de teste (login, cadastro de investidor e botões que chamam
+as rotas protegidas). Ela precisa da config web do Firebase:
+
+1. No console do Firebase: **Configurações do projeto** → **Geral** → **Seus apps** →
+   registrar um app da **Web** (`</>`). O console mostra `apiKey` e `authDomain`.
+2. Preencher em `frontend/.env`: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN` e
+   `VITE_FIREBASE_PROJECT_ID`. Esses valores não são segredo: vão no bundle.
+3. Subir `uvicorn main:app --reload` em `backend/` e `npm run dev` em `frontend/`.
+
+Use o `npm run dev`: o proxy do Vite evita o CORS, que a API ainda não configura.
+
+!!! warning "Abra em um navegador comum"
+    O navegador embutido do VS Code bloqueia a chamada de login ao Google e a tela
+    mostra "Sem conexão com o Firebase". Abra <http://localhost:5173> no Chrome,
+    Firefox ou Brave. Extensões de bloqueio de anúncio também podem causar o mesmo
+    erro; teste em janela anônima.
+
 ## Qualidade
 
 ```bash

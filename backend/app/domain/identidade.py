@@ -11,15 +11,17 @@ uma função só.
 import re
 from typing import Final
 
+from validate_docbr import CNPJ, CPF
+
 # Validação básica de formato de e-mail — não verifica se o domínio existe.
 _EMAIL_REGEX: Final[re.Pattern[str]] = re.compile(
     r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
 )
 
-# Regras estruturais: CPF tem 11 dígitos, CNPJ tem 14.
+# CPF tem 11 dígitos, CNPJ tem 14; `validar` confere os dígitos verificadores.
 _REGRAS_DOCUMENTOS: Final[dict[str, dict]] = {
-    "CPF": {"tamanho": 11, "permite_letras": False},
-    "CNPJ": {"tamanho": 14, "permite_letras": False},
+    "CPF": {"tamanho": 11, "permite_letras": False, "validar": CPF().validate},
+    "CNPJ": {"tamanho": 14, "permite_letras": False, "validar": CNPJ().validate},
 }
 
 DOCUMENTO_INVALIDO: Final[str] = "INVALIDO"
@@ -46,10 +48,12 @@ def identificar_documento(documento_bruto: str) -> tuple[str, str]:
     Classifica uma string como CPF, CNPJ ou inválida, e devolve a versão limpa.
 
     COMO FUNCIONA:
-        Remove tudo que não for letra ou número e compara o tamanho resultante com
-        as regras de cada tipo. A validação é APENAS ESTRUTURAL — não confere
-        dígitos verificadores, então '00000000000' passa como CPF. É uma limitação
-        consciente do MVP, travada por teste.
+        1. Remove tudo que não for letra ou número.
+        2. Compara o tamanho com as regras de cada tipo e exige só dígitos.
+        3. Confere os dígitos verificadores (`validate-docbr`). Sequências repetidas,
+           como '00000000000', são recusadas.
+        CNPJ alfanumérico ainda é recusado de propósito: `normalizar_documento`, a
+        chave de ligação com os aportes, só mantém dígitos.
 
     Args:
         documento_bruto (str): String digitada pelo usuário, com ou sem máscara.
@@ -66,6 +70,8 @@ def identificar_documento(documento_bruto: str) -> tuple[str, str]:
         if tamanho != regras["tamanho"]:
             continue
         if not regras["permite_letras"] and not documento_limpo.isdigit():
+            continue
+        if not regras["validar"](documento_limpo):
             continue
         return tipo, documento_limpo
 
