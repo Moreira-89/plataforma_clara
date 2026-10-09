@@ -21,9 +21,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: pagina('index'),
-        login: pagina('login'),
-        cadastro: pagina('cadastro'),
-        painel: pagina('painel'),
+        login: pagina('paginas/login'),
+        cadastro: pagina('paginas/cadastro'),
+        novoBloco: pagina('paginas/gestora/novo-bloco'),
       },
     },
   },

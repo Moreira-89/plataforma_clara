@@ -1,0 +1,56 @@
+/* Criação de bloco de liquidez: empresas à esquerda (maior), dados do bloco à direita. */
+.container-largo { max-width: 1488px; }
+.pagina-bloco { max-width: 1440px; margin: var(--space-xxl) auto; padding: 0 var(--space-lg); }
+.titulo-pagina { font-size: 36px; line-height: 1.11; letter-spacing: -0.5px; margin: var(--space-base) 0 var(--space-xs); }
+.titulo-bloco { font-size: 18px; font-weight: 600; margin-bottom: var(--space-base); }
+
+.layout-bloco {
+  display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: var(--space-lg);
+  align-items: start; margin-top: var(--space-xl);
+}
+/* Coluna em flex (e não grid) para o botão fixo poder deslizar dentro dela. */
+.coluna-principal { display: flex; flex-direction: column; gap: var(--space-base); min-width: 0; }
+#salvar { position: sticky; bottom: var(--space-base); z-index: 2; }
+.coluna-empresas { min-width: 0; min-height: 320px; }
+.coluna-dados { display: grid; gap: var(--space-base); position: sticky; top: var(--space-lg); }
+.dados-bloco { display: grid; gap: var(--space-base); }
+
+.linha-cor { display: flex; align-items: center; gap: var(--space-sm); }
+.selo-cor { width: 24px; height: 24px; border-radius: var(--radius-full); border: 1px solid var(--hairline); background: var(--surface-strong); flex: none; }
+
+.busca-empresa { display: flex; gap: var(--space-xs); }
+.busca-empresa input {
+  flex: 1; height: 44px; padding: 12px 20px; border: 1px solid var(--hairline); border-radius: var(--radius-pill);
+  background: var(--surface-strong); font: 400 16px var(--font-sans); color: var(--ink);
+}
+.busca-empresa input:focus { outline: none; border-color: var(--primary); background: var(--canvas); }
+.resultados { list-style: none; margin: var(--space-xs) 0 0; padding: 0; border: 1px solid var(--hairline); border-radius: var(--radius-md); max-height: 240px; overflow-y: auto; }
+.resultados li { border-top: 1px solid var(--hairline); }
+.resultados li:first-child { border-top: 0; }
+.resultados label { display: flex; gap: var(--space-sm); align-items: center; padding: var(--space-sm) var(--space-base); cursor: pointer; color: var(--ink); }
+.resultados small { margin-left: auto; color: var(--muted); font-family: var(--font-mono); }
+
+.tabela-rolagem { overflow-x: auto; margin-top: var(--space-lg); }
+.tabela { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tabela th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); padding: var(--space-xs) var(--space-sm); border-bottom: 1px solid var(--hairline); }
+.tabela td { padding: var(--space-sm); border-bottom: 1px solid var(--hairline); color: var(--ink); vertical-align: middle; }
+.tabela input { width: 110px; height: 40px; padding: 8px 12px; border: 1px solid var(--hairline); border-radius: var(--radius-md); font: 500 14px var(--font-mono); }
+.tabela input:focus { outline: none; border: 2px solid var(--primary); padding: 7px 11px; }
+.tabela .remover { background: none; border: 0; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1; }
+.aviso-vazio { margin-top: var(--space-base); color: var(--muted); font-size: 14px; }
+
+.resumo-alocacao { display: flex; gap: var(--space-xl); margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--hairline); }
+.resumo-alocacao span { display: block; font-size: 13px; color: var(--muted); }
+.resumo-alocacao strong { font-size: 24px; color: var(--ink); }
+.resumo-alocacao .excedido { color: var(--semantic-down); }
+.resumo-alocacao .completo { color: var(--semantic-up); }
+
+@media (max-width: 1024px) {
+  /* Em coluna única: dados, depois empresas e, por último, o botão de criar. */
+  .layout-bloco { grid-template-columns: 1fr; }
+  .coluna-dados { order: -1; position: static; }
+  .coluna-empresas { min-height: 0; }
+}
+@media (max-width: 768px) {
+  .busca-empresa { flex-direction: column; }
+}

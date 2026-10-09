@@ -1,0 +1,7 @@
+/* Login e cadastro. */
+/* --- login e cadastro --- */
+.auth { min-height: calc(100vh - 64px); display: grid; place-items: center; padding: var(--space-xxl) var(--space-lg); background: var(--surface-soft); }
+.auth-cartao { width: 100%; max-width: 440px; }
+.auth-cartao h1 { font-size: 32px; line-height: 1.13; letter-spacing: -0.4px; margin-bottom: var(--space-xs); }
+.auth-cartao > p { margin-bottom: var(--space-lg); }
+.auth-rodape { margin-top: var(--space-lg); text-align: center; font-size: 14px; }

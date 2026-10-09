@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/css/principal.css" />
+    <link rel="stylesheet" href="/src/css/paginas/gestora-novo-bloco.css" />
+    <title>Criar bloco de liquidez — Plataforma Clara</title>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container container-largo">
+        <a class="marca" href="/">Clara<small>Plataforma</small></a>
+        <div class="nav-acoes">
+          <button class="btn btn-secundario" id="sair" type="button">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="pagina-bloco" id="conteudo" hidden>
+      <span class="rotulo">Gestora</span>
+      <h1 class="titulo-pagina">Criar bloco de liquidez</h1>
+      <p>Escolha a etiqueta, defina o capital e distribua-o entre as empresas do bloco.</p>
+      <p id="erro-pagina" class="mensagem erro" role="alert" hidden></p>
+
+      <form id="form-bloco" class="layout-bloco" novalidate>
+        <div class="coluna-principal">
+        <section class="cartao coluna-empresas">
+          <h2 class="titulo-bloco">Adicionar empresas no bloco</h2>
+          <div class="busca-empresa">
+            <input id="busca" type="search" placeholder="Nome fantasia ou CNPJ" autocomplete="off" aria-label="Buscar empresa" />
+            <button class="btn btn-secundario" id="adicionar" type="button" disabled>Adicionar</button>
+          </div>
+          <p id="busca-estado" class="mensagem" role="status"></p>
+          <ul id="resultados" class="resultados" hidden></ul>
+
+          <div class="tabela-rolagem">
+            <table class="tabela" id="tabela-empresas">
+              <thead>
+                <tr>
+                  <th>Empresa</th><th>CNPJ</th><th>Ramo</th>
+                  <th>Capital estimado para a empresa</th>
+                  <th>Porcentagem de liquidez aplicada</th>
+                  <th><span class="so-leitor">Remover</span></th>
+                </tr>
+              </thead>
+              <tbody id="corpo-tabela"></tbody>
+            </table>
+          </div>
+          <p id="tabela-vazia" class="aviso-vazio">Nenhuma empresa adicionada.</p>
+
+          <div class="resumo-alocacao" aria-live="polite">
+            <div><span>Realocado</span><strong class="numero" id="realocado">0%</strong></div>
+            <div><span>Disponível</span><strong class="numero" id="disponivel">100%</strong></div>
+          </div>
+        </section>
+
+        <p id="mensagem" class="mensagem" role="status"></p>
+        <div id="sucesso" class="cartao sucesso" hidden></div>
+        <button class="btn btn-primario btn-lg btn-bloco" id="salvar" type="submit" disabled>Criar bloco</button>
+        </div>
+
+        <aside class="coluna-dados">
+          <div class="cartao dados-bloco">
+            <h2 class="titulo-bloco">Dados do bloco</h2>
+            <label class="campo">Etiqueta
+              <span class="linha-cor">
+                <i class="selo-cor" id="selo-cor" aria-hidden="true"></i>
+                <select name="etiqueta" id="etiqueta" required></select>
+              </span>
+              <small id="codigo-previa" class="numero">Código: gerado ao salvar</small>
+            </label>
+            <label class="campo">Capital total do bloco
+              <input name="capital_total" id="capital-total" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off" required />
+            </label>
+            <label class="campo">Data de vencimento do bloco
+              <input name="data_vencimento" id="data-vencimento" type="date" required />
+            </label>
+            <label class="campo">Nome do responsável técnico
+              <input name="responsavel_tecnico" maxlength="120" required autocomplete="off" />
+            </label>
+            <label class="campo">Observação
+              <textarea name="observacao" id="observacao" maxlength="500" rows="4"></textarea>
+              <small id="contador-observacao">0 / 500</small>
+            </label>
+          </div>
+        </aside>
+      </form>
+    </main>
+    <script type="module" src="/src/js/paginas/gestora/novo-bloco.js"></script>
+  </body>
+</html>

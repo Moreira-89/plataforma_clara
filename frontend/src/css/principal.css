@@ -1,0 +1,4 @@
+/* Estilos comuns a todas as páginas. */
+@import './tokens.css';
+@import './base.css';
+@import './componentes.css';

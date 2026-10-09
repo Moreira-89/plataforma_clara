@@ -1,7 +1,7 @@
 import { obterToken } from './firebase.js'
 
 // Em dev o proxy do Vite atende /api; em produção a URL vem do build.
-const API = import.meta.env.VITE_API_URL ?? '/api'
+const API = import.meta.env.VITE_API_URL || '/api'
 
 // Devolve { status, corpo } sem lançar em 4xx/5xx: a tela mostra o status.
 export async function chamar(metodo, caminho, corpo, { autenticado = true } = {}) {
@@ -17,13 +17,11 @@ export async function chamar(metodo, caminho, corpo, { autenticado = true } = {}
     body: corpo ? JSON.stringify(corpo) : undefined,
   })
   const texto = await resposta.text()
-  let json = null
   try {
-    json = texto ? JSON.parse(texto) : null
+    return { status: resposta.status, corpo: texto ? JSON.parse(texto) : null }
   } catch {
-    json = texto
+    return { status: 502, corpo: { detail: 'Resposta inesperada do servidor. Confira VITE_API_URL e o backend.' } }
   }
-  return { status: resposta.status, corpo: json }
 }
 
 // detail do FastAPI é texto, ou lista de erros de validação (422).
