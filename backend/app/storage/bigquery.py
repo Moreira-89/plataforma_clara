@@ -7,6 +7,7 @@ Suporta dois modos de configuração da variável GOOGLE_APPLICATION_CREDENTIALS
 """
 
 import logging
+from functools import lru_cache
 
 from google.cloud import bigquery
 from google.oauth2 import service_account
@@ -80,5 +81,12 @@ def criar_cliente_bigquery(project_id: str | None = None) -> bigquery.Client:
     return bigquery.Client(project=project_id)
 
 
+@lru_cache
+def cliente_compartilhado() -> bigquery.Client:
+    """Cliente BigQuery criado uma vez por processo e reaproveitado pelas consultas."""
+    return criar_cliente_bigquery()
 
 
+def tabela(nome: str) -> str:
+    """Nome qualificado `projeto.dataset.tabela`, já entre crases para usar no SQL."""
+    return f"`{settings.project_id}.{settings.bigquery_dataset}.{nome}`"

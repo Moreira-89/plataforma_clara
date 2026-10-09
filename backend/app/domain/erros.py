@@ -45,3 +45,19 @@ class PerfilAusenteError(ErroDeNegocio):
 
 class AcessoNegadoError(ErroDeNegocio):
     """O perfil do usuário não tem permissão para esta operação."""
+
+
+class BlocoInvalidoError(ErroDeNegocio):
+    """Os dados do bloco de liquidez não passaram na validação."""
+
+
+class EmpresaNaoEncontradaError(ErroDeNegocio):
+    """Uma empresa do bloco não existe no cadastro de empresas."""
+
+
+class EmpresaJaEmBlocoError(ErroDeNegocio):
+    """Uma empresa do bloco já pertence a outro bloco de liquidez."""
+
+
+class DadosIndisponiveisError(ErroDeNegocio):
+    """Uma tabela do BigQuery necessária à operação não está acessível."""

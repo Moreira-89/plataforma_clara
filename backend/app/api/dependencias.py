@@ -4,8 +4,9 @@ Dependências do FastAPI: identidade do usuário e controle de acesso por perfil
 COMO FUNCIONA:
     1. `obter_usuario_atual` extrai o Bearer, verifica o token e monta o `UsuarioAtual`.
     2. `exigir_perfil(...)` fabrica uma dependência que recusa perfis fora da lista.
-    3. `obter_verificador_token` e `obter_cadastrador` entregam as funções de I/O; nos
-       testes são trocadas com `dependency_overrides`.
+    3. `obter_verificador_token`, `obter_cadastrador`, `obter_buscador_de_empresas` e
+       `obter_criador_de_bloco` entregam as funções de I/O; nos testes são trocadas com
+       `dependency_overrides`.
 
 Args:
     Nenhum.
@@ -27,12 +28,15 @@ from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.api.schemas.auth import UsuarioAtual
+from app.domain.blocos import BlocoValidado, EmpresaCatalogo
 from app.domain.erros import AcessoNegadoError, TokenInvalidoError
 from app.domain.perfis import DadosCadastro, Perfil, perfil_de_claims
-from app.storage import firebase, usuarios
+from app.storage import blocos, empresas, firebase, usuarios
 
 Verificador = Callable[[str], dict[str, Any]]
 Cadastrador = Callable[[DadosCadastro, str, Perfil], str]
+BuscadorDeEmpresas = Callable[[str], list[EmpresaCatalogo]]
+CriadorDeBloco = Callable[[BlocoValidado, str], None]
 
 # auto_error=False para o 401 sair pelo nosso handler, com o mesmo formato dos demais.
 _esquema_bearer = HTTPBearer(auto_error=False)
@@ -46,6 +50,16 @@ def obter_verificador_token() -> Verificador:
 def obter_cadastrador() -> Cadastrador:
     """Entrega a função que cria a conta completa."""
     return usuarios.cadastrar_usuario
+
+
+def obter_buscador_de_empresas() -> BuscadorDeEmpresas:
+    """Entrega a função que busca empresas no cadastro."""
+    return empresas.buscar_empresas
+
+
+def obter_criador_de_bloco() -> CriadorDeBloco:
+    """Entrega a função que grava um bloco de liquidez."""
+    return blocos.criar_bloco
 
 
 async def obter_usuario_atual(
