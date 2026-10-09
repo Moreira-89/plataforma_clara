@@ -104,13 +104,21 @@ backend/
     api/schemas/           #   contratos Pydantic de entrada e saída
     config/                #   settings.py (env) e logging.py
     domain/                #   risco, metricas, formatacao, identidade, erros
-    jobs/                  #   criar_gestora.py (CLI do cadastro da gestora)
-    storage/               #   bigquery, firebase (token + Firestore), usuarios, credenciais
+    jobs/                  #   criar_gestora.py e criar_tabelas_blocos.py (CLIs)
+    storage/               #   bigquery, empresas, blocos, firebase (token + Firestore), usuarios, credenciais
   tests/
 frontend/
   Dockerfile               # build Node → nginx
-  vite.config.js           # proxy /api para o backend em desenvolvimento
-  src/                     # css, js, img
+  vite.config.js           # proxy /api em dev; lista as páginas do build
+  index.html               # home
+  paginas/                 # uma pasta por área, um HTML por tela
+    login.html, cadastro.html
+    gestora/novo-bloco.html
+  src/css/                 # tokens, base, componentes (principal.css junta os três)
+    paginas/               #   um CSS por tela ou grupo de telas
+  src/js/nucleo/           # api, firebase, rotas, ui — usados por todas as telas
+  src/js/paginas/          # um script por tela (espelha paginas/)
+  src/img/
   .env.example
 docs/                      # documentação MkDocs
 mkdocs.yml
@@ -154,7 +162,7 @@ Cada serviço tem o seu modelo: `backend/.env.example` e `frontend/.env.example`
 ```
 GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account", ...}  # ou caminho de arquivo
 PROJECT_ID=plataforma-clara
-BIGQUERY_DATASET=dados_cvm
+BIGQUERY_DATASET=tabelas_silvers
 REDIS_URL=redis://localhost:6379/0
 GROQ_API_KEY=gsk_...
 LLM_MODEL_NAME="groq:openai/gpt-oss-120b"
@@ -168,7 +176,7 @@ Não criar variável de ambiente nova sem que algo a consuma.
 Não invente que existe. Nesta ordem:
 
 1. **Fonte dos dados de aportes.** O upload de CSV foi removido de propósito (não é assim que a plataforma vai operar). Ainda não existe nenhum mecanismo que traga esses dados para a plataforma — nem CSV, nem consulta a serviço externo, nada. É a decisão mais urgente em aberto.
-2. **Endpoints do produto** — só `GET /health` e `/auth/*` funcionam. `/dashboard`, `/blocos` e `/relatorios` exigem o perfil certo, mas depois da checagem respondem 501 até terem fonte de dados.
+2. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `GET /blocos/etiquetas`, `POST /blocos` e `GET /empresas` (criação de bloco pela gestora; depende da `tb_empresas`, que outra pessoa do grupo está criando). `/dashboard`, `/blocos` e `/relatorios` exigem o perfil certo, mas depois da checagem respondem 501 até terem fonte de dados.
 3. **Redis** — declarado no compose, sem cliente na aplicação.
 4. **CORS** — sem middleware. Precisa entrar quando o frontend chamar a API de outro domínio.
 5. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.

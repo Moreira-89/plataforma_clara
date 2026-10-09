@@ -79,23 +79,56 @@ que o BigQuery já usa.
 
 ### Testar o login no frontend
 
-O frontend tem a home, o cadastro de investidor, o login e um painel provisório
-que mostra o e-mail e o perfil do usuário logado. O login e o cadastro precisam da
-config web do Firebase:
+O frontend tem a home, o cadastro de investidor, o login e a tela de criação de bloco
+de liquidez (só gestora). Depois de entrar, a gestora vai direto para essa tela; o
+investidor, que ainda não tem tela própria, volta para a home. O login e o cadastro
+precisam da config web do Firebase:
 
 1. No console do Firebase: **Configurações do projeto** → **Geral** → **Seus apps** →
    registrar um app da **Web** (`</>`). O console mostra `apiKey` e `authDomain`.
 2. Preencher em `frontend/.env`: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN` e
    `VITE_FIREBASE_PROJECT_ID`. Esses valores não são segredo: vão no bundle.
 3. Subir `uvicorn main:app --reload` em `backend/` e `npm run dev` em `frontend/`.
+4. Abrir <http://localhost:5173/paginas/login.html>.
 
 Use o `npm run dev`: o proxy do Vite evita o CORS, que a API ainda não configura.
+
+`VITE_API_URL` pode ficar **vazio** em desenvolvimento: o frontend usa `/api`, que o
+proxy do Vite encaminha ao backend. Em produção ela recebe a URL pública do backend.
 
 !!! warning "Abra em um navegador comum"
     O navegador embutido do VS Code bloqueia a chamada de login ao Google e a tela
     mostra "Sem conexão com o Firebase". Abra <http://localhost:5173> no Chrome,
     Firefox ou Brave. Extensões de bloqueio de anúncio também podem causar o mesmo
     erro; teste em janela anônima.
+
+### Estrutura do frontend
+
+```
+index.html                home
+paginas/                  uma pasta por área, um HTML por tela
+  login.html  cadastro.html
+  gestora/novo-bloco.html
+src/css/                  tokens, base e componentes (principal.css junta os três)
+  paginas/                um CSS por tela ou grupo de telas
+src/js/nucleo/            api, firebase, rotas e ui, usados por todas as telas
+src/js/paginas/           um script por tela, espelhando paginas/
+```
+
+Tela nova: um HTML em `paginas/`, o script em `src/js/paginas/`, o CSS em
+`src/css/paginas/` e uma linha em `vite.config.js` para entrar no build.
+
+## Tabelas de blocos no BigQuery
+
+Uma vez por dataset, para criar `tb_blocos_liquidez` e `tb_blocos_empresas`:
+
+```bash
+cd backend
+python -m app.jobs.criar_tabelas_blocos
+```
+
+Usa a credencial e o `BIGQUERY_DATASET` do `backend/.env` (hoje `tabelas_silvers`) e pode
+rodar de novo sem apagar nada. Detalhes em [Blocos de Liquidez](blocos.md).
 
 ## Qualidade
 

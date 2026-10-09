@@ -31,11 +31,15 @@ falta só quem as alimente.
 
 ## 3. Endpoints do produto
 
-`GET /health` funciona. As demais rotas já existem no contrato e respondem
-501 até terem implementação. Planejadas:
+Funcionam: `GET /health`, `/auth/*` e, para a gestora, a criação de blocos
+(`GET /blocos/etiquetas`, `GET /empresas`, `POST /blocos`; ver
+[Blocos de Liquidez](../arquitetura/blocos.md)). A criação de blocos depende da
+tabela `tb_empresas`, que outra pessoa do grupo está criando. As demais rotas já
+existem no contrato e respondem 501 até terem implementação. Planejadas:
 
 - `GET /dashboard/gestora`, `GET /dashboard/investidor`
-- `GET /blocos`, `GET /blocos/{bloco_id}`
+- `GET /blocos`, `GET /blocos/{bloco_id}` (a lista de blocos da gestora já está
+  desenhada, ainda sem implementação)
 - `POST /relatorios` + `GET /relatorios/{id}`
 - OpenAPI documentado, CORS configurado
 

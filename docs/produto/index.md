@@ -27,12 +27,15 @@ versão diferente dos mesmos dados.
 
 ## Fluxo da gestora
 
-1. **Login.**
+1. **Login.** Depois de entrar, a gestora cai na tela de criação de blocos.
 2. **Dashboard consolidado.** A gestora vê a mesma visão por Bloco de
    Liquidez, mas sem filtro de investidor — é o fundo inteiro.
 3. **Tabela de empresas.** Uma visão de todas as empresas sacadas (que devem
    os recebíveis) no fundo, com valor total alocado, nota de risco e status
    de adimplência de cada uma.
+4. **Criação de blocos.** A gestora monta um Bloco de Liquidez: escolhe a
+   etiqueta, define o capital, adiciona empresas e distribui o capital entre
+   elas. Ver [Blocos de Liquidez](blocos-de-liquidez.md).
 
 !!! warning "Como os dados entram no sistema: ainda não definido"
     O fluxo original — a gestora subindo uma planilha manualmente — foi

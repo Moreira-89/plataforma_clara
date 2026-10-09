@@ -34,10 +34,13 @@ nav:
       - Quem ganha o quê: negocio/beneficios.md
       - Impacto no mercado: negocio/impacto.md
       - Glossário: negocio/glossario.md
-  - Produto: produto/index.md
+  - Produto:
+      - produto/index.md
+      - Blocos de Liquidez: produto/blocos-de-liquidez.md
   - Arquitetura:
       - arquitetura/index.md
       - Autenticação: arquitetura/autenticacao.md
+      - Blocos de Liquidez: arquitetura/blocos.md
       - Desenvolvimento: arquitetura/desenvolvimento.md
   - Roadmap:
       - roadmap/index.md
