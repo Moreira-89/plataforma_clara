@@ -11,6 +11,7 @@ const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL
 const empresas = new Map() // id_empresa -> { dados, centesimos }
 let etiquetas = []
 let encontradas = []
+const selecionadas = new Map() // marcadas na busca, ainda não adicionadas; sobrevivem a novas buscas
 let temporizador
 
 const formatarCnpj = (c) =>
@@ -158,6 +159,36 @@ function desenharTabela() {
   atualizarResumo()
 }
 
+function atualizarBotaoAdicionar() {
+  const botao = $('#adicionar')
+  botao.disabled = selecionadas.size === 0
+  botao.textContent = selecionadas.size ? `Adicionar (${selecionadas.size})` : 'Adicionar'
+}
+
+// Chips com as empresas marcadas, em qualquer busca; o × desmarca.
+function desenharSelecionadas() {
+  const lista = $('#selecionadas')
+  lista.replaceChildren()
+  lista.hidden = selecionadas.size === 0
+  for (const [id, empresa] of selecionadas) {
+    const item = document.createElement('li')
+    const nome = document.createElement('span')
+    nome.textContent = `${empresa.nome_fantasia} · ${formatarCnpj(empresa.cnpj)}`
+    const remover = document.createElement('button')
+    remover.type = 'button'
+    remover.textContent = '×'
+    remover.setAttribute('aria-label', `Desmarcar ${empresa.nome_fantasia}`)
+    remover.addEventListener('click', () => {
+      selecionadas.delete(id)
+      desenharSelecionadas()
+      desenharResultados()
+    })
+    item.append(nome, remover)
+    lista.append(item)
+  }
+  atualizarBotaoAdicionar()
+}
+
 function desenharResultados() {
   const lista = $('#resultados')
   lista.replaceChildren()
@@ -169,8 +200,11 @@ function desenharResultados() {
     const caixa = document.createElement('input')
     caixa.type = 'checkbox'
     caixa.value = empresa.id_empresa
+    caixa.checked = selecionadas.has(empresa.id_empresa)
     caixa.addEventListener('change', () => {
-      $('#adicionar').disabled = lista.querySelectorAll('input:checked').length === 0
+      if (caixa.checked) selecionadas.set(empresa.id_empresa, empresa)
+      else selecionadas.delete(empresa.id_empresa)
+      desenharSelecionadas()
     })
     const nome = document.createElement('span')
     nome.textContent = empresa.nome_fantasia
@@ -180,7 +214,6 @@ function desenharResultados() {
     item.append(rotulo)
     lista.append(item)
   }
-  $('#adicionar').disabled = true
 }
 
 async function buscar() {
@@ -206,14 +239,13 @@ async function buscar() {
 }
 
 function adicionarSelecionadas() {
-  const marcadas = new Set([...document.querySelectorAll('#resultados input:checked')].map((c) => c.value))
-  for (const empresa of encontradas) {
-    if (marcadas.has(empresa.id_empresa)) empresas.set(empresa.id_empresa, { dados: empresa, centesimos: 0 })
-  }
+  for (const [id, empresa] of selecionadas) empresas.set(id, { dados: empresa, centesimos: 0 })
+  selecionadas.clear()
   $('#busca').value = ''
   encontradas = []
-  desenharResultados()
   $('#busca-estado').textContent = ''
+  desenharSelecionadas()
+  desenharResultados()
   desenharTabela()
 }
 
@@ -228,6 +260,10 @@ function atualizarEtiqueta() {
 function limparFormulario() {
   $('#form-bloco').reset()
   capitalCentavos = 0
+  selecionadas.clear()
+  encontradas = []
+  desenharSelecionadas()
+  desenharResultados()
   empresas.clear()
   desenharTabela()
   atualizarEtiqueta()

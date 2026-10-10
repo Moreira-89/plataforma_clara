@@ -3,13 +3,12 @@
 .nav { height: 64px; background: var(--canvas); border-bottom: 1px solid var(--hairline); }
 .nav .container { height: 100%; display: flex; align-items: center; gap: var(--space-xl); }
 .nav-escura { background: var(--surface-dark); border-bottom-color: var(--surface-dark-elevated); color: var(--on-dark); }
-.marca { font-size: 20px; font-weight: 600; color: var(--ink); letter-spacing: -0.4px; }
-.marca small { font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
-.nav-escura .marca { color: var(--on-dark); }
-.nav-escura .marca small { color: var(--on-dark-soft); }
+.marca { display: inline-flex; align-items: center; }
+.marca img { display: block; height: 36px; width: auto; }
 .nav-links { display: flex; gap: var(--space-lg); font-size: 14px; font-weight: 500; }
 .nav-escura .nav-links a { color: var(--on-dark-soft); }
 .nav-escura .nav-links a:hover { color: var(--on-dark); }
+.nav-escura .btn-secundario { background: var(--surface-dark-elevated); color: var(--on-dark); }
 .nav-acoes { margin-left: auto; display: flex; gap: var(--space-xs); align-items: center; }
 
 

@@ -11,9 +11,9 @@
     <title>Criar bloco de liquidez — Plataforma Clara</title>
   </head>
   <body>
-    <header class="nav">
+    <header class="nav nav-escura">
       <div class="container container-largo">
-        <a class="marca" href="/">Clara<small>Plataforma</small></a>
+        <a class="marca" href="/"><img src="/src/img/logo-clara.png" alt="Plataforma Clara" /></a>
         <div class="nav-acoes">
           <button class="btn btn-secundario" id="sair" type="button">Sair</button>
         </div>
@@ -34,6 +34,7 @@
             <input id="busca" type="search" placeholder="Nome fantasia ou CNPJ" autocomplete="off" aria-label="Buscar empresa" />
             <button class="btn btn-secundario" id="adicionar" type="button" disabled>Adicionar</button>
           </div>
+          <ul id="selecionadas" class="selecionadas" aria-label="Empresas marcadas" hidden></ul>
           <p id="busca-estado" class="mensagem" role="status"></p>
           <ul id="resultados" class="resultados" hidden></ul>
 

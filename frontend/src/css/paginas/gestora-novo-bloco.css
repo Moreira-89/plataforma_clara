@@ -24,6 +24,12 @@
   background: var(--surface-strong); font: 400 16px var(--font-sans); color: var(--ink);
 }
 .busca-empresa input:focus { outline: none; border-color: var(--primary); background: var(--canvas); }
+.selecionadas { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-xs); margin: var(--space-sm) 0 0; padding: 0; }
+.selecionadas li {
+  display: inline-flex; align-items: center; gap: 2px; padding: 4px 4px 4px 12px; border-radius: var(--radius-pill);
+  background: var(--surface-strong); color: var(--ink); font-size: 13px; font-weight: 500;
+}
+.selecionadas button { background: none; border: 0; padding: 0 8px; color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer; }
 .resultados { list-style: none; margin: var(--space-xs) 0 0; padding: 0; border: 1px solid var(--hairline); border-radius: var(--radius-md); max-height: 240px; overflow-y: auto; }
 .resultados li { border-top: 1px solid var(--hairline); }
 .resultados li:first-child { border-top: 0; }
