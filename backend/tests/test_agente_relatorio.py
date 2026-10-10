@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from pydantic import SecretStr
 
 pytest.importorskip("groq", reason="requer o stack completo (groq/langchain) instalado")
 
@@ -231,18 +232,19 @@ def test_nome_do_modelo_vazio_falha_cedo():
 
 
 def test_llm_usa_modelo_da_configuracao(monkeypatch):
-    monkeypatch.setattr(servico.settings, "groq_api_key", "gsk_teste")
+    monkeypatch.setattr(servico.settings, "groq_api_key", SecretStr("gsk_teste"))
     monkeypatch.setattr(servico.settings, "llm_model_name", "groq:openai/gpt-oss-120b")
 
     llm = servico._criar_llm()
 
+    assert llm.groq_api_key.get_secret_value() == "gsk_teste"
     assert llm.model_name == "openai/gpt-oss-120b"
     assert llm.reasoning_effort == "medium"
     assert llm.max_tokens is not None and llm.max_tokens >= 2048
 
 
 def test_llm_sem_api_key_falha_com_mensagem_clara(monkeypatch):
-    monkeypatch.setattr(servico.settings, "groq_api_key", "")
+    monkeypatch.setattr(servico.settings, "groq_api_key", SecretStr(""))
     with pytest.raises(RuntimeError, match="GROQ_API_KEY"):
         servico._criar_llm()
 

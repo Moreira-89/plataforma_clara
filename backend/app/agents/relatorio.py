@@ -25,7 +25,6 @@ from groq import APIStatusError
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from markdown_pdf import MarkdownPdf, Section
-from pydantic import SecretStr
 
 from app.config.settings import settings
 from app.domain import identidade
@@ -402,11 +401,11 @@ def _nome_modelo_groq(nome_configurado: str) -> str:
 
 def _criar_llm() -> ChatGroq:
     """Monta o cliente do LLM a partir de `settings`."""
-    if not settings.groq_api_key:
+    if not settings.groq_api_key.get_secret_value():
         raise RuntimeError("GROQ_API_KEY não encontrada no ambiente.")
 
     return ChatGroq(
-        api_key=SecretStr(settings.groq_api_key),
+        api_key=settings.groq_api_key,
         model=_nome_modelo_groq(settings.llm_model_name),
         temperature=settings.llm_temperature,
         max_tokens=_MAX_TOKENS_RESPOSTA,
