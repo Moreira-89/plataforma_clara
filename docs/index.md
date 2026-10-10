@@ -5,44 +5,37 @@ Investimento em Direitos Creditórios).
 
 Projeto acadêmico (FIAP).
 
-## O problema
+## Por onde começar
 
-Um FIDC reúne o dinheiro de vários investidores e aplica em recebíveis —
-direitos de receber pagamentos que empresas têm a receber de terceiros. Quem
-decide onde alocar esse dinheiro é a gestora do fundo. Quem tem o dinheiro
-aplicado é o investidor.
+- **[Negócio](negocio/index.md)** — o que é um FIDC, a "caixa-preta" que a
+  plataforma resolve, quem ganha o quê e o impacto no mercado.
+- **[Produto](produto/index.md)** — o que cada perfil vê e faz na plataforma.
+- **[Arquitetura](arquitetura/index.md)** — como a plataforma é construída.
+- **[Roadmap](roadmap/index.md)** — o que está em andamento e o que vem depois.
 
-O investidor, hoje, enxerga pouco além de um extrato. Não sabe, sem perguntar,
-em quais empresas o dinheiro dele está, qual o risco de cada uma, nem como
-isso mudou desde o último relatório. A informação existe — a gestora a tem —
-mas não chega ao investidor de um jeito que ele consiga consultar sozinho.
+## Em poucas palavras
 
-## A ideia
-
-Dar ao investidor uma visão direta e sempre atualizada de onde o dinheiro dele
-está: agregado por **Bloco de Liquidez** (um agrupamento de risco/setor), com
-o volume alocado, o score de risco de cada empresa por trás do bloco, e um
-relatório em PDF que explica a carteira em linguagem natural, gerado por IA a
-partir dos dados reais daquele investidor — não um relatório genérico.
-
-O nome do produto é literal: **Clara** é a promessa de que o investidor vê o
-que a gestora já vê, sem intermediário escondendo a informação.
+Um FIDC reúne o dinheiro de vários investidores e aplica em recebíveis. Quem
+decide onde alocar esse dinheiro é a gestora do fundo; quem tem o dinheiro aplicado
+é o investidor, que hoje enxerga pouco além de um extrato. A Plataforma Clara
+funciona como uma lente de aumento: dá ao investidor uma visão direta e sempre
+atualizada de onde o dinheiro dele está. Detalhes em
+[O problema](negocio/problema.md) e [A solução](negocio/solucao.md).
 
 ## Stakeholders
 
 | Quem | O que quer da plataforma |
 | --- | --- |
 | **Investidor** | Saber onde o dinheiro está, com que risco, sem precisar pedir para ninguém. |
-| **Gestora** | Mostrar essa informação para os investidores sem ter que montar um relatório manual a cada pedido. |
-| **Núclea** (ou fonte equivalente) | Fornece o score de risco de cada empresa — a plataforma não calcula esse número, só o apresenta. |
+| **Gestora** (hoje, a Núclea) | Mostrar essa informação para os investidores sem ter que montar um relatório manual a cada pedido. |
 
 ## O que a plataforma não é
 
 Não é uma ferramenta de gestão de carteira, nem decide onde alocar recursos —
 isso continua sendo trabalho da gestora. A plataforma só **expõe**, de forma
-clara e verificável, uma decisão que já foi tomada. Não há modelo de machine
-learning no repositório: o score de risco é um dado de entrada, não um
-cálculo da plataforma.
+clara e verificável, uma decisão que já foi tomada. O score de risco é a
+previsão de um modelo de machine learning; hoje o modelo não está no
+repositório e o score entra como dado pronto.
 
 ## Estado do projeto
 

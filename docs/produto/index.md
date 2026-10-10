@@ -27,12 +27,15 @@ versão diferente dos mesmos dados.
 
 ## Fluxo da gestora
 
-1. **Login.**
+1. **Login.** Depois de entrar, a gestora cai na tela de criação de blocos.
 2. **Dashboard consolidado.** A gestora vê a mesma visão por Bloco de
    Liquidez, mas sem filtro de investidor — é o fundo inteiro.
 3. **Tabela de empresas.** Uma visão de todas as empresas sacadas (que devem
    os recebíveis) no fundo, com valor total alocado, nota de risco e status
    de adimplência de cada uma.
+4. **Criação de blocos.** A gestora monta um Bloco de Liquidez: escolhe a
+   etiqueta, define o capital, adiciona empresas e distribui o capital entre
+   elas. Ver [Blocos de Liquidez](blocos-de-liquidez.md).
 
 !!! warning "Como os dados entram no sistema: ainda não definido"
     O fluxo original — a gestora subindo uma planilha manualmente — foi
@@ -43,10 +46,10 @@ versão diferente dos mesmos dados.
 
 ## O que o score de risco é — e o que não é
 
-O score de risco de cada empresa **chega pronto** de uma fonte externa (ex.:
-Núclea). A plataforma classifica esse número numa escala de nota (de A+ a C-)
-e num status de adimplência, mas **não calcula** o score. Não existe modelo
-de machine learning por trás disso.
+O score de risco de cada empresa é a **previsão de um modelo de machine
+learning**. A plataforma classifica esse número numa escala de nota (de A+ a C-)
+e num status de adimplência, mas hoje **não contém o modelo**: o score entra como
+dado pronto. Onde o modelo roda e quem o fornece ainda está a definir.
 
 ## Regra de produto: nunca simular sem avisar
 

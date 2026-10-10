@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/css/principal.css" />
+    <link rel="stylesheet" href="/src/css/paginas/autenticacao.css" />
+    <title>Criar conta — Plataforma Clara</title>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container">
+        <a class="marca" href="/">Clara<small>Plataforma</small></a>
+        <div class="nav-acoes"><a class="btn btn-secundario" href="/paginas/login.html">Entrar</a></div>
+      </div>
+    </header>
+    <main class="auth">
+      <section class="cartao auth-cartao">
+        <h1>Criar conta de investidor</h1>
+        <p>Use o CPF ou CNPJ com que você investe: é ele que liga a conta aos seus aportes.</p>
+        <form id="form-cadastro" class="formulario" novalidate>
+          <label class="campo">Nome
+            <input name="nome" required autocomplete="name" />
+          </label>
+          <label class="campo">E-mail
+            <input name="email" type="email" required autocomplete="username" />
+          </label>
+          <label class="campo">CPF ou CNPJ
+            <input name="documento" required inputmode="numeric" autocomplete="off" />
+          </label>
+          <label class="campo">Senha
+            <input name="senha" type="password" required minlength="8" autocomplete="new-password" />
+            <small>Mínimo de 8 caracteres.</small>
+          </label>
+          <p id="mensagem" class="mensagem" role="status"></p>
+          <button class="btn btn-primario btn-bloco" type="submit">Criar conta</button>
+        </form>
+        <p class="auth-rodape">Já tem conta? <a class="btn-texto" href="/paginas/login.html">Entrar</a></p>
+      </section>
+    </main>
+    <script type="module" src="/src/js/paginas/cadastro.js"></script>
+  </body>
+</html>

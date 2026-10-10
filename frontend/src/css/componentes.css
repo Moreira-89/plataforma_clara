@@ -1,0 +1,73 @@
+/* Peças reutilizadas em várias telas. */
+/* --- navegação --- */
+.nav { height: 64px; background: var(--canvas); border-bottom: 1px solid var(--hairline); }
+.nav .container { height: 100%; display: flex; align-items: center; gap: var(--space-xl); }
+.nav-escura { background: var(--surface-dark); border-bottom-color: var(--surface-dark-elevated); color: var(--on-dark); }
+.marca { font-size: 20px; font-weight: 600; color: var(--ink); letter-spacing: -0.4px; }
+.marca small { font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
+.nav-escura .marca { color: var(--on-dark); }
+.nav-escura .marca small { color: var(--on-dark-soft); }
+.nav-links { display: flex; gap: var(--space-lg); font-size: 14px; font-weight: 500; }
+.nav-escura .nav-links a { color: var(--on-dark-soft); }
+.nav-escura .nav-links a:hover { color: var(--on-dark); }
+.nav-acoes { margin-left: auto; display: flex; gap: var(--space-xs); align-items: center; }
+
+
+/* --- botões --- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 44px; padding: 0 20px; border: 1px solid transparent; border-radius: var(--radius-pill);
+  font: 600 16px/1.15 var(--font-sans); cursor: pointer; white-space: nowrap;
+}
+.btn-lg { height: 56px; padding: 0 32px; }
+.btn-primario { background: var(--primary); color: var(--on-primary); }
+.btn-primario:hover, .btn-primario:active { background: var(--primary-active); }
+.btn-primario:disabled { background: var(--primary-disabled); cursor: not-allowed; }
+.btn-secundario { background: var(--surface-strong); color: var(--ink); }
+.btn-contorno-escuro { background: transparent; color: var(--on-dark); border-color: var(--on-dark); }
+.btn-texto { background: transparent; color: var(--primary); padding: 0; height: auto; }
+.btn-bloco { width: 100%; }
+
+
+.rotulo {
+  display: inline-block; padding: 4px 12px; border-radius: var(--radius-pill);
+  background: var(--surface-strong); color: var(--ink);
+  font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;
+}
+
+
+.cartao {
+  background: var(--canvas); border: 1px solid var(--hairline); border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+}
+.cartao h3 { font-size: 18px; font-weight: 600; line-height: 1.33; margin-bottom: var(--space-xs); }
+.cartao-escuro { background: var(--surface-dark-elevated); border-color: transparent; color: var(--on-dark); }
+.cartao-escuro .rotulo { background: var(--surface-dark); color: var(--on-dark-soft); }
+
+
+.formulario { display: grid; gap: var(--space-base); }
+.campo { display: grid; gap: 6px; align-content: start; font-size: 14px; font-weight: 500; color: var(--ink); }
+.campo input {
+  height: 48px; padding: 14px 16px; border: 1px solid var(--hairline); border-radius: var(--radius-md);
+  font: 400 16px var(--font-sans); color: var(--ink); background: var(--canvas);
+}
+.campo input:focus { outline: none; border: 2px solid var(--primary); padding: 13px 15px; }
+.campo small { font-weight: 400; color: var(--muted); }
+.mensagem { min-height: 24px; font-size: 14px; }
+.mensagem.erro { color: var(--semantic-down); }
+
+
+.campo select, .campo textarea {
+  padding: 14px 16px; border: 1px solid var(--hairline); border-radius: var(--radius-md);
+  font: 400 16px var(--font-sans); color: var(--ink); background: var(--canvas);
+}
+.campo select { height: 48px; flex: 1; }
+.campo textarea { resize: vertical; }
+.campo select:focus, .campo textarea:focus { outline: none; border: 2px solid var(--primary); padding: 13px 15px; }
+.sucesso { border-color: var(--semantic-up); }
+
+
+@media (max-width: 768px) {
+  .nav .container { gap: var(--space-base); }
+  .nav-acoes .btn { padding: 0 14px; font-size: 14px; }
+}

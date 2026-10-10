@@ -42,13 +42,22 @@ class Configuracao(BaseSettings):
     # JSON da service account inline, ou caminho de arquivo.
     google_application_credentials: str = ""
     project_id: str = "plataforma-clara"
-    bigquery_dataset: str = "dados_cvm"
+    bigquery_dataset: str = "tabelas_silvers"
+
+    # Origens que podem chamar a API, separadas por vírgula.
+    cors_origens: str = "http://localhost:5173"
 
     redis_url: str = ""
 
     groq_api_key: SecretStr = SecretStr("")
     llm_model_name: str = "groq:openai/gpt-oss-120b"
     llm_temperature: float = 0.1
+
+
+    @property
+    def origens_cors(self) -> list[str]:
+        """Origens liberadas no CORS, já separadas e sem espaços."""
+        return [origem.strip() for origem in self.cors_origens.split(",") if origem.strip()]
 
 
 @lru_cache

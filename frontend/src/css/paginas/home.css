@@ -1,0 +1,49 @@
+/* Home. */
+/* --- seções --- */
+.secao { padding: var(--space-section) 0; }
+.secao-suave { background: var(--surface-soft); }
+.secao-escura { background: var(--surface-dark); color: var(--on-dark-soft); }
+.secao-escura h2, .secao-escura h1 { color: var(--on-dark); }
+.titulo-secao { font-size: 44px; line-height: 1.09; letter-spacing: -1px; margin: var(--space-base) 0; max-width: 720px; }
+.texto-secao { max-width: 640px; font-size: 18px; }
+
+
+/* --- hero --- */
+.hero { padding: var(--space-section) 0; }
+.hero .container { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--space-xxl); align-items: center; }
+.hero h1 { font-size: 64px; line-height: 1; letter-spacing: -1.6px; }
+.hero p { margin-top: var(--space-lg); font-size: 18px; max-width: 520px; }
+.hero-acoes { margin-top: var(--space-xl); display: flex; gap: var(--space-sm); flex-wrap: wrap; }
+
+
+.grade-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); margin-top: var(--space-xxl); }
+.exemplo-titulo { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); }
+.exemplo-titulo strong { font-size: 18px; font-weight: 600; }
+.linha-exemplo {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--space-base) 0; border-top: 1px solid var(--surface-dark);
+}
+.linha-exemplo small { display: block; color: var(--on-dark-soft); font-size: 13px; }
+.nota-exemplo { margin-top: var(--space-base); font-size: 13px; color: var(--on-dark-soft); }
+
+
+/* --- faixa final e rodapé --- */
+.faixa-cta { text-align: center; }
+.faixa-cta h2 { font-size: 52px; line-height: 1; letter-spacing: -1.3px; max-width: 720px; margin: 0 auto var(--space-xl); }
+.rodape { padding: var(--space-xxl) 0; font-size: 14px; color: var(--body); border-top: 1px solid var(--hairline); }
+.rodape .container { display: flex; justify-content: space-between; gap: var(--space-base); flex-wrap: wrap; }
+
+
+@media (max-width: 1024px) {
+  .hero h1 { font-size: 52px; }
+  .grade-3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .hero .container { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 40px; letter-spacing: -1px; }
+  .titulo-secao { font-size: 36px; }
+  .faixa-cta h2 { font-size: 36px; }
+  .grade-3 { grid-template-columns: 1fr; }
+  .secao, .hero { padding: var(--space-xxl) 0; }
+}

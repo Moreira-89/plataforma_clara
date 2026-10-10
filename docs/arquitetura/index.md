@@ -77,11 +77,15 @@ recurso tem o seu arquivo em `api/endpoints/` com um `APIRouter` próprio.
 | `GET /auth/me` | qualquer perfil | funciona |
 | `GET /dashboard/gestora` | gestora | 501, depende da fonte dos aportes |
 | `GET /dashboard/investidor` | investidor | 501, depende da fonte dos aportes |
-| `GET /blocos`, `GET /blocos/{bloco_id}` | qualquer perfil | 501, dependem da fonte dos aportes |
+| `GET /blocos/etiquetas` | qualquer perfil | funciona |
+| `POST /blocos` | gestora | funciona; depende da `tb_empresas` |
+| `GET /empresas?busca=` | gestora | funciona; depende da `tb_empresas` |
+| `GET /blocos`, `GET /blocos/{bloco_id}` | qualquer perfil | funciona |
 | `POST /relatorios`, `GET /relatorios/{id}` | investidor | 501, dependem da fonte dos aportes |
 
 O acesso por perfil já é aplicado: sem token a rota responde 401, com perfil errado
-403, e só depois chega ao 501. Ver [Autenticação](autenticacao.md).
+403, e só depois chega ao 501. Ver [Autenticação](autenticacao.md). Os dados e as rotas
+de blocos estão em [Blocos de Liquidez](blocos.md).
 
 Convenções:
 
