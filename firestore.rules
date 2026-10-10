@@ -1,0 +1,10 @@
+rules_version = '2';
+
+// Só o Admin SDK do backend acessa o Firestore; o navegador não lê nem escreve.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{documento=**} {
+      allow read, write: if false;
+    }
+  }
+}

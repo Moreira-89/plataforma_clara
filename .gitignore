@@ -220,3 +220,6 @@ site/
 
 # Notas privadas de planejamento (não vai pro GitHub)
 /notas-planejamento/
+
+# Frontend
+node_modules/

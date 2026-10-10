@@ -5,7 +5,7 @@ Configuração da aplicação, lida do ambiente.
 `settings` daqui.
 
 COMO FUNCIONA:
-    1. O `.env` é carregado quando existe. Em produção as variáveis já vêm do
+    1. O `backend/.env` é carregado quando existe. Em produção as variáveis já vêm do
        ambiente e o arquivo não existe.
     2. Os campos são validados na primeira leitura.
     3. `obter_configuracao()` fica em cache: a leitura acontece uma vez por processo.
@@ -21,15 +21,20 @@ Raises:
 """
 
 from functools import lru_cache
+from pathlib import Path
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# O .env fica em backend/, qualquer que seja o diretório de onde o comando roda.
+_ENV_ARQUIVO = Path(__file__).resolve().parents[2] / ".env"
 
 
 class Configuracao(BaseSettings):
     """Variáveis de ambiente do backend, tipadas."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_ENV_ARQUIVO,
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -41,7 +46,7 @@ class Configuracao(BaseSettings):
 
     redis_url: str = ""
 
-    groq_api_key: str = ""
+    groq_api_key: SecretStr = SecretStr("")
     llm_model_name: str = "groq:openai/gpt-oss-120b"
     llm_temperature: float = 0.1
 
