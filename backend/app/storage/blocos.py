@@ -6,7 +6,9 @@ COMO FUNCIONA:
     2. Confere que nenhuma já pertence a outro bloco.
     3. Grava o bloco e as suas empresas numa única transação, para não sobrar bloco
        pela metade se algo falhar.
-    4. `criar_tabelas` cria as duas tabelas, sem apagar nada se já existirem.
+    4. `listar_blocos` e `buscar_bloco` leem os blocos já criados; o nome e o ramo das
+       empresas vêm do cadastro quando ele está acessível.
+    5. `criar_tabelas` cria as duas tabelas, sem apagar nada se já existirem.
 
 Args:
     Nenhum.
@@ -15,6 +17,7 @@ Returns:
     None: via `criar_bloco()`.
 
 Raises:
+    BlocoNaoEncontradoError: Bloco inexistente, em `buscar_bloco()`.
     EmpresaNaoEncontradaError: Empresa fora do cadastro.
     EmpresaJaEmBlocoError: Empresa já alocada a outro bloco.
     DadosIndisponiveisError: Alguma tabela fora do ar.
@@ -25,8 +28,14 @@ import logging
 from google.api_core.exceptions import Forbidden, NotFound
 from google.cloud import bigquery
 
-from app.domain.blocos import BlocoValidado
+from app.domain.blocos import (
+    BlocoDetalhado,
+    BlocoListado,
+    BlocoValidado,
+    EmpresaDoBlocoDetalhada,
+)
 from app.domain.erros import (
+    BlocoNaoEncontradoError,
     DadosIndisponiveisError,
     EmpresaJaEmBlocoError,
     EmpresaNaoEncontradaError,
@@ -166,3 +175,122 @@ def _gravar(
         ]
     )
     cliente.query(script, job_config=config).result()
+
+
+_COLUNAS_BLOCO = """
+    b.id_bloco, b.codigo_identificacao, b.etiqueta, b.capital_total, b.data_criacao,
+    b.data_vencimento, b.responsavel_tecnico, b.observacao
+"""
+
+
+def _para_bloco(linha) -> BlocoListado:
+    return BlocoListado(
+        id_bloco=linha.id_bloco,
+        codigo_identificacao=linha.codigo_identificacao,
+        etiqueta=linha.etiqueta,
+        capital_total=linha.capital_total,
+        data_criacao=linha.data_criacao,
+        data_vencimento=linha.data_vencimento,
+        responsavel_tecnico=linha.responsavel_tecnico,
+        observacao=linha.observacao,
+        quantidade_empresas=linha.quantidade_empresas,
+    )
+
+
+def listar_blocos() -> list[BlocoListado]:
+    """
+    Lista os blocos criados, do mais novo para o mais antigo. Bloqueante.
+
+    Returns:
+        list[BlocoListado]: Os blocos, cada um com a quantidade de empresas.
+
+    Raises:
+        DadosIndisponiveisError: Tabela de blocos fora do ar.
+    """
+    sql = f"""
+        SELECT {_COLUNAS_BLOCO}, COUNT(e.id_empresa) AS quantidade_empresas, b.criado_em
+        FROM {tabela(TABELA_BLOCOS)} b
+        LEFT JOIN {tabela(TABELA_BLOCOS_EMPRESAS)} e ON e.id_bloco = b.id_bloco
+        GROUP BY b.id_bloco, b.codigo_identificacao, b.etiqueta, b.capital_total, b.data_criacao,
+                 b.data_vencimento, b.responsavel_tecnico, b.observacao, b.criado_em
+        ORDER BY b.criado_em DESC
+    """
+    try:
+        return [_para_bloco(linha) for linha in cliente_compartilhado().query(sql).result()]
+    except (NotFound, Forbidden) as e:
+        logger.error("Tabela de blocos inacessível: %s", e)
+        raise DadosIndisponiveisError("Os dados de blocos estão indisponíveis.") from e
+
+
+def _empresas_do_bloco(cliente: bigquery.Client, config: bigquery.QueryJobConfig):
+    """Empresas do bloco com nome e ramo; sem o cadastro, devolve só o que o bloco guarda."""
+    com_cadastro = f"""
+        SELECT e.id_empresa, e.cnpj, e.capital_estimado, e.percentual_liquidez,
+               c.nome_fantasia, c.ramo_atividade
+        FROM {tabela(TABELA_BLOCOS_EMPRESAS)} e
+        LEFT JOIN {tabela(TABELA_EMPRESAS)} c ON CAST(c.id_empresa AS STRING) = e.id_empresa
+        WHERE e.id_bloco = @id_bloco
+        ORDER BY e.capital_estimado DESC
+    """
+    sem_cadastro = f"""
+        SELECT e.id_empresa, e.cnpj, e.capital_estimado, e.percentual_liquidez,
+               CAST(NULL AS STRING) AS nome_fantasia, CAST(NULL AS STRING) AS ramo_atividade
+        FROM {tabela(TABELA_BLOCOS_EMPRESAS)} e
+        WHERE e.id_bloco = @id_bloco
+        ORDER BY e.capital_estimado DESC
+    """
+    try:
+        return list(cliente.query(com_cadastro, job_config=config).result())
+    except NotFound:
+        logger.warning("Cadastro de empresas inacessível; o bloco sai sem nome e ramo.")
+        return list(cliente.query(sem_cadastro, job_config=config).result())
+
+
+def buscar_bloco(id_bloco: str) -> BlocoDetalhado:
+    """
+    Busca um bloco e as suas empresas. Bloqueante.
+
+    Args:
+        id_bloco (str): Identificador do bloco.
+
+    Returns:
+        BlocoDetalhado: O bloco com as empresas, da maior para a menor fatia.
+
+    Raises:
+        BlocoNaoEncontradoError: Não existe bloco com esse id.
+        DadosIndisponiveisError: Tabela de blocos fora do ar.
+    """
+    cliente = cliente_compartilhado()
+    config = bigquery.QueryJobConfig(
+        query_parameters=[bigquery.ScalarQueryParameter("id_bloco", "STRING", id_bloco)]
+    )
+    sql = f"""
+        SELECT {_COLUNAS_BLOCO},
+               (SELECT COUNT(*) FROM {tabela(TABELA_BLOCOS_EMPRESAS)} e
+                WHERE e.id_bloco = b.id_bloco) AS quantidade_empresas
+        FROM {tabela(TABELA_BLOCOS)} b
+        WHERE b.id_bloco = @id_bloco
+    """
+    try:
+        linhas = list(cliente.query(sql, job_config=config).result())
+        if not linhas:
+            raise BlocoNaoEncontradoError("Bloco não encontrado.")
+        empresas = _empresas_do_bloco(cliente, config)
+    except (NotFound, Forbidden) as e:
+        logger.error("Tabela de blocos inacessível: %s", e)
+        raise DadosIndisponiveisError("Os dados de blocos estão indisponíveis.") from e
+
+    return BlocoDetalhado(
+        bloco=_para_bloco(linhas[0]),
+        empresas=tuple(
+            EmpresaDoBlocoDetalhada(
+                id_empresa=e.id_empresa,
+                cnpj=e.cnpj,
+                capital_estimado=e.capital_estimado,
+                percentual_liquidez=e.percentual_liquidez,
+                nome_fantasia=e.nome_fantasia,
+                ramo_atividade=e.ramo_atividade,
+            )
+            for e in empresas
+        ),
+    )

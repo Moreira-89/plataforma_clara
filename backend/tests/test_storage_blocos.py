@@ -14,6 +14,7 @@ from google.api_core.exceptions import NotFound
 
 from app.domain.blocos import AlocacaoEmpresa, montar_bloco
 from app.domain.erros import (
+    BlocoNaoEncontradoError,
     DadosIndisponiveisError,
     EmpresaJaEmBlocoError,
     EmpresaNaoEncontradaError,
@@ -156,3 +157,89 @@ def test_tabela_ausente_vira_dados_indisponiveis(monkeypatch, bloco):
 
     with pytest.raises(DadosIndisponiveisError):
         blocos.criar_bloco(bloco, "u-ges")
+
+
+def linha_bloco(**campos):
+    base = {
+        "id_bloco": "b1",
+        "codigo_identificacao": "BLOCO_SAFIRA_1",
+        "etiqueta": "Safira",
+        "capital_total": D("1000"),
+        "data_criacao": date(2026, 10, 9),
+        "data_vencimento": date(2030, 1, 1),
+        "responsavel_tecnico": "Lucas",
+        "observacao": None,
+        "quantidade_empresas": 2,
+    }
+    return linha(**{**base, **campos})
+
+
+def linha_empresa(**campos):
+    base = {
+        "id_empresa": "e1",
+        "cnpj": "11222333000181",
+        "capital_estimado": D("400"),
+        "percentual_liquidez": D("40"),
+        "nome_fantasia": "Alfa",
+        "ramo_atividade": "Varejo",
+    }
+    return linha(**{**base, **campos})
+
+
+def test_listar_blocos_devolve_um_item_por_bloco(monkeypatch):
+    cliente = ClienteFalso([linha_bloco(), linha_bloco(id_bloco="b2", etiqueta="Rubi")])
+    usar(monkeypatch, blocos, cliente)
+
+    lista = blocos.listar_blocos()
+
+    assert [b.id_bloco for b in lista] == ["b1", "b2"]
+    assert lista[0].quantidade_empresas == 2
+    assert "ORDER BY b.criado_em DESC" in cliente.consultas[0][0]
+
+
+def test_listar_blocos_sem_tabela_vira_dados_indisponiveis(monkeypatch):
+    usar(monkeypatch, blocos, ClienteFalso(NotFound("sem tabela")))
+
+    with pytest.raises(DadosIndisponiveisError):
+        blocos.listar_blocos()
+
+
+def test_buscar_bloco_manda_o_id_como_parametro(monkeypatch):
+    cliente = ClienteFalso([linha_bloco()], [linha_empresa()])
+    usar(monkeypatch, blocos, cliente)
+
+    detalhado = blocos.buscar_bloco("b1' OR '1'='1")
+
+    for sql, config in cliente.consultas:
+        assert "OR '1'='1" not in sql
+        assert {p.name: p.value for p in config.query_parameters} == {"id_bloco": "b1' OR '1'='1"}
+    assert detalhado.empresas[0].nome_fantasia == "Alfa"
+
+
+def test_buscar_bloco_inexistente(monkeypatch):
+    usar(monkeypatch, blocos, ClienteFalso([]))
+
+    with pytest.raises(BlocoNaoEncontradoError):
+        blocos.buscar_bloco("nao-existe")
+
+
+def test_buscar_bloco_sem_o_cadastro_de_empresas_devolve_sem_nome(monkeypatch):
+    cliente = ClienteFalso(
+        [linha_bloco()],
+        NotFound("sem tb_empresas"),
+        [linha_empresa(nome_fantasia=None, ramo_atividade=None)],
+    )
+    usar(monkeypatch, blocos, cliente)
+
+    detalhado = blocos.buscar_bloco("b1")
+
+    assert detalhado.empresas[0].nome_fantasia is None
+    assert "tb_empresas" in cliente.consultas[1][0]
+    assert "tb_empresas" not in cliente.consultas[2][0]
+
+
+def test_buscar_bloco_com_tabela_de_blocos_ausente_vira_dados_indisponiveis(monkeypatch):
+    usar(monkeypatch, blocos, ClienteFalso(NotFound("sem tabela")))
+
+    with pytest.raises(DadosIndisponiveisError):
+        blocos.buscar_bloco("b1")

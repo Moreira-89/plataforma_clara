@@ -393,9 +393,9 @@ def _gerar_markdown_chatgroq(
     dados_bq: list[dict[str, Any]],
     dados_invest: list[dict[str, Any]],
 ) -> str:
-    api_key = os.getenv("GROQ_API_KEY")
+    api_key = settings.groq_api_key.get_secret_value()
     if not api_key:
-        raise RuntimeError("GROQ_API_KEY não encontrada no ambiente.")
+        raise RuntimeError("GROQ_API_KEY não configurada.")
 
     llm = ChatGroq(
         api_key=SecretStr(api_key),

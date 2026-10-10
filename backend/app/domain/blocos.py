@@ -10,6 +10,7 @@ COMO FUNCIONA:
     3. A soma das porcentagens por empresa precisa fechar exatamente 100%.
     4. O capital estimado de cada empresa é o capital total vezes a porcentagem.
     5. A data de criação é a do dia (fuso de Brasília) e o código leva o instante em ms.
+    6. `BlocoListado` e `BlocoDetalhado` são o formato dos blocos já criados, na leitura.
 
 Args:
     Nenhum.
@@ -102,6 +103,46 @@ class BlocoValidado:
     observacao: str
     criado_em: datetime
     empresas: tuple[EmpresaAlocada, ...]
+
+
+@dataclass(frozen=True)
+class BlocoListado:
+    """Um bloco já criado, como a listagem o devolve."""
+
+    id_bloco: str
+    codigo_identificacao: str
+    etiqueta: str
+    capital_total: Decimal
+    data_criacao: date
+    data_vencimento: date
+    responsavel_tecnico: str
+    observacao: str | None
+    quantidade_empresas: int
+
+
+@dataclass(frozen=True)
+class EmpresaDoBlocoDetalhada:
+    """Uma empresa dentro de um bloco já criado; nome e ramo vêm do cadastro, se acessível."""
+
+    id_empresa: str
+    cnpj: str
+    capital_estimado: Decimal
+    percentual_liquidez: Decimal
+    nome_fantasia: str | None
+    ramo_atividade: str | None
+
+
+@dataclass(frozen=True)
+class BlocoDetalhado:
+    """Um bloco já criado, com as suas empresas."""
+
+    bloco: BlocoListado
+    empresas: tuple[EmpresaDoBlocoDetalhada, ...]
+
+
+def cor_da_etiqueta(etiqueta: str) -> str | None:
+    """Cor da pedra, ou None se a etiqueta não está mais na lista."""
+    return ETIQUETAS.get(etiqueta)
 
 
 def slug_etiqueta(etiqueta: str) -> str:

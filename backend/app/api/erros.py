@@ -34,6 +34,7 @@ _STATUS_POR_ERRO: dict[type[erros.ErroDeNegocio], int] = {
     erros.BlocoInvalidoError: status.HTTP_422_UNPROCESSABLE_CONTENT,
     erros.EmpresaNaoEncontradaError: status.HTTP_422_UNPROCESSABLE_CONTENT,
     erros.EmpresaJaEmBlocoError: status.HTTP_409_CONFLICT,
+    erros.BlocoNaoEncontradoError: status.HTTP_404_NOT_FOUND,
     erros.DadosIndisponiveisError: status.HTTP_503_SERVICE_UNAVAILABLE,
 }
 

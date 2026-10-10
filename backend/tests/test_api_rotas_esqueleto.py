@@ -11,8 +11,6 @@ from conftest import cabecalho
 ROTAS = [
     ("GET", "/dashboard/gestora", "gestora", "investidor"),
     ("GET", "/dashboard/investidor", "investidor", "gestora"),
-    ("GET", "/blocos", "investidor", None),
-    ("GET", "/blocos/bloco-x", "gestora", None),
     ("POST", "/relatorios", "investidor", "gestora"),
     ("GET", "/relatorios/abc", "investidor", "gestora"),
 ]

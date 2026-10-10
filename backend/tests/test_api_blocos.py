@@ -137,3 +137,54 @@ def test_tabelas_fora_do_ar_respondem_503(client, criador_de_bloco):
     criador_de_bloco.erro = DadosIndisponiveisError("fora do ar")
 
     assert client.post("/blocos", json=CORPO, headers=cabecalho("gestora")).status_code == 503
+
+
+def test_lista_de_blocos_exige_login(client):
+    assert client.get("/blocos").status_code == 401
+
+
+def test_lista_de_blocos_serve_a_qualquer_perfil(client):
+    for perfil in ("gestora", "investidor"):
+        resposta = client.get("/blocos", headers=cabecalho(perfil))
+
+        assert resposta.status_code == 200
+        assert resposta.json()[0]["codigo_identificacao"] == "BLOCO_SAFIRA_1"
+
+
+def test_lista_de_blocos_traz_a_cor_da_etiqueta(client):
+    bloco = client.get("/blocos", headers=cabecalho("gestora")).json()[0]
+
+    assert bloco["cor"] == "#0F52BA"
+    assert bloco["capital_total"] == "1000000.00"
+    assert bloco["quantidade_empresas"] == 2
+
+
+def test_lista_vazia_quando_nao_ha_blocos(client, leitura_de_blocos):
+    leitura_de_blocos.blocos = []
+
+    assert client.get("/blocos", headers=cabecalho("gestora")).json() == []
+
+
+def test_lista_com_tabela_fora_do_ar_responde_503(client, leitura_de_blocos):
+    leitura_de_blocos.erro = DadosIndisponiveisError("fora do ar")
+
+    assert client.get("/blocos", headers=cabecalho("gestora")).status_code == 503
+
+
+def test_detalhe_do_bloco_traz_as_empresas_com_e_sem_nome(client):
+    resposta = client.get("/blocos/b1", headers=cabecalho("investidor"))
+
+    assert resposta.status_code == 200
+    corpo = resposta.json()
+    assert corpo["cor"] == "#0F52BA"
+    assert [e["id_empresa"] for e in corpo["empresas"]] == ["e2", "e1"]
+    assert corpo["empresas"][0]["nome_fantasia"] == "Brinquedos Beta"
+    assert corpo["empresas"][1]["nome_fantasia"] is None
+
+
+def test_detalhe_de_bloco_inexistente_responde_404(client):
+    assert client.get("/blocos/nao-existe", headers=cabecalho("gestora")).status_code == 404
+
+
+def test_detalhe_exige_login(client):
+    assert client.get("/blocos/b1").status_code == 401

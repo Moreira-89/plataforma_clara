@@ -61,3 +61,7 @@ class EmpresaJaEmBlocoError(ErroDeNegocio):
 
 class DadosIndisponiveisError(ErroDeNegocio):
     """Uma tabela do BigQuery necessária à operação não está acessível."""
+
+
+class BlocoNaoEncontradoError(ErroDeNegocio):
+    """Não existe bloco de liquidez com o identificador informado."""

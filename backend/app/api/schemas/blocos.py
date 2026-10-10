@@ -6,6 +6,7 @@ COMO FUNCIONA:
        regras de negócio em `domain/blocos.py`.
     2. `BlocoCriado` devolve o código gerado e o capital estimado de cada empresa.
     3. `EtiquetaResposta` e `EmpresaBusca` alimentam o seletor e a busca do formulário.
+    4. `BlocoListagem` e `BlocoDetalhe` devolvem os blocos já criados; a cor vem da etiqueta.
 
 Args:
     Nenhum.
@@ -76,3 +77,37 @@ class BlocoCriado(BaseModel):
     data_criacao: date
     data_vencimento: date
     empresas: list[EmpresaAlocadaResposta]
+
+
+class BlocoListagem(BaseModel):
+    """Um bloco já criado, na lista."""
+
+    id_bloco: str
+    codigo_identificacao: str
+    etiqueta: str
+    cor: str | None = Field(description="Cor da pedra; vazia se a etiqueta saiu da lista")
+    capital_total: Decimal
+    data_criacao: date
+    data_vencimento: date
+    responsavel_tecnico: str
+    observacao: str | None
+    quantidade_empresas: int
+
+
+class EmpresaDoBlocoDetalhe(BaseModel):
+    """Empresa de um bloco já criado."""
+
+    id_empresa: str
+    cnpj: str = Field(description="Somente dígitos")
+    nome_fantasia: str | None = Field(
+        description="Vazio se o cadastro de empresas estiver fora do ar"
+    )
+    ramo_atividade: str | None
+    capital_estimado: Decimal
+    percentual_liquidez: Decimal
+
+
+class BlocoDetalhe(BlocoListagem):
+    """Um bloco já criado, com as suas empresas."""
+
+    empresas: list[EmpresaDoBlocoDetalhe]
