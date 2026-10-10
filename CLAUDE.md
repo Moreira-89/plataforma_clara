@@ -162,7 +162,8 @@ Cada serviço tem o seu modelo: `backend/.env.example` e `frontend/.env.example`
 ```
 GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account", ...}  # ou caminho de arquivo
 PROJECT_ID=plataforma-clara
-BIGQUERY_DATASET=tabelas_silvers
+BIGQUERY_DATASET=tabelas_silvers                                 # tabelas de blocos
+BIGQUERY_DATASET_EMPRESAS=dados_fidc                             # cadastro de empresas (tb_empresas_fidc)
 CORS_ORIGENS=http://localhost:5173                               # separadas por vírgula
 REDIS_URL=redis://localhost:6379/0
 GROQ_API_KEY=gsk_...
@@ -177,6 +178,6 @@ Não criar variável de ambiente nova sem que algo a consuma.
 Não invente que existe. Nesta ordem:
 
 1. **Fonte dos dados de aportes.** O upload de CSV foi removido de propósito (não é assim que a plataforma vai operar). Ainda não existe nenhum mecanismo que traga esses dados para a plataforma — nem CSV, nem consulta a serviço externo, nada. É a decisão mais urgente em aberto.
-2. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `/blocos` (etiquetas, criar, listar e detalhar) e `GET /empresas`; criar bloco e buscar empresas dependem da `tb_empresas`, que outra pessoa do grupo está criando. `/dashboard` e `/relatorios` exigem o perfil certo, mas depois da checagem respondem 501 até terem fonte de dados.
+2. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `/blocos` (etiquetas, criar, listar e detalhar) e `GET /empresas`; a busca de empresas lê `dados_fidc.tb_empresas_fidc`. `/dashboard` e `/relatorios` exigem o perfil certo, mas depois da checagem respondem 501 até terem fonte de dados.
 3. **Redis** — declarado no compose, sem cliente na aplicação.
 4. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.

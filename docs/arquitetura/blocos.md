@@ -5,7 +5,7 @@ Como a criação de um bloco funciona por baixo. A regra de negócio está em
 
 ## Tabelas no BigQuery
 
-Ficam no dataset configurado em `BIGQUERY_DATASET` (hoje `tabelas_silvers`).
+Ficam no dataset configurado em `BIGQUERY_DATASET` (recomendado: `tabelas_silvers`).
 
 **`tb_blocos_liquidez`**: uma linha por bloco.
 
@@ -33,12 +33,18 @@ vínculo entre bloco e empresa; o `id_bloco` **não** fica na tabela de empresas
 | `capital_estimado` | NUMERIC | Calculado no servidor. |
 | `percentual_liquidez` | NUMERIC | Até 2 casas. |
 
-Nome e ramo da empresa não são copiados: vêm do join com `tb_empresas`.
+Nome e ramo da empresa não são copiados: vêm do join com `tb_empresas_fidc`.
 
-**`tb_empresas`** (cadastro, criado por outra pessoa do grupo) deve ter `id_empresa`,
-`nome_fantasia`, `razao_social`, `cnpj` e `ramo_atividade`. O backend converte o id para
-texto e tira a máscara do CNPJ ao consultar, então o tipo do id e o formato do CNPJ não
-importam.
+**`tb_empresas_fidc`** (cadastro de empresas, mantido por outra pessoa do grupo) mora em
+**outro dataset**, `dados_fidc`, configurado em `BIGQUERY_DATASET_EMPRESAS`. Colunas:
+`ID_EMPRESA` (INTEGER), `NOME_FANTASIA`, `RAZAO_SOCIAL`, `RAMO_EMPRESA` e `CNPJ` (STRING),
+todas opcionais; hoje são 490 empresas fictícias. O backend converte o id para texto, tira
+a máscara do CNPJ ao consultar e ignora linhas sem id ou sem CNPJ. As duas regiões dos
+datasets precisam ser a mesma (hoje, `US`), porque o detalhe do bloco junta as duas tabelas.
+
+Por isso são **dois datasets**: `BIGQUERY_DATASET` para as tabelas de blocos (escritas pela
+aplicação) e `BIGQUERY_DATASET_EMPRESAS` para o cadastro (só leitura). Se os dois apontarem
+para o mesmo dataset, as tabelas de blocos precisam existir nele (rode o job abaixo).
 
 As tabelas de blocos são criadas por `python -m app.jobs.criar_tabelas_blocos`, que pode
 rodar de novo sem apagar nada.
@@ -57,7 +63,7 @@ Erros de `POST /blocos`: dados inválidos ou soma diferente de 100% (422), empre
 cadastro (422), empresa já em outro bloco (409), tabela fora do ar (503). Em
 `GET /blocos/{bloco_id}`, bloco inexistente responde 404.
 
-No detalhe, nome e ramo das empresas vêm de um join com `tb_empresas`. Se o cadastro não
+No detalhe, nome e ramo das empresas vêm de um join com `tb_empresas_fidc`. Se o cadastro não
 estiver acessível, o bloco sai com `nome_fantasia` e `ramo_atividade` vazios, em vez de
 falhar. A `cor` vem da etiqueta; fica vazia se a pedra sair da lista.
 

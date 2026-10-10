@@ -33,9 +33,9 @@ falta só quem as alimente.
 
 Funcionam: `GET /health`, `/auth/*` e os blocos de liquidez (`GET /blocos/etiquetas`,
 `POST /blocos`, `GET /blocos`, `GET /blocos/{id}` e `GET /empresas`; ver
-[Blocos de Liquidez](../arquitetura/blocos.md)). Criar bloco e buscar empresas dependem
-da tabela `tb_empresas`, que outra pessoa do grupo está criando. As demais rotas já
-existem no contrato e respondem 501 até terem implementação. Planejadas:
+[Blocos de Liquidez](../arquitetura/blocos.md)), já com o cadastro real de empresas
+(`dados_fidc.tb_empresas_fidc`). As demais rotas já existem no contrato e respondem 501
+até terem implementação. Planejadas:
 
 - `GET /dashboard/gestora`, `GET /dashboard/investidor`
 - `POST /relatorios` + `GET /relatorios/{id}`

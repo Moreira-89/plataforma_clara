@@ -78,8 +78,8 @@ recurso tem o seu arquivo em `api/endpoints/` com um `APIRouter` próprio.
 | `GET /dashboard/gestora` | gestora | 501, depende da fonte dos aportes |
 | `GET /dashboard/investidor` | investidor | 501, depende da fonte dos aportes |
 | `GET /blocos/etiquetas` | qualquer perfil | funciona |
-| `POST /blocos` | gestora | funciona; depende da `tb_empresas` |
-| `GET /empresas?busca=` | gestora | funciona; depende da `tb_empresas` |
+| `POST /blocos` | gestora | funciona |
+| `GET /empresas?busca=` | gestora | funciona |
 | `GET /blocos`, `GET /blocos/{bloco_id}` | qualquer perfil | funciona |
 | `POST /relatorios`, `GET /relatorios/{id}` | investidor | 501, dependem da fonte dos aportes |
 

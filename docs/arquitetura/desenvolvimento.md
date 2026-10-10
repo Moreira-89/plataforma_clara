@@ -129,8 +129,9 @@ cd backend
 python -m app.jobs.criar_tabelas_blocos
 ```
 
-Usa a credencial e o `BIGQUERY_DATASET` do `backend/.env` (hoje `tabelas_silvers`) e pode
-rodar de novo sem apagar nada. Detalhes em [Blocos de Liquidez](blocos.md).
+Usa a credencial e o `BIGQUERY_DATASET` do `backend/.env` (recomendado: `tabelas_silvers`) e
+pode rodar de novo sem apagar nada. O cadastro de empresas fica em outro dataset
+(`BIGQUERY_DATASET_EMPRESAS`, padrão `dados_fidc`). Detalhes em [Blocos de Liquidez](blocos.md).
 
 ## Qualidade
 

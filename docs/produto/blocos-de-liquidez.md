@@ -51,12 +51,16 @@ horário de Brasília.
 
 1. A gestora busca por **nome fantasia** ou **CNPJ**. A busca lista nome e CNPJ numa
    caixa de seleção, e ela marca uma ou várias empresas.
-2. Ao clicar em **Adicionar**, as empresas entram numa tabela com nome, CNPJ, ramo de
-   atividade, **capital estimado para a empresa** e **porcentagem de liquidez aplicada**.
-3. A gestora preenche a **porcentagem** de cada empresa (até 2 casas decimais). Essa
+2. As empresas marcadas **continuam selecionadas** quando ela faz outra busca: aparecem como
+   etiquetas acima dos resultados (cada uma com um × para desmarcar), e o botão mostra
+   quantas há. Assim ela pode procurar e marcar empresas diferentes, uma busca após a outra.
+3. Ao clicar em **Adicionar**, todas as marcadas entram de uma vez numa tabela com nome,
+   CNPJ, ramo de atividade, **capital estimado para a empresa** e **porcentagem de
+   liquidez aplicada**.
+4. A gestora preenche a **porcentagem** de cada empresa (até 2 casas decimais). Essa
    porcentagem é a parte do capital total do bloco que a empresa recebe: 5% de
    R$ 1.000.000 dá R$ 50.000.
-4. O **capital estimado** não é digitado: é calculado (capital total × porcentagem).
+5. O **capital estimado** não é digitado: é calculado (capital total × porcentagem).
 
 **Realocado e Disponível**
 
@@ -81,9 +85,6 @@ Os detalhes técnicos (tabelas, rotas e erros) estão em
 - **Uma empresa em vários blocos.** Hoje vale "um só", como a gestora definiu para o
   momento, mas o grupo ainda vai confirmar. Se mudar, a busca deixa de filtrar e a
   gravação deixa de recusar.
-- **Cadastro de empresas.** A tabela `tb_empresas` está sendo criada por outra pessoa do
-  grupo. O nome exato e as colunas (`id_empresa`, `nome_fantasia`, `razao_social`,
-  `cnpj`, `ramo_atividade`) precisam ser conferidos quando ela existir.
 - **Lista de blocos da gestora.** A tela que lista os blocos já criados está desenhada,
   mas ainda não foi implementada.
 - **Telas do investidor** para explorar e escolher blocos: a definir.
