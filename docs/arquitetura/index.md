@@ -80,7 +80,7 @@ recurso tem o seu arquivo em `api/endpoints/` com um `APIRouter` próprio.
 | `GET /blocos/etiquetas` | qualquer perfil | funciona |
 | `POST /blocos` | gestora | funciona; depende da `tb_empresas` |
 | `GET /empresas?busca=` | gestora | funciona; depende da `tb_empresas` |
-| `GET /blocos`, `GET /blocos/{bloco_id}` | qualquer perfil | 501, dependem da fonte dos aportes |
+| `GET /blocos`, `GET /blocos/{bloco_id}` | qualquer perfil | funciona |
 | `POST /relatorios`, `GET /relatorios/{id}` | investidor | 501, dependem da fonte dos aportes |
 
 O acesso por perfil já é aplicado: sem token a rota responde 401, com perfil errado

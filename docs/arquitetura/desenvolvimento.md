@@ -49,7 +49,7 @@ npm run dev                    # http://localhost:5173
 ```
 
 Em desenvolvimento o Vite faz proxy de `/api` para `http://localhost:8000`, então
-o frontend funciona sem configurar CORS nem `VITE_API_URL`.
+o frontend funciona sem `VITE_API_URL`.
 
 ## Firebase (autenticação)
 
@@ -91,7 +91,9 @@ precisam da config web do Firebase:
 3. Subir `uvicorn main:app --reload` em `backend/` e `npm run dev` em `frontend/`.
 4. Abrir <http://localhost:5173/paginas/login.html>.
 
-Use o `npm run dev`: o proxy do Vite evita o CORS, que a API ainda não configura.
+Em desenvolvimento o proxy do Vite evita o CORS. Já no Docker, o frontend chama a API
+diretamente em outra origem, e é o CORS da API que libera: ele aceita as origens de
+`CORS_ORIGENS` em `backend/.env` (separadas por vírgula; padrão `http://localhost:5173`).
 
 `VITE_API_URL` pode ficar **vazio** em desenvolvimento: o frontend usa `/api`, que o
 proxy do Vite encaminha ao backend. Em produção ela recebe a URL pública do backend.

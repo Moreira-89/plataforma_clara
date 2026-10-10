@@ -31,17 +31,15 @@ falta só quem as alimente.
 
 ## 3. Endpoints do produto
 
-Funcionam: `GET /health`, `/auth/*` e, para a gestora, a criação de blocos
-(`GET /blocos/etiquetas`, `GET /empresas`, `POST /blocos`; ver
-[Blocos de Liquidez](../arquitetura/blocos.md)). A criação de blocos depende da
-tabela `tb_empresas`, que outra pessoa do grupo está criando. As demais rotas já
+Funcionam: `GET /health`, `/auth/*` e os blocos de liquidez (`GET /blocos/etiquetas`,
+`POST /blocos`, `GET /blocos`, `GET /blocos/{id}` e `GET /empresas`; ver
+[Blocos de Liquidez](../arquitetura/blocos.md)). Criar bloco e buscar empresas dependem
+da tabela `tb_empresas`, que outra pessoa do grupo está criando. As demais rotas já
 existem no contrato e respondem 501 até terem implementação. Planejadas:
 
 - `GET /dashboard/gestora`, `GET /dashboard/investidor`
-- `GET /blocos`, `GET /blocos/{bloco_id}` (a lista de blocos da gestora já está
-  desenhada, ainda sem implementação)
 - `POST /relatorios` + `GET /relatorios/{id}`
-- OpenAPI documentado, CORS configurado
+- OpenAPI documentado
 
 O que já está pronto para eles chamarem:
 
@@ -61,16 +59,11 @@ do dashboard.
 
 Sobe no `docker-compose`, sem cliente na aplicação ainda.
 
-## 6. CORS
-
-Sem middleware. Necessário assim que o frontend chamar a API de outro
-domínio.
-
-## 7. Frontend
+## 6. Frontend
 
 Só a casca hoje (Vite, Dockerfile, proxy de desenvolvimento). Nenhuma tela.
 
-## 8. Lock file de dependências
+## 7. Lock file de dependências
 
 `requirements.txt` usa faixas de versão (`~=`), sem lock file fixando a
 árvore inteira de dependências transitivas.

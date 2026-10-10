@@ -50,9 +50,16 @@ rodar de novo sem apagar nada.
 | `GET /blocos/etiquetas` | qualquer perfil | As pedras e as cores. |
 | `GET /empresas?busca=` | gestora | Busca por nome fantasia ou CNPJ (2+ caracteres, até 20 resultados), só empresas fora de qualquer bloco. |
 | `POST /blocos` | gestora | Valida e cria o bloco. Responde 201 com o código gerado. |
+| `GET /blocos` | qualquer perfil | Os blocos criados, do mais novo para o mais antigo, cada um com a cor da etiqueta e a quantidade de empresas. |
+| `GET /blocos/{bloco_id}` | qualquer perfil | Um bloco com as suas empresas, da maior para a menor fatia. |
 
 Erros de `POST /blocos`: dados inválidos ou soma diferente de 100% (422), empresa fora do
-cadastro (422), empresa já em outro bloco (409), tabela fora do ar (503).
+cadastro (422), empresa já em outro bloco (409), tabela fora do ar (503). Em
+`GET /blocos/{bloco_id}`, bloco inexistente responde 404.
+
+No detalhe, nome e ramo das empresas vêm de um join com `tb_empresas`. Se o cadastro não
+estiver acessível, o bloco sai com `nome_fantasia` e `ramo_atividade` vazios, em vez de
+falhar. A `cor` vem da etiqueta; fica vazia se a pedra sair da lista.
 
 ## Como a criação funciona
 
@@ -63,6 +70,12 @@ cadastro (422), empresa já em outro bloco (409), tabela fora do ar (503).
    `BEGIN TRANSACTION … COMMIT` com parâmetros), para não sobrar bloco pela metade.
 
 As consultas são parametrizadas: o texto digitado nunca entra no SQL.
+
+## CORS
+
+O `main.py` libera as origens de `CORS_ORIGENS` (separadas por vírgula; padrão
+`http://localhost:5173`). Em produção, é a URL pública do frontend. Mexe só em
+`config/settings.py` e na variável; nada espalhado.
 
 ## Limites conhecidos
 
