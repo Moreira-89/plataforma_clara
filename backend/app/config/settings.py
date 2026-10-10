@@ -43,6 +43,8 @@ class Configuracao(BaseSettings):
     google_application_credentials: str = ""
     project_id: str = "plataforma-clara"
     bigquery_dataset: str = "tabelas_silvers"
+    # Dataset do cadastro de empresas (tb_empresas_fidc), mantido por outra pessoa do grupo.
+    bigquery_dataset_empresas: str = "dados_fidc"
 
     # Origens que podem chamar a API, separadas por vírgula.
     cors_origens: str = "http://localhost:5173"
@@ -52,7 +54,6 @@ class Configuracao(BaseSettings):
     groq_api_key: SecretStr = SecretStr("")
     llm_model_name: str = "groq:openai/gpt-oss-120b"
     llm_temperature: float = 0.1
-
 
     @property
     def origens_cors(self) -> list[str]:

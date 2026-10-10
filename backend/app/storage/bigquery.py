@@ -87,6 +87,6 @@ def cliente_compartilhado() -> bigquery.Client:
     return criar_cliente_bigquery()
 
 
-def tabela(nome: str) -> str:
-    """Nome qualificado `projeto.dataset.tabela`, já entre crases para usar no SQL."""
-    return f"`{settings.project_id}.{settings.bigquery_dataset}.{nome}`"
+def tabela(nome: str, dataset: str | None = None) -> str:
+    """Nome qualificado `projeto.dataset.tabela`, entre crases; sem `dataset`, usa o padrão."""
+    return f"`{settings.project_id}.{dataset or settings.bigquery_dataset}.{nome}`"

@@ -2,7 +2,7 @@
 Gravação dos Blocos de Liquidez no BigQuery (`tb_blocos_liquidez` e `tb_blocos_empresas`).
 
 COMO FUNCIONA:
-    1. Confere que todas as empresas existem em `tb_empresas`.
+    1. Confere que todas as empresas existem em `tb_empresas_fidc`.
     2. Confere que nenhuma já pertence a outro bloco.
     3. Grava o bloco e as suas empresas numa única transação, para não sobrar bloco
        pela metade se algo falhar.
@@ -41,7 +41,7 @@ from app.domain.erros import (
     EmpresaNaoEncontradaError,
 )
 from app.storage.bigquery import cliente_compartilhado, tabela
-from app.storage.empresas import TABELA_BLOCOS_EMPRESAS, TABELA_EMPRESAS
+from app.storage.empresas import TABELA_BLOCOS_EMPRESAS, tabela_empresas
 
 logger = logging.getLogger(__name__)
 
@@ -88,10 +88,10 @@ def _ids_param(ids: list[str]) -> bigquery.QueryJobConfig:
 
 def _cnpjs_do_cadastro(cliente: bigquery.Client, ids: list[str]) -> dict[str, str]:
     sql = f"""
-        SELECT CAST(id_empresa AS STRING) AS id_empresa,
-               REGEXP_REPLACE(CAST(cnpj AS STRING), r'\\D', '') AS cnpj
-        FROM {tabela(TABELA_EMPRESAS)}
-        WHERE CAST(id_empresa AS STRING) IN UNNEST(@ids)
+        SELECT CAST(ID_EMPRESA AS STRING) AS id_empresa,
+               REGEXP_REPLACE(CAST(CNPJ AS STRING), r'\\D', '') AS cnpj
+        FROM {tabela_empresas()}
+        WHERE CAST(ID_EMPRESA AS STRING) IN UNNEST(@ids) AND CNPJ IS NOT NULL
     """
     return {r.id_empresa: r.cnpj for r in cliente.query(sql, job_config=_ids_param(ids)).result()}
 
@@ -226,9 +226,10 @@ def _empresas_do_bloco(cliente: bigquery.Client, config: bigquery.QueryJobConfig
     """Empresas do bloco com nome e ramo; sem o cadastro, devolve só o que o bloco guarda."""
     com_cadastro = f"""
         SELECT e.id_empresa, e.cnpj, e.capital_estimado, e.percentual_liquidez,
-               c.nome_fantasia, c.ramo_atividade
+               COALESCE(c.NOME_FANTASIA, c.RAZAO_SOCIAL) AS nome_fantasia,
+               c.RAMO_EMPRESA AS ramo_atividade
         FROM {tabela(TABELA_BLOCOS_EMPRESAS)} e
-        LEFT JOIN {tabela(TABELA_EMPRESAS)} c ON CAST(c.id_empresa AS STRING) = e.id_empresa
+        LEFT JOIN {tabela_empresas()} c ON CAST(c.ID_EMPRESA AS STRING) = e.id_empresa
         WHERE e.id_bloco = @id_bloco
         ORDER BY e.capital_estimado DESC
     """
