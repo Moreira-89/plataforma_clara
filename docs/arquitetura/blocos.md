@@ -77,6 +77,21 @@ falhar. A `cor` vem da etiqueta; fica vazia se a pedra sair da lista.
 
 As consultas são parametrizadas: o texto digitado nunca entra no SQL.
 
+## Blocos de exemplo
+
+Os blocos que aparecem hoje na plataforma são **dados fictícios de demonstração**: 12 blocos
+montados com as empresas do cadastro, com responsável, capital, vencimento, datas de criação e
+distribuição da liquidez sorteados (cada bloco soma exatamente 100%, e nenhuma empresa está em
+dois blocos). Foram gravados com `criado_por_uid = 'seed-demo'`, pelas mesmas regras e pela mesma
+transação da tela. O script que os gerou foi removido. Para apagá-los, no BigQuery:
+
+```sql
+DELETE FROM `plataforma-clara.tabelas_silvers.tb_blocos_empresas`
+WHERE id_bloco IN (SELECT id_bloco FROM `plataforma-clara.tabelas_silvers.tb_blocos_liquidez`
+                   WHERE criado_por_uid = 'seed-demo');
+DELETE FROM `plataforma-clara.tabelas_silvers.tb_blocos_liquidez` WHERE criado_por_uid = 'seed-demo';
+```
+
 ## CORS
 
 O `main.py` libera as origens de `CORS_ORIGENS` (separadas por vírgula; padrão

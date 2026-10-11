@@ -1,8 +1,8 @@
 # Blocos de Liquidez
 
 Um **Bloco de Liquidez** é um conjunto de empresas, montado pela gestora, em que o
-capital do fundo é distribuído. Esta página descreve a tela em que a gestora cria um
-bloco. As telas do investidor ainda não foram definidas.
+capital do fundo é distribuído. Esta página descreve as telas de blocos (a lista, para gestora e investidor, e o
+formulário de criação, só da gestora).
 
 ## Etiquetas
 
@@ -29,10 +29,49 @@ O mesmo nome de pedra pode ser usado em vários blocos. O que os distingue é o
 criação em milissegundos e o nome da pedra perde acentos e espaços
 (`Turmalina Paraíba` vira `TURMALINA_PARAIBA`). O código é gerado ao salvar.
 
-## A tela de criação (gestora)
+## As telas de blocos
 
-Só a gestora acessa. Ao entrar, ela cai direto nesta tela. A tela tem duas colunas:
-à esquerda, as empresas, que ocupam a maior parte da tela; à direita, os dados do bloco.
+A mesma tela serve aos dois perfis, com nomes e permissões diferentes. É a primeira tela
+que cada um vê depois de entrar.
+
+| | Gestora | Investidor |
+| --- | --- | --- |
+| Nome | **Gestão de Blocos** | **Blocos de Liquidez** |
+| Cartões, busca e "Ver mais detalhes" | sim | sim |
+| Botão **Criar novo bloco** | sim (abre o formulário num pop-up) | não |
+| Botão **Alocar dinheiro** no pop-up | não | sim, ainda desativado ("em breve") |
+| Responsável técnico, data de criação e observação no pop-up | sim | não |
+
+**Cartões.** Um cartão por bloco criado, sempre do mais recente para o mais antigo.
+Cada cartão mostra a etiqueta (com a cor da pedra), o código do bloco (os 8 primeiros
+caracteres do id), o score de risco, a quantidade de empresas, o vencimento e o botão
+**Ver mais detalhes**.
+
+**Busca e filtros.** A barra de busca procura pelo código do bloco (o id) ou pelo nome da
+etiqueta. **Ver tudo** limpa a busca e volta à ordem padrão. O filtro de ordem tem
+**Mais recentes** e **Maior score**; o segundo fica desativado até o score existir.
+
+**Pop-up "Ver mais detalhes".** Mostra a etiqueta, a data de vencimento, o score do bloco e
+a tabela de empresas, com nome, CNPJ, ramo, capital estimado e score de risco de cada uma.
+
+!!! warning "Score de risco ainda não existe nos dados"
+    Nenhuma tabela tem o score hoje (a `tb_empresas_fidc` não traz essa coluna), e a
+    plataforma não inventa número. Os cartões e o pop-up mostram **—** e o aviso "score de
+    risco indisponível". Quando a fonte do score for integrada, o score entra nos cartões, no
+    pop-up e no filtro **Maior score**.
+
+**Menu lateral.** Todas as telas de quem está logado (a Gestão de Blocos e os Blocos de
+Liquidez) têm o mesmo menu à esquerda, fixo: o logo no topo, o item da área do perfil
+(destacado quando é a tela atual) e, no rodapé, o e-mail de quem entrou e o botão **Sair**.
+A home não tem esse menu. Telas novas entram na lista de itens do menu e passam a aparecer em
+todas as páginas.
+
+## O formulário de criação (gestora)
+
+Só a gestora vê. Abre num **pop-up** a partir do botão **Criar novo bloco** da Gestão de
+Blocos; ao criar, o pop-up fecha e a lista já mostra o bloco novo no topo, com o código dele
+num aviso. O pop-up tem duas colunas: à esquerda, as empresas, que ocupam a maior parte; à
+direita, os dados do bloco.
 
 **Dados do bloco**
 
@@ -85,6 +124,5 @@ Os detalhes técnicos (tabelas, rotas e erros) estão em
 - **Uma empresa em vários blocos.** Hoje vale "um só", como a gestora definiu para o
   momento, mas o grupo ainda vai confirmar. Se mudar, a busca deixa de filtrar e a
   gravação deixa de recusar.
-- **Lista de blocos da gestora.** A tela que lista os blocos já criados está desenhada,
-  mas ainda não foi implementada.
-- **Telas do investidor** para explorar e escolher blocos: a definir.
+- **Score de risco** do bloco e de cada empresa: de onde vem e quando entra (ver aviso acima).
+- **Alocar dinheiro:** como o investidor aporta ainda não foi definido; o botão está desativado.

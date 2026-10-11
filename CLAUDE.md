@@ -113,10 +113,11 @@ frontend/
   index.html               # home
   paginas/                 # uma pasta por área, um HTML por tela
     login.html, cadastro.html
-    gestora/novo-bloco.html
+    gestora/gestao-blocos.html   # inclui o pop-up de criação de bloco
+    investidor/blocos-de-liquidez.html
   src/css/                 # tokens, base, componentes (principal.css junta os três)
     paginas/               #   um CSS por tela ou grupo de telas
-  src/js/nucleo/           # api, firebase, rotas, ui — usados por todas as telas
+  src/js/nucleo/           # api, firebase, rotas, ui, menu — usados por todas as telas
   src/js/paginas/          # um script por tela (espelha paginas/)
   src/img/
   .env.example
