@@ -1,6 +1,6 @@
 import { chamar, textoDoErro } from '../nucleo/api.js'
 import { aoMudarSessao, entrar, mensagemDeErro } from '../nucleo/firebase.js'
-import { HOME, LOGIN, destinoPorPerfil } from '../nucleo/rotas.js'
+import { BLOCOS_INVESTIDOR, LOGIN, destinoPorPerfil } from '../nucleo/rotas.js'
 import { $, enviando, mostrarMensagem } from '../nucleo/ui.js'
 
 aoMudarSessao(async (usuario) => {
@@ -35,7 +35,7 @@ $('#form-cadastro').addEventListener('submit', async (evento) => {
       }
       // O backend define o perfil antes de responder, então o token já nasce com ele.
       await entrar(dados.get('email'), dados.get('senha'))
-      window.location.href = HOME
+      window.location.href = BLOCOS_INVESTIDOR
     } catch (erro) {
       mostrarMensagem(erro.code ? mensagemDeErro(erro) : 'Não foi possível falar com o servidor.', true)
     }

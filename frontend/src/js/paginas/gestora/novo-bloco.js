@@ -1,8 +1,7 @@
 import { chamar, textoDoErro } from '../../nucleo/api.js'
-import { aoMudarSessao, sair } from '../../nucleo/firebase.js'
-import { HOME, LOGIN, encerrarSeInvalida } from '../../nucleo/rotas.js'
 import { $, mostrarMensagem } from '../../nucleo/ui.js'
 
+// Formulário de criação de bloco, aberto num pop-up da Gestão de Blocos.
 const ATRASO_BUSCA = 300
 const LIMITE_DIGITOS = 13 // até R$ 9.999.999.999.999
 const TOTAL = 10000 // 100,00% em centésimos, para somar sem erro de ponto flutuante
@@ -13,6 +12,8 @@ let etiquetas = []
 let encontradas = []
 const selecionadas = new Map() // marcadas na busca, ainda não adicionadas; sobrevivem a novas buscas
 let temporizador
+let aoCriarBloco = () => {}
+let iniciado = false
 
 const formatarCnpj = (c) =>
   c.length === 14 ? c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : c
@@ -217,7 +218,7 @@ function desenharResultados() {
 }
 
 async function buscar() {
-  const texto = $('#busca').value.trim()
+  const texto = $('#busca-empresa').value.trim()
   const estado = $('#busca-estado')
   encontradas = []
   desenharResultados()
@@ -241,7 +242,7 @@ async function buscar() {
 function adicionarSelecionadas() {
   for (const [id, empresa] of selecionadas) empresas.set(id, { dados: empresa, centesimos: 0 })
   selecionadas.clear()
-  $('#busca').value = ''
+  $('#busca-empresa').value = ''
   encontradas = []
   $('#busca-estado').textContent = ''
   desenharSelecionadas()
@@ -276,7 +277,6 @@ async function criarBloco(evento) {
   const botao = $('#salvar')
   botao.disabled = true
   mostrarMensagem('Criando o bloco...')
-  $('#sucesso').hidden = true
 
   const resposta = await chamar('POST', '/blocos', {
     etiqueta: dados.get('etiqueta'),
@@ -292,11 +292,8 @@ async function criarBloco(evento) {
 
   if (resposta.status === 201) {
     mostrarMensagem('')
-    const bloco = resposta.corpo
-    const aviso = $('#sucesso')
-    aviso.textContent = `Bloco criado: ${bloco.codigo_identificacao}`
-    aviso.hidden = false
     limparFormulario()
+    aoCriarBloco(resposta.corpo)
   } else {
     mostrarMensagem(textoDoErro(resposta), true)
     validar()
@@ -307,7 +304,7 @@ async function iniciar() {
   const resposta = await chamar('GET', '/blocos/etiquetas')
   if (resposta.status !== 200) {
     mostrarMensagem('Não foi possível carregar as etiquetas.', true)
-    return
+    return false
   }
   etiquetas = resposta.corpo
   const seletor = $('#etiqueta')
@@ -324,37 +321,19 @@ async function iniciar() {
   $('#observacao').addEventListener('input', (e) => {
     $('#contador-observacao').textContent = `${e.target.value.length} / 500`
   })
-  $('#busca').addEventListener('input', () => {
+  $('#busca-empresa').addEventListener('input', () => {
     clearTimeout(temporizador)
     temporizador = setTimeout(buscar, ATRASO_BUSCA)
   })
   $('#adicionar').addEventListener('click', adicionarSelecionadas)
   $('#form-bloco').addEventListener('submit', criarBloco)
   desenharTabela()
+  return true
 }
 
-$('#sair').addEventListener('click', async () => {
-  await sair()
-  window.location.href = '/'
-})
-
-aoMudarSessao(async (usuario) => {
-  if (!usuario) {
-    window.location.href = LOGIN
-    return
-  }
-  const perfil = await chamar('GET', '/auth/me')
-  if (await encerrarSeInvalida(perfil)) return
-  if (perfil.status === 200 && perfil.corpo.perfil !== 'gestora') {
-    window.location.href = HOME
-    return
-  }
-  $('#conteudo').hidden = false
-  if (perfil.status !== 200) {
-    $('#form-bloco').hidden = true
-    $('#erro-pagina').textContent = `Não foi possível verificar o seu perfil: ${textoDoErro(perfil)}`
-    $('#erro-pagina').hidden = false
-    return
-  }
-  await iniciar()
-})
+// Chamado a cada abertura do pop-up; a primeira vez carrega as etiquetas e liga os eventos.
+export async function prepararFormulario({ aoCriar }) {
+  aoCriarBloco = aoCriar
+  if (!iniciado) iniciado = await iniciar()
+  return iniciado
+}

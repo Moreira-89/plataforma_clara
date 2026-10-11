@@ -7,31 +7,46 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/css/principal.css" />
+    <link rel="stylesheet" href="/src/css/paginas/blocos.css" />
     <link rel="stylesheet" href="/src/css/paginas/gestora-novo-bloco.css" />
-    <title>Criar bloco de liquidez — Plataforma Clara</title>
+    <title>Gestão de Blocos — Plataforma Clara</title>
   </head>
-  <body>
-    <header class="nav nav-escura">
-      <div class="container container-largo">
-        <a class="marca" href="/"><img src="/src/img/logo-clara.png" alt="Plataforma Clara" /></a>
-        <div class="nav-acoes">
-          <button class="btn btn-secundario" id="sair" type="button">Sair</button>
-        </div>
-      </div>
-    </header>
+  <body data-perfil="gestora" class="com-menu">
+    <aside id="menu"></aside>
 
-    <main class="pagina-bloco" id="conteudo" hidden>
+    <main class="pagina-blocos" id="conteudo" hidden>
       <span class="rotulo">Gestora</span>
-      <h1 class="titulo-pagina">Criar bloco de liquidez</h1>
-      <p>Escolha a etiqueta, defina o capital e distribua-o entre as empresas do bloco.</p>
-      <p id="erro-pagina" class="mensagem erro" role="alert" hidden></p>
+      <h1 class="titulo-pagina">Gestão de Blocos</h1>
+      <p>Os blocos de liquidez já criados, do mais recente para o mais antigo.</p>
 
+      <div class="barra-blocos">
+        <input id="busca" type="search" placeholder="Buscar por código ou etiqueta" autocomplete="off" aria-label="Buscar bloco" />
+        <label class="ordem">
+          <span class="so-leitor">Ordenar por</span>
+          <select id="ordem" aria-label="Ordenar blocos">
+            <option value="recentes">Mais recentes</option>
+            <option value="score" disabled>Maior score (indisponível)</option>
+          </select>
+        </label>
+        <button class="btn btn-secundario" id="ver-tudo" type="button">Ver tudo</button>
+        <button class="btn btn-primario" id="criar-bloco" type="button">Criar novo bloco</button>
+      </div>
+
+      <p id="estado" class="mensagem" role="status"></p>
+      <section id="cartoes" class="grade-blocos" aria-live="polite"></section>
+    </main>
+
+    <dialog id="dialogo-bloco" class="detalhe-bloco dialogo-bloco" aria-labelledby="dialogo-bloco-titulo">
+      <div class="detalhe-topo">
+        <h2 id="dialogo-bloco-titulo">Criar novo bloco</h2>
+        <button class="detalhe-fechar" id="dialogo-bloco-fechar" type="button" aria-label="Fechar">×</button>
+      </div>
       <form id="form-bloco" class="layout-bloco" novalidate>
         <div class="coluna-principal">
         <section class="cartao coluna-empresas">
           <h2 class="titulo-bloco">Adicionar empresas no bloco</h2>
           <div class="busca-empresa">
-            <input id="busca" type="search" placeholder="Nome fantasia ou CNPJ" autocomplete="off" aria-label="Buscar empresa" />
+            <input id="busca-empresa" type="search" placeholder="Nome fantasia ou CNPJ" autocomplete="off" aria-label="Buscar empresa" />
             <button class="btn btn-secundario" id="adicionar" type="button" disabled>Adicionar</button>
           </div>
           <ul id="selecionadas" class="selecionadas" aria-label="Empresas marcadas" hidden></ul>
@@ -60,7 +75,6 @@
         </section>
 
         <p id="mensagem" class="mensagem" role="status"></p>
-        <div id="sucesso" class="cartao sucesso" hidden></div>
         <button class="btn btn-primario btn-lg btn-bloco" id="salvar" type="submit" disabled>Criar bloco</button>
         </div>
 
@@ -90,7 +104,15 @@
           </div>
         </aside>
       </form>
-    </main>
-    <script type="module" src="/src/js/paginas/gestora/novo-bloco.js"></script>
+    </dialog>
+
+    <dialog id="detalhe" class="detalhe-bloco" aria-labelledby="detalhe-titulo">
+      <div class="detalhe-topo">
+        <h2 id="detalhe-titulo"></h2>
+        <button class="detalhe-fechar" id="detalhe-fechar" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div id="detalhe-corpo"></div>
+    </dialog>
+    <script type="module" src="/src/js/paginas/blocos/lista.js"></script>
   </body>
 </html>

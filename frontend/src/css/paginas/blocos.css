@@ -1,0 +1,51 @@
+/* Gestão de Blocos (gestora) e Blocos de Liquidez (investidor): mesma tela, mesmos estilos. */
+.pagina-blocos { width: 100%; max-width: 1360px; margin: var(--space-xxl) auto; padding: 0 var(--space-xl); }
+.titulo-pagina { font-size: 36px; line-height: 1.11; letter-spacing: -0.5px; margin: var(--space-base) 0 var(--space-xs); }
+
+.barra-blocos { display: flex; flex-wrap: wrap; gap: var(--space-sm); align-items: center; margin: var(--space-xl) 0 var(--space-base); }
+.barra-blocos input {
+  flex: 1 1 280px; height: 44px; padding: 12px 20px; border: 1px solid var(--hairline); border-radius: var(--radius-pill);
+  background: var(--surface-strong); font: 400 16px var(--font-sans); color: var(--ink);
+}
+.barra-blocos input:focus { outline: none; border-color: var(--primary); background: var(--canvas); }
+.barra-blocos select {
+  height: 44px; padding: 0 20px; border: 1px solid var(--hairline); border-radius: var(--radius-pill);
+  background: var(--canvas); font: 500 14px var(--font-sans); color: var(--ink);
+}
+.barra-blocos #criar-bloco { margin-left: auto; }
+
+.grade-blocos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-lg); }
+.cartao-bloco { display: grid; gap: var(--space-base); padding: var(--space-lg); }
+.cartao-bloco:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04); }
+.cartao-topo { display: flex; justify-content: space-between; align-items: center; gap: var(--space-sm); }
+.etiqueta-bloco { display: inline-flex; align-items: center; gap: var(--space-xs); font-size: 20px; font-weight: 600; color: var(--ink); }
+.selo-etiqueta { width: 16px; height: 16px; border-radius: var(--radius-full); border: 1px solid var(--hairline); flex: none; }
+.codigo-bloco { font-family: var(--font-mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
+.linha-score { display: flex; justify-content: space-between; align-items: center; padding: var(--space-sm) 0; border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); font-size: 14px; }
+.linha-score strong { font-family: var(--font-mono); color: var(--muted); }
+.meta-bloco { font-size: 13px; color: var(--muted); }
+.cartao-bloco .btn { width: 100%; }
+.vazio { grid-column: 1 / -1; padding: var(--space-xxl) 0; text-align: center; color: var(--muted); }
+
+.detalhe-bloco {
+  width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 64px); padding: var(--space-xl);
+  border: 0; border-radius: var(--radius-xl); color: var(--body); background: var(--canvas);
+}
+.detalhe-bloco::backdrop { background: rgba(10, 11, 13, 0.6); }
+.detalhe-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-base); margin-bottom: var(--space-lg); }
+.detalhe-topo h2 { display: flex; align-items: center; gap: var(--space-sm); font-size: 28px; line-height: 1.13; }
+.detalhe-fechar { background: none; border: 0; font-size: 28px; line-height: 1; color: var(--muted); cursor: pointer; }
+.dialogo-bloco { width: min(1320px, calc(100vw - 48px)); max-height: calc(100vh - 48px); overflow-y: auto; }
+.resumo-detalhe { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-base); margin-bottom: var(--space-lg); }
+.resumo-detalhe span { display: block; font-size: 13px; color: var(--muted); }
+.resumo-detalhe strong { color: var(--ink); font-weight: 500; }
+.observacao-detalhe { margin-bottom: var(--space-lg); font-size: 14px; }
+.tabela-detalhe { overflow-x: auto; }
+.tabela-detalhe .tabela td:nth-child(n+4), .tabela-detalhe .tabela th:nth-child(n+4) { text-align: right; }
+.nota-score { margin-top: var(--space-base); font-size: 13px; color: var(--muted); }
+.rodape-detalhe { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-base); margin-top: var(--space-lg); }
+.rodape-detalhe small { color: var(--muted); }
+
+@media (max-width: 768px) {
+  .barra-blocos #criar-bloco { margin-left: 0; width: 100%; }
+}
