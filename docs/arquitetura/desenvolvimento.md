@@ -110,11 +110,14 @@ proxy do Vite encaminha ao backend. Em produção ela recebe a URL pública do b
 index.html                home
 paginas/                  uma pasta por área, um HTML por tela
   login.html  cadastro.html
-  gestora/novo-bloco.html
+  gestora/gestao-blocos.html     (inclui o pop-up de criação de bloco)
+  investidor/blocos-de-liquidez.html
 src/css/                  tokens, base e componentes (principal.css junta os três)
   paginas/                um CSS por tela ou grupo de telas
-src/js/nucleo/            api, firebase, rotas e ui, usados por todas as telas
-src/js/paginas/           um script por tela, espelhando paginas/
+src/js/nucleo/            api, firebase, rotas, ui e menu, usados por todas as telas
+src/js/paginas/           um script por tela, espelhando paginas/ (blocos/lista.js serve
+                          às duas telas de blocos, gestora e investidor; gestora/novo-bloco.js é o
+                          formulário do pop-up)
 ```
 
 Tela nova: um HTML em `paginas/`, o script em `src/js/paginas/`, o CSS em
@@ -129,8 +132,9 @@ cd backend
 python -m app.jobs.criar_tabelas_blocos
 ```
 
-Usa a credencial e o `BIGQUERY_DATASET` do `backend/.env` (hoje `tabelas_silvers`) e pode
-rodar de novo sem apagar nada. Detalhes em [Blocos de Liquidez](blocos.md).
+Usa a credencial e o `BIGQUERY_DATASET` do `backend/.env` (recomendado: `tabelas_silvers`) e
+pode rodar de novo sem apagar nada. O cadastro de empresas fica em outro dataset
+(`BIGQUERY_DATASET_EMPRESAS`, padrão `dados_fidc`). Detalhes em [Blocos de Liquidez](blocos.md).
 
 ## Qualidade
 

@@ -92,6 +92,8 @@ class BlocoListagem(BaseModel):
     responsavel_tecnico: str
     observacao: str | None
     quantidade_empresas: int
+    score: float | None = Field(description="Média dos scores das empresas, ponderada pelo capital")
+    nota_risco: str | None = Field(description="Nota de A+ a C- do score; vazia sem score")
 
 
 class EmpresaDoBlocoDetalhe(BaseModel):
@@ -105,6 +107,8 @@ class EmpresaDoBlocoDetalhe(BaseModel):
     ramo_atividade: str | None
     capital_estimado: Decimal
     percentual_liquidez: Decimal
+    score: float | None
+    nota_risco: str | None
 
 
 class BlocoDetalhe(BlocoListagem):

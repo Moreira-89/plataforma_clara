@@ -85,7 +85,7 @@ api/ ──▶ agents/ · storage/ ──▶ domain/
 | LLM | ChatGroq via Langchain |
 | PDF | `markdown-pdf` |
 | Dados | pandas |
-| ML | Nenhum modelo no repositório — `score_risco_interno` chega pronto, calculado por fora |
+| ML | Nenhum modelo no repositório — os scores são de demonstração, sorteados e lidos de `backend/dados/scores_empresas.csv` |
 
 ## Estrutura de Diretórios
 
@@ -105,7 +105,8 @@ backend/
     config/                #   settings.py (env) e logging.py
     domain/                #   risco, metricas, formatacao, identidade, erros
     jobs/                  #   criar_gestora.py e criar_tabelas_blocos.py (CLIs)
-    storage/               #   bigquery, empresas, blocos, firebase (token + Firestore), usuarios, credenciais
+    storage/               #   bigquery, empresas, blocos, scores, firebase (token + Firestore), usuarios, credenciais
+  dados/                   # scores_empresas.csv (scores de demonstração, lidos por storage/scores.py)
   tests/
 frontend/
   Dockerfile               # build Node → nginx
@@ -113,10 +114,11 @@ frontend/
   index.html               # home
   paginas/                 # uma pasta por área, um HTML por tela
     login.html, cadastro.html
-    gestora/novo-bloco.html
+    gestora/gestao-blocos.html   # inclui o pop-up de criação de bloco
+    investidor/blocos-de-liquidez.html
   src/css/                 # tokens, base, componentes (principal.css junta os três)
     paginas/               #   um CSS por tela ou grupo de telas
-  src/js/nucleo/           # api, firebase, rotas, ui — usados por todas as telas
+  src/js/nucleo/           # api, firebase, rotas, ui, menu — usados por todas as telas
   src/js/paginas/          # um script por tela (espelha paginas/)
   src/img/
   .env.example
@@ -149,11 +151,12 @@ Instruções do dono do projeto. Valem sobre qualquer padrão default.
 ## Restrições Rígidas
 
 - Nunca commitar `.env` ou credenciais de service account. Não manter arquivo de credencial na raiz do repositório — o `COPY . .` do Docker o levaria para dentro da imagem.
-- Nunca reintroduzir número inventado como se fosse dado. A evolução do AUM, o rendimento projetado e a rentabilidade por bloco eram fatores fixos e um hash do nome do bloco, exibidos ao lado de números reais sem rótulo. Foram removidos. Se a tela nova precisar desses campos, ou vêm de dado real, ou vão rotulados como estimativa.
+- Nunca reintroduzir número inventado como se fosse dado real. A evolução do AUM, o rendimento projetado e a rentabilidade por bloco eram fatores fixos e um hash do nome do bloco, exibidos ao lado de números reais sem rótulo. Foram removidos. Fora dos dados de demonstração, ou vêm de dado real, ou vão rotulados como estimativa.
+- **Exceção, por decisão do dono do projeto:** os dados de demonstração (empresas geradas com Faker, blocos de exemplo e scores sorteados em `backend/dados/scores_empresas.csv`) são fictícios e o front-end **não** os rotula. A documentação, o README e a apresentação declaram que são fictícios. Nenhum outro número inventado pode aparecer nas telas.
 - Nunca implementar autenticação própria: quem cuida de identidade e senha é o Firebase. O backend verifica o token e lê as claims.
 - Nunca chamar a API do Groq fora de `agents/relatorio.py` — é o único lugar com o retry progressivo (5 tentativas com cortes crescentes na amostra de aportes, nos grupos de empresa e no texto de referência) tratado para `APIStatusError` 413.
 - Nunca importar camada de entrega dentro de `domain/`. É essa regra que faz trocar de stack ser uma troca, e não uma reescrita.
-- Nunca assumir que existe modelo de ML no projeto: o score de risco é um dado de entrada, não um cálculo da plataforma.
+- Nunca assumir que existe modelo de ML no projeto: o score de risco é um dado de entrada (hoje, o CSV de demonstração), não um cálculo da plataforma. O modelo real (Random Forest de 0 a 100) é uma ideia do grupo, ainda sem código.
 
 ## Variáveis de Ambiente
 
@@ -162,7 +165,8 @@ Cada serviço tem o seu modelo: `backend/.env.example` e `frontend/.env.example`
 ```
 GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account", ...}  # ou caminho de arquivo
 PROJECT_ID=plataforma-clara
-BIGQUERY_DATASET=tabelas_silvers
+BIGQUERY_DATASET=tabelas_silvers                                 # tabelas de blocos
+BIGQUERY_DATASET_EMPRESAS=dados_fidc                             # cadastro de empresas (tb_empresas_fidc)
 CORS_ORIGENS=http://localhost:5173                               # separadas por vírgula
 REDIS_URL=redis://localhost:6379/0
 GROQ_API_KEY=gsk_...
@@ -177,6 +181,7 @@ Não criar variável de ambiente nova sem que algo a consuma.
 Não invente que existe. Nesta ordem:
 
 1. **Fonte dos dados de aportes.** O upload de CSV foi removido de propósito (não é assim que a plataforma vai operar). Ainda não existe nenhum mecanismo que traga esses dados para a plataforma — nem CSV, nem consulta a serviço externo, nada. É a decisão mais urgente em aberto.
-2. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `/blocos` (etiquetas, criar, listar e detalhar) e `GET /empresas`; criar bloco e buscar empresas dependem da `tb_empresas`, que outra pessoa do grupo está criando. `/dashboard` e `/relatorios` exigem o perfil certo, mas depois da checagem respondem 501 até terem fonte de dados.
+2. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `/blocos` (etiquetas, criar, listar e detalhar) e `GET /empresas`; a busca de empresas lê `dados_fidc.tb_empresas_fidc`. `/dashboard` e `/relatorios` exigem o perfil certo, mas depois da checagem respondem 501 até terem fonte de dados.
 3. **Redis** — declarado no compose, sem cliente na aplicação.
-4. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.
+4. **Score de risco real.** Hoje os scores são de demonstração (CSV sorteado). O modelo de machine learning que o grupo imagina não existe, nem o histórico de aportes que ele usaria.
+5. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.

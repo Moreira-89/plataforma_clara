@@ -5,7 +5,8 @@ COMO FUNCIONA:
     1. `GET /blocos/etiquetas` devolve as pedras e as cores (qualquer perfil).
     2. `POST /blocos` cria um bloco: só a gestora, validado em `domain/blocos.py`.
     3. `GET /blocos` lista os blocos criados e `GET /blocos/{bloco_id}` devolve um bloco
-       com as suas empresas; qualquer perfil autenticado.
+       com as suas empresas; qualquer perfil autenticado. Os dois trazem o score de cada
+       empresa e o do bloco (média ponderada pelo capital), lidos de `dados/scores_empresas.csv`.
 
 Args:
     Nenhum.
@@ -23,7 +24,9 @@ Raises:
 """
 
 import asyncio
+from collections.abc import Mapping
 from datetime import datetime
+from decimal import Decimal
 from typing import Annotated
 from uuid import uuid4
 
@@ -32,10 +35,12 @@ from fastapi import APIRouter, Depends, status
 from app.api.dependencias import (
     BuscadorDeBloco,
     CriadorDeBloco,
+    LeitorDeScores,
     ListadorDeBlocos,
     exigir_perfil,
     obter_buscador_de_bloco,
     obter_criador_de_bloco,
+    obter_leitor_de_scores,
     obter_listador_de_blocos,
     obter_usuario_atual,
 )
@@ -58,6 +63,7 @@ from app.domain.blocos import (
     montar_bloco,
 )
 from app.domain.perfis import Perfil
+from app.domain.risco import classificar_nota, score_ponderado
 
 router = APIRouter(prefix="/blocos", tags=["blocos"], dependencies=[Depends(obter_usuario_atual)])
 
@@ -104,27 +110,49 @@ async def criar_bloco(
     )
 
 
-def _listagem(bloco: BlocoListado) -> dict:
-    return {**vars(bloco), "cor": cor_da_etiqueta(bloco.etiqueta)}
+def _risco(score: float | None) -> dict:
+    return {"score": score, "nota_risco": None if score is None else classificar_nota(score)}
+
+
+def _listagem(
+    bloco: BlocoListado, pares: list[tuple[str, Decimal]], scores: Mapping[str, float]
+) -> dict:
+    """Campos do bloco com a cor e o score ponderado pelo capital de cada empresa."""
+    score = score_ponderado((scores.get(id_empresa), capital) for id_empresa, capital in pares)
+    base = {k: v for k, v in vars(bloco).items() if k != "participacoes"}
+    return {**base, "cor": cor_da_etiqueta(bloco.etiqueta), **_risco(score)}
 
 
 @router.get("", response_model=list[BlocoListagem])
 async def listar_blocos(
     listar: Annotated[ListadorDeBlocos, Depends(obter_listador_de_blocos)],
+    ler_scores: Annotated[LeitorDeScores, Depends(obter_leitor_de_scores)],
 ) -> list[BlocoListagem]:
-    """Os blocos criados, do mais novo para o mais antigo."""
-    blocos = await asyncio.to_thread(listar)
-    return [BlocoListagem(**_listagem(b)) for b in blocos]
+    """Os blocos criados, do mais novo para o mais antigo, com o score de cada um."""
+    blocos, scores = await asyncio.gather(asyncio.to_thread(listar), asyncio.to_thread(ler_scores))
+    return [
+        BlocoListagem(
+            **_listagem(b, [(p.id_empresa, p.capital_estimado) for p in b.participacoes], scores)
+        )
+        for b in blocos
+    ]
 
 
 @router.get("/{bloco_id}", response_model=BlocoDetalhe)
 async def detalhar_bloco(
     bloco_id: str,
     buscar: Annotated[BuscadorDeBloco, Depends(obter_buscador_de_bloco)],
+    ler_scores: Annotated[LeitorDeScores, Depends(obter_leitor_de_scores)],
 ) -> BlocoDetalhe:
-    """Um bloco com as suas empresas, da maior para a menor fatia."""
-    detalhado = await asyncio.to_thread(buscar, bloco_id)
+    """Um bloco com as suas empresas, da maior para a menor fatia, cada uma com o seu score."""
+    detalhado, scores = await asyncio.gather(
+        asyncio.to_thread(buscar, bloco_id), asyncio.to_thread(ler_scores)
+    )
+    pares = [(e.id_empresa, e.capital_estimado) for e in detalhado.empresas]
     return BlocoDetalhe(
-        **_listagem(detalhado.bloco),
-        empresas=[EmpresaDoBlocoDetalhe(**vars(e)) for e in detalhado.empresas],
+        **_listagem(detalhado.bloco, pares, scores),
+        empresas=[
+            EmpresaDoBlocoDetalhe(**vars(e), **_risco(scores.get(e.id_empresa)))
+            for e in detalhado.empresas
+        ],
     )

@@ -4,7 +4,7 @@ import { $ } from '../nucleo/ui.js'
 async function mostrarSessao() {
   const { aoMudarSessao, sair } = await import('../nucleo/firebase.js')
   const { chamar } = await import('../nucleo/api.js')
-  const { NOVO_BLOCO, encerrarSeInvalida } = await import('../nucleo/rotas.js')
+  const { destinoDoPerfil, encerrarSeInvalida } = await import('../nucleo/rotas.js')
 
   aoMudarSessao(async (usuario) => {
     if (!usuario) return
@@ -13,12 +13,13 @@ async function mostrarSessao() {
 
     const acoes = $('#nav-acoes')
     acoes.replaceChildren()
-    if (resposta.status === 200 && resposta.corpo.perfil === 'gestora') {
-      const criar = document.createElement('a')
-      criar.className = 'btn btn-primario'
-      criar.href = NOVO_BLOCO
-      criar.textContent = 'Criar bloco de liquidez'
-      acoes.append(criar)
+    if (resposta.status === 200) {
+      const gestora = resposta.corpo.perfil === 'gestora'
+      const entrar = document.createElement('a')
+      entrar.className = 'btn btn-primario'
+      entrar.href = destinoDoPerfil(resposta.corpo.perfil)
+      entrar.textContent = gestora ? 'Gestão de Blocos' : 'Blocos de Liquidez'
+      acoes.append(entrar)
     }
     const botao = document.createElement('button')
     botao.type = 'button'

@@ -1,7 +1,4 @@
-/* Criação de bloco de liquidez: empresas à esquerda (maior), dados do bloco à direita. */
-.container-largo { max-width: 1488px; }
-.pagina-bloco { max-width: 1440px; margin: var(--space-xxl) auto; padding: 0 var(--space-lg); }
-.titulo-pagina { font-size: 36px; line-height: 1.11; letter-spacing: -0.5px; margin: var(--space-base) 0 var(--space-xs); }
+/* Formulário de criação de bloco (pop-up): empresas à esquerda (maior), dados do bloco à direita. */
 .titulo-bloco { font-size: 18px; font-weight: 600; margin-bottom: var(--space-base); }
 
 .layout-bloco {
@@ -24,16 +21,18 @@
   background: var(--surface-strong); font: 400 16px var(--font-sans); color: var(--ink);
 }
 .busca-empresa input:focus { outline: none; border-color: var(--primary); background: var(--canvas); }
+.selecionadas { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-xs); margin: var(--space-sm) 0 0; padding: 0; }
+.selecionadas li {
+  display: inline-flex; align-items: center; gap: 2px; padding: 4px 4px 4px 12px; border-radius: var(--radius-pill);
+  background: var(--surface-strong); color: var(--ink); font-size: 13px; font-weight: 500;
+}
+.selecionadas button { background: none; border: 0; padding: 0 8px; color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer; }
 .resultados { list-style: none; margin: var(--space-xs) 0 0; padding: 0; border: 1px solid var(--hairline); border-radius: var(--radius-md); max-height: 240px; overflow-y: auto; }
 .resultados li { border-top: 1px solid var(--hairline); }
 .resultados li:first-child { border-top: 0; }
 .resultados label { display: flex; gap: var(--space-sm); align-items: center; padding: var(--space-sm) var(--space-base); cursor: pointer; color: var(--ink); }
 .resultados small { margin-left: auto; color: var(--muted); font-family: var(--font-mono); }
 
-.tabela-rolagem { overflow-x: auto; margin-top: var(--space-lg); }
-.tabela { width: 100%; border-collapse: collapse; font-size: 14px; }
-.tabela th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); padding: var(--space-xs) var(--space-sm); border-bottom: 1px solid var(--hairline); }
-.tabela td { padding: var(--space-sm); border-bottom: 1px solid var(--hairline); color: var(--ink); vertical-align: middle; }
 .tabela input { width: 110px; height: 40px; padding: 8px 12px; border: 1px solid var(--hairline); border-radius: var(--radius-md); font: 500 14px var(--font-mono); }
 .tabela input:focus { outline: none; border: 2px solid var(--primary); padding: 7px 11px; }
 .tabela .remover { background: none; border: 0; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1; }

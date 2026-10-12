@@ -12,6 +12,7 @@ from types import SimpleNamespace
 import pytest
 from google.api_core.exceptions import NotFound
 
+from app.config.settings import settings
 from app.domain.blocos import AlocacaoEmpresa, montar_bloco
 from app.domain.erros import (
     BlocoNaoEncontradoError,
@@ -19,6 +20,7 @@ from app.domain.erros import (
     EmpresaJaEmBlocoError,
     EmpresaNaoEncontradaError,
 )
+from app.storage import bigquery as bq
 from app.storage import blocos, empresas
 
 
@@ -186,14 +188,26 @@ def linha_empresa(**campos):
     return linha(**{**base, **campos})
 
 
-def test_listar_blocos_devolve_um_item_por_bloco(monkeypatch):
-    cliente = ClienteFalso([linha_bloco(), linha_bloco(id_bloco="b2", etiqueta="Rubi")])
+def test_listar_blocos_devolve_um_item_por_bloco_com_as_fatias(monkeypatch):
+    cliente = ClienteFalso(
+        [linha_bloco(), linha_bloco(id_bloco="b2", etiqueta="Rubi")],
+        [
+            linha(id_bloco="b1", id_empresa="e1", capital_estimado=D("400")),
+            linha(id_bloco="b1", id_empresa="e2", capital_estimado=D("600")),
+            linha(id_bloco="b2", id_empresa="e3", capital_estimado=D("1000")),
+        ],
+    )
     usar(monkeypatch, blocos, cliente)
 
     lista = blocos.listar_blocos()
 
     assert [b.id_bloco for b in lista] == ["b1", "b2"]
     assert lista[0].quantidade_empresas == 2
+    assert [(p.id_empresa, p.capital_estimado) for p in lista[0].participacoes] == [
+        ("e1", D("400")),
+        ("e2", D("600")),
+    ]
+    assert [p.id_empresa for p in lista[1].participacoes] == ["e3"]
     assert "ORDER BY b.criado_em DESC" in cliente.consultas[0][0]
 
 
@@ -243,3 +257,34 @@ def test_buscar_bloco_com_tabela_de_blocos_ausente_vira_dados_indisponiveis(monk
 
     with pytest.raises(DadosIndisponiveisError):
         blocos.buscar_bloco("b1")
+
+
+def test_empresas_e_blocos_ficam_em_datasets_diferentes(monkeypatch):
+    monkeypatch.setattr(settings, "bigquery_dataset", "ds_blocos")
+    monkeypatch.setattr(settings, "bigquery_dataset_empresas", "ds_empresas")
+    cliente = ClienteFalso([])
+    usar(monkeypatch, empresas, cliente)
+
+    empresas.buscar_empresas("alfa")
+
+    sql = cliente.consultas[0][0]
+    assert f"{settings.project_id}.ds_empresas.tb_empresas_fidc" in sql
+    assert f"{settings.project_id}.ds_blocos.tb_blocos_empresas" in sql
+
+
+def test_busca_le_as_colunas_do_cadastro_real(monkeypatch):
+    cliente = ClienteFalso([])
+    usar(monkeypatch, empresas, cliente)
+
+    empresas.buscar_empresas("alfa")
+
+    sql = cliente.consultas[0][0]
+    for coluna in ("ID_EMPRESA", "NOME_FANTASIA", "RAZAO_SOCIAL", "RAMO_EMPRESA", "CNPJ"):
+        assert coluna in sql
+
+
+def test_tabela_usa_o_dataset_informado_ou_o_padrao(monkeypatch):
+    monkeypatch.setattr(settings, "bigquery_dataset", "ds_padrao")
+
+    assert bq.tabela("t") == f"`{settings.project_id}.ds_padrao.t`"
+    assert bq.tabela("t", "outro") == f"`{settings.project_id}.outro.t`"

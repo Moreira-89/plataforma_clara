@@ -1,8 +1,8 @@
 # Blocos de Liquidez
 
 Um **Bloco de Liquidez** é um conjunto de empresas, montado pela gestora, em que o
-capital do fundo é distribuído. Esta página descreve a tela em que a gestora cria um
-bloco. As telas do investidor ainda não foram definidas.
+capital do fundo é distribuído. Esta página descreve as telas de blocos (a lista, para gestora e investidor, e o
+formulário de criação, só da gestora).
 
 ## Etiquetas
 
@@ -29,10 +29,55 @@ O mesmo nome de pedra pode ser usado em vários blocos. O que os distingue é o
 criação em milissegundos e o nome da pedra perde acentos e espaços
 (`Turmalina Paraíba` vira `TURMALINA_PARAIBA`). O código é gerado ao salvar.
 
-## A tela de criação (gestora)
+## As telas de blocos
 
-Só a gestora acessa. Ao entrar, ela cai direto nesta tela. A tela tem duas colunas:
-à esquerda, as empresas, que ocupam a maior parte da tela; à direita, os dados do bloco.
+A mesma tela serve aos dois perfis, com nomes e permissões diferentes. É a primeira tela
+que cada um vê depois de entrar.
+
+| | Gestora | Investidor |
+| --- | --- | --- |
+| Nome | **Gestão de Blocos** | **Blocos de Liquidez** |
+| Cartões, busca e "Ver mais detalhes" | sim | sim |
+| Botão **Criar novo bloco** | sim (abre o formulário num pop-up) | não |
+| Botão **Alocar dinheiro** no pop-up | não | sim, ainda desativado ("em breve") |
+| Responsável técnico, data de criação e observação no pop-up | sim | não |
+
+**Cartões.** Um cartão por bloco criado, sempre do mais recente para o mais antigo.
+Cada cartão mostra a etiqueta (com a cor da pedra), o código do bloco (os 8 primeiros
+caracteres do id), a nota de risco, a quantidade de empresas, o vencimento e o botão
+**Ver mais detalhes**.
+
+**Busca e filtros.** A barra de busca procura pelo código do bloco (o id) ou pelo nome da
+etiqueta. **Ver tudo** limpa a busca e volta à ordem padrão. O filtro de ordem tem
+**Mais recentes** (o padrão) e **Maior score**.
+
+**Pop-up "Ver mais detalhes".** Mostra a etiqueta, a data de vencimento, o score do bloco e
+a tabela de empresas, com nome, CNPJ, ramo, capital estimado e score de risco de cada uma.
+
+**Score de risco.** Cada empresa tem um score de 0 a 100 (maior score, menor risco), traduzido numa
+nota: **A+** a partir de 80, **A** a partir de 70, **A-** a partir de 60, **B+** a partir de 50, **B** a
+partir de 40 e **C-** abaixo disso. O score do bloco é a **média dos scores das empresas, ponderada
+pelo capital** que cada uma recebe no bloco. Os cartões mostram só a **nota**; o pop-up mostra a nota
+e o número (por exemplo, "A- · 67") do bloco e de cada empresa. O filtro **Maior score** ordena os
+blocos do maior para o menor.
+
+!!! info "Dados de demonstração"
+    Os scores são **fictícios**: foram sorteados de 0 a 100 para cada empresa, sem modelo por trás,
+    e ficam em `backend/dados/scores_empresas.csv`. As empresas (Faker) e os blocos de exemplo também
+    são fictícios. As telas não trazem esse aviso; ele fica aqui, no README e na apresentação.
+
+**Menu lateral.** Todas as telas de quem está logado (a Gestão de Blocos e os Blocos de
+Liquidez) têm o mesmo menu à esquerda, fixo: o logo no topo, o item da área do perfil
+(destacado quando é a tela atual) e, no rodapé, o e-mail de quem entrou e o botão **Sair**.
+A home não tem esse menu. Telas novas entram na lista de itens do menu e passam a aparecer em
+todas as páginas.
+
+## O formulário de criação (gestora)
+
+Só a gestora vê. Abre num **pop-up** a partir do botão **Criar novo bloco** da Gestão de
+Blocos; ao criar, o pop-up fecha e a lista já mostra o bloco novo no topo, com o código dele
+num aviso. O pop-up tem duas colunas: à esquerda, as empresas, que ocupam a maior parte; à
+direita, os dados do bloco.
 
 **Dados do bloco**
 
@@ -51,12 +96,16 @@ horário de Brasília.
 
 1. A gestora busca por **nome fantasia** ou **CNPJ**. A busca lista nome e CNPJ numa
    caixa de seleção, e ela marca uma ou várias empresas.
-2. Ao clicar em **Adicionar**, as empresas entram numa tabela com nome, CNPJ, ramo de
-   atividade, **capital estimado para a empresa** e **porcentagem de liquidez aplicada**.
-3. A gestora preenche a **porcentagem** de cada empresa (até 2 casas decimais). Essa
+2. As empresas marcadas **continuam selecionadas** quando ela faz outra busca: aparecem como
+   etiquetas acima dos resultados (cada uma com um × para desmarcar), e o botão mostra
+   quantas há. Assim ela pode procurar e marcar empresas diferentes, uma busca após a outra.
+3. Ao clicar em **Adicionar**, todas as marcadas entram de uma vez numa tabela com nome,
+   CNPJ, ramo de atividade, **capital estimado para a empresa** e **porcentagem de
+   liquidez aplicada**.
+4. A gestora preenche a **porcentagem** de cada empresa (até 2 casas decimais). Essa
    porcentagem é a parte do capital total do bloco que a empresa recebe: 5% de
    R$ 1.000.000 dá R$ 50.000.
-4. O **capital estimado** não é digitado: é calculado (capital total × porcentagem).
+5. O **capital estimado** não é digitado: é calculado (capital total × porcentagem).
 
 **Realocado e Disponível**
 
@@ -81,9 +130,5 @@ Os detalhes técnicos (tabelas, rotas e erros) estão em
 - **Uma empresa em vários blocos.** Hoje vale "um só", como a gestora definiu para o
   momento, mas o grupo ainda vai confirmar. Se mudar, a busca deixa de filtrar e a
   gravação deixa de recusar.
-- **Cadastro de empresas.** A tabela `tb_empresas` está sendo criada por outra pessoa do
-  grupo. O nome exato e as colunas (`id_empresa`, `nome_fantasia`, `razao_social`,
-  `cnpj`, `ramo_atividade`) precisam ser conferidos quando ela existir.
-- **Lista de blocos da gestora.** A tela que lista os blocos já criados está desenhada,
-  mas ainda não foi implementada.
-- **Telas do investidor** para explorar e escolher blocos: a definir.
+- **Score real:** o modelo de machine learning (Random Forest, de 0 a 100, a partir do histórico) ainda não existe; hoje os scores são de demonstração (ver aviso acima).
+- **Alocar dinheiro:** como o investidor aporta ainda não foi definido; o botão está desativado.

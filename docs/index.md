@@ -33,9 +33,9 @@ atualizada de onde o dinheiro dele está. Detalhes em
 
 Não é uma ferramenta de gestão de carteira, nem decide onde alocar recursos —
 isso continua sendo trabalho da gestora. A plataforma só **expõe**, de forma
-clara e verificável, uma decisão que já foi tomada. O score de risco é a
-previsão de um modelo de machine learning; hoje o modelo não está no
-repositório e o score entra como dado pronto.
+clara e verificável, uma decisão que já foi tomada. O score de risco é, na
+ideia do grupo, a previsão de um modelo de machine learning; hoje o modelo não existe e os
+scores são de demonstração (fictícios), lidos de um arquivo CSV.
 
 ## Estado do projeto
 

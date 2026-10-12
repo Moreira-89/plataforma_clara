@@ -106,6 +106,14 @@ class BlocoValidado:
 
 
 @dataclass(frozen=True)
+class Participacao:
+    """A fatia de capital que uma empresa recebe dentro de um bloco."""
+
+    id_empresa: str
+    capital_estimado: Decimal
+
+
+@dataclass(frozen=True)
 class BlocoListado:
     """Um bloco já criado, como a listagem o devolve."""
 
@@ -118,6 +126,7 @@ class BlocoListado:
     responsavel_tecnico: str
     observacao: str | None
     quantidade_empresas: int
+    participacoes: tuple[Participacao, ...] = ()
 
 
 @dataclass(frozen=True)

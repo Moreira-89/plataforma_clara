@@ -46,17 +46,26 @@ versão diferente dos mesmos dados.
 
 ## O que o score de risco é — e o que não é
 
-O score de risco de cada empresa é a **previsão de um modelo de machine
-learning**. A plataforma classifica esse número numa escala de nota (de A+ a C-)
-e num status de adimplência, mas hoje **não contém o modelo**: o score entra como
-dado pronto. Onde o modelo roda e quem o fornece ainda está a definir.
+O score de risco de cada empresa vai de 0 a 100, e **maior score significa menor risco**. A
+plataforma traduz esse número numa nota (A+ a C-) e num status de adimplência, mas **não calcula**
+o score. A ideia do grupo é que ele venha de um modelo de machine learning (um Random Forest que
+analisa o histórico da empresa: valor de aporte, prazo, taxa de retorno, bloco setorial, categoria
+técnica). Esse modelo ainda não existe.
 
-## Regra de produto: nunca simular sem avisar
+**Hoje, os scores são de demonstração**: foram sorteados de 0 a 100 para cada empresa e ficam em
+`backend/dados/scores_empresas.csv`. Ver [Dados de demonstração](#regra-de-produto-dado-inventado-so-como-demonstracao-declarada).
 
-Em algum momento a plataforma já mostrou números que pareciam dados reais mas
-eram simulados — evolução de patrimônio, rendimento projetado — sem nenhum
-rótulo avisando isso. Numa plataforma que se vende pela transparência, número
-inventado sem rótulo é o pior defeito possível.
+## Regra de produto: dado inventado só como demonstração declarada
 
-**Regra que fica:** qualquer número exibido ou vem de dado real, ou é
-explicitamente rotulado como estimativa. Sem exceção, e sem "por enquanto".
+Em algum momento a plataforma já mostrou números que pareciam dados reais mas eram simulados
+(evolução de patrimônio, rendimento projetado) sem nenhum rótulo avisando isso. Numa plataforma
+que se vende pela transparência, número inventado sem aviso é o pior defeito possível.
+
+**Regra que fica:** em produção, qualquer número exibido ou vem de dado real, ou é explicitamente
+rotulado como estimativa.
+
+**Exceção declarada, os dados de demonstração.** Enquanto o projeto é acadêmico e não tem dados
+reais, os dados da plataforma são **fictícios**: as empresas (geradas com a biblioteca Faker, do
+Python), os blocos de exemplo e os scores de risco (sorteados de 0 a 100). Por decisão do grupo, o
+front-end **não** os rotula, mas esta documentação, o README e a apresentação declaram, de forma
+explícita, que são fictícios. Nenhum outro número inventado pode aparecer nas telas.

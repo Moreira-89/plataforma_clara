@@ -2,7 +2,7 @@
 Gravação dos Blocos de Liquidez no BigQuery (`tb_blocos_liquidez` e `tb_blocos_empresas`).
 
 COMO FUNCIONA:
-    1. Confere que todas as empresas existem em `tb_empresas`.
+    1. Confere que todas as empresas existem em `tb_empresas_fidc`.
     2. Confere que nenhuma já pertence a outro bloco.
     3. Grava o bloco e as suas empresas numa única transação, para não sobrar bloco
        pela metade se algo falhar.
@@ -33,6 +33,7 @@ from app.domain.blocos import (
     BlocoListado,
     BlocoValidado,
     EmpresaDoBlocoDetalhada,
+    Participacao,
 )
 from app.domain.erros import (
     BlocoNaoEncontradoError,
@@ -41,7 +42,7 @@ from app.domain.erros import (
     EmpresaNaoEncontradaError,
 )
 from app.storage.bigquery import cliente_compartilhado, tabela
-from app.storage.empresas import TABELA_BLOCOS_EMPRESAS, TABELA_EMPRESAS
+from app.storage.empresas import TABELA_BLOCOS_EMPRESAS, tabela_empresas
 
 logger = logging.getLogger(__name__)
 
@@ -88,10 +89,10 @@ def _ids_param(ids: list[str]) -> bigquery.QueryJobConfig:
 
 def _cnpjs_do_cadastro(cliente: bigquery.Client, ids: list[str]) -> dict[str, str]:
     sql = f"""
-        SELECT CAST(id_empresa AS STRING) AS id_empresa,
-               REGEXP_REPLACE(CAST(cnpj AS STRING), r'\\D', '') AS cnpj
-        FROM {tabela(TABELA_EMPRESAS)}
-        WHERE CAST(id_empresa AS STRING) IN UNNEST(@ids)
+        SELECT CAST(ID_EMPRESA AS STRING) AS id_empresa,
+               REGEXP_REPLACE(CAST(CNPJ AS STRING), r'\\D', '') AS cnpj
+        FROM {tabela_empresas()}
+        WHERE CAST(ID_EMPRESA AS STRING) IN UNNEST(@ids) AND CNPJ IS NOT NULL
     """
     return {r.id_empresa: r.cnpj for r in cliente.query(sql, job_config=_ids_param(ids)).result()}
 
@@ -183,7 +184,7 @@ _COLUNAS_BLOCO = """
 """
 
 
-def _para_bloco(linha) -> BlocoListado:
+def _para_bloco(linha, participacoes: tuple[Participacao, ...] = ()) -> BlocoListado:
     return BlocoListado(
         id_bloco=linha.id_bloco,
         codigo_identificacao=linha.codigo_identificacao,
@@ -194,6 +195,7 @@ def _para_bloco(linha) -> BlocoListado:
         responsavel_tecnico=linha.responsavel_tecnico,
         observacao=linha.observacao,
         quantidade_empresas=linha.quantidade_empresas,
+        participacoes=participacoes,
     )
 
 
@@ -202,7 +204,7 @@ def listar_blocos() -> list[BlocoListado]:
     Lista os blocos criados, do mais novo para o mais antigo. Bloqueante.
 
     Returns:
-        list[BlocoListado]: Os blocos, cada um com a quantidade de empresas.
+        list[BlocoListado]: Os blocos, cada um com a quantidade de empresas e a fatia de cada uma.
 
     Raises:
         DadosIndisponiveisError: Tabela de blocos fora do ar.
@@ -215,8 +217,16 @@ def listar_blocos() -> list[BlocoListado]:
                  b.data_vencimento, b.responsavel_tecnico, b.observacao, b.criado_em
         ORDER BY b.criado_em DESC
     """
+    fatias_sql = (
+        f"SELECT id_bloco, id_empresa, capital_estimado FROM {tabela(TABELA_BLOCOS_EMPRESAS)}"
+    )
     try:
-        return [_para_bloco(linha) for linha in cliente_compartilhado().query(sql).result()]
+        cliente = cliente_compartilhado()
+        linhas = list(cliente.query(sql).result())
+        fatias: dict[str, list[Participacao]] = {}
+        for f in cliente.query(fatias_sql).result():
+            fatias.setdefault(f.id_bloco, []).append(Participacao(f.id_empresa, f.capital_estimado))
+        return [_para_bloco(linha, tuple(fatias.get(linha.id_bloco, ()))) for linha in linhas]
     except (NotFound, Forbidden) as e:
         logger.error("Tabela de blocos inacessível: %s", e)
         raise DadosIndisponiveisError("Os dados de blocos estão indisponíveis.") from e
@@ -226,9 +236,10 @@ def _empresas_do_bloco(cliente: bigquery.Client, config: bigquery.QueryJobConfig
     """Empresas do bloco com nome e ramo; sem o cadastro, devolve só o que o bloco guarda."""
     com_cadastro = f"""
         SELECT e.id_empresa, e.cnpj, e.capital_estimado, e.percentual_liquidez,
-               c.nome_fantasia, c.ramo_atividade
+               COALESCE(c.NOME_FANTASIA, c.RAZAO_SOCIAL) AS nome_fantasia,
+               c.RAMO_EMPRESA AS ramo_atividade
         FROM {tabela(TABELA_BLOCOS_EMPRESAS)} e
-        LEFT JOIN {tabela(TABELA_EMPRESAS)} c ON CAST(c.id_empresa AS STRING) = e.id_empresa
+        LEFT JOIN {tabela_empresas()} c ON CAST(c.ID_EMPRESA AS STRING) = e.id_empresa
         WHERE e.id_bloco = @id_bloco
         ORDER BY e.capital_estimado DESC
     """
