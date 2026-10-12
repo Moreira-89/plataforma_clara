@@ -129,3 +129,29 @@ def test_valor_em_milhoes_acima_de_um_bilhao_sai_errado():
     o atual da tela e foi preservado; corrigir é mudança de UI, prevista para a Fase 5.
     """
     assert formatacao.formatar_milhoes(1_500_000_000.0) == "R$ 1,500,0M"
+
+
+# -----------------------------------------------------------------------------
+# SCORE DO BLOCO (média ponderada pelo capital)
+# -----------------------------------------------------------------------------
+
+
+def test_score_ponderado_pesa_cada_empresa_pelo_capital():
+    from decimal import Decimal
+
+    pares = [(80.0, Decimal("50000")), (60.0, Decimal("950000"))]
+
+    assert risco.score_ponderado(pares) == 61.0
+
+
+def test_score_ponderado_com_pesos_iguais_e_a_media_simples():
+    assert risco.score_ponderado([(40.0, 10), (60.0, 10), (80.0, 10)]) == 60.0
+
+
+def test_score_ponderado_ignora_empresas_sem_score():
+    assert risco.score_ponderado([(None, 1_000_000), (70.0, 100)]) == 70.0
+
+
+def test_score_ponderado_sem_nenhum_score_devolve_none():
+    assert risco.score_ponderado([]) is None
+    assert risco.score_ponderado([(None, 100), (None, 200)]) is None

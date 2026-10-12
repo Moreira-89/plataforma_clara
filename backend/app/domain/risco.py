@@ -16,6 +16,8 @@ O `score_risco_interno` chega pronto, calculado por fora — a plataforma não
 treina nem executa nenhum modelo. Estas funções apenas TRADUZEM o número.
 """
 
+from collections.abc import Iterable
+from decimal import Decimal
 from typing import Final, NamedTuple
 
 
@@ -86,8 +88,6 @@ def classificar_nota_com_nivel(score: float) -> str:
     return f"{faixa.nota} ({faixa.nivel_detalhe} Risco)"
 
 
-
-
 def classificar_adimplencia(score: float) -> str:
     """
     Traduz o score médio de uma empresa sacada em status de adimplência.
@@ -116,3 +116,27 @@ def esta_em_risco_de_inadimplencia(score: float) -> bool:
         bool: True quando o score é menor que 50.
     """
     return score < _PISO_INADIMPLENCIA_PROJETADA
+
+
+def score_ponderado(pares: Iterable[tuple[float | None, Decimal | float]]) -> float | None:
+    """
+    Média dos scores ponderada pelo capital de cada empresa.
+
+    Args:
+        pares (Iterable[tuple[float | None, Decimal | float]]): (score, capital) de cada empresa.
+            Empresas sem score ficam de fora da média.
+
+    Returns:
+        float | None: Score de 0 a 100 com uma casa decimal, ou None se nenhuma empresa tem score.
+    """
+    soma = 0.0
+    peso_total = 0.0
+    for score, capital in pares:
+        if score is None:
+            continue
+        peso = float(capital)
+        soma += score * peso
+        peso_total += peso
+    if peso_total <= 0:
+        return None
+    return round(soma / peso_total, 1)

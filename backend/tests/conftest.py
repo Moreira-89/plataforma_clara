@@ -20,6 +20,7 @@ from app.api.dependencias import (
     obter_buscador_de_empresas,
     obter_cadastrador,
     obter_criador_de_bloco,
+    obter_leitor_de_scores,
     obter_listador_de_blocos,
     obter_verificador_token,
 )
@@ -29,6 +30,7 @@ from app.domain.blocos import (
     BlocoValidado,
     EmpresaCatalogo,
     EmpresaDoBlocoDetalhada,
+    Participacao,
 )
 from app.domain.erros import (
     BlocoNaoEncontradoError,
@@ -121,7 +123,14 @@ BLOCO_A = BlocoListado(
     responsavel_tecnico="Lucas",
     observacao=None,
     quantidade_empresas=2,
+    participacoes=(
+        Participacao("e1", Decimal("50000.00")),
+        Participacao("e2", Decimal("950000.00")),
+    ),
 )
+
+# e1 tem 5% do capital e e2 tem 95%: o score do bloco é (80*5 + 60*95) / 100 = 61.
+SCORES = {"e1": 80.0, "e2": 60.0}
 
 
 class LeituraDeBlocosFalsa:
@@ -192,6 +201,7 @@ def client(
     app.dependency_overrides[obter_criador_de_bloco] = lambda: criador_de_bloco
     app.dependency_overrides[obter_listador_de_blocos] = lambda: leitura_de_blocos.listar
     app.dependency_overrides[obter_buscador_de_bloco] = lambda: leitura_de_blocos.buscar
+    app.dependency_overrides[obter_leitor_de_scores] = lambda: lambda: SCORES
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()

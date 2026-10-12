@@ -5,8 +5,8 @@ COMO FUNCIONA:
     1. `obter_usuario_atual` extrai o Bearer, verifica o token e monta o `UsuarioAtual`.
     2. `exigir_perfil(...)` fabrica uma dependência que recusa perfis fora da lista.
     3. `obter_verificador_token`, `obter_cadastrador`, `obter_buscador_de_empresas` e
-       `obter_criador_de_bloco`, `obter_listador_de_blocos` e `obter_buscador_de_bloco`
-       entregam as funções de I/O; nos testes são trocadas com
+       `obter_criador_de_bloco`, `obter_listador_de_blocos`, `obter_buscador_de_bloco` e
+       `obter_leitor_de_scores` entregam as funções de I/O; nos testes são trocadas com
        `dependency_overrides`.
 
 Args:
@@ -22,7 +22,7 @@ Raises:
 """
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Annotated, Any
 
 from fastapi import Depends
@@ -32,7 +32,7 @@ from app.api.schemas.auth import UsuarioAtual
 from app.domain.blocos import BlocoDetalhado, BlocoListado, BlocoValidado, EmpresaCatalogo
 from app.domain.erros import AcessoNegadoError, TokenInvalidoError
 from app.domain.perfis import DadosCadastro, Perfil, perfil_de_claims
-from app.storage import blocos, empresas, firebase, usuarios
+from app.storage import blocos, empresas, firebase, scores, usuarios
 
 Verificador = Callable[[str], dict[str, Any]]
 Cadastrador = Callable[[DadosCadastro, str, Perfil], str]
@@ -40,6 +40,7 @@ BuscadorDeEmpresas = Callable[[str], list[EmpresaCatalogo]]
 CriadorDeBloco = Callable[[BlocoValidado, str], None]
 ListadorDeBlocos = Callable[[], list[BlocoListado]]
 BuscadorDeBloco = Callable[[str], BlocoDetalhado]
+LeitorDeScores = Callable[[], Mapping[str, float]]
 
 # auto_error=False para o 401 sair pelo nosso handler, com o mesmo formato dos demais.
 _esquema_bearer = HTTPBearer(auto_error=False)
@@ -73,6 +74,11 @@ def obter_listador_de_blocos() -> ListadorDeBlocos:
 def obter_buscador_de_bloco() -> BuscadorDeBloco:
     """Entrega a função que busca um bloco com as suas empresas."""
     return blocos.buscar_bloco
+
+
+def obter_leitor_de_scores() -> LeitorDeScores:
+    """Entrega a função que lê os scores de risco das empresas."""
+    return scores.carregar_scores
 
 
 async def obter_usuario_atual(

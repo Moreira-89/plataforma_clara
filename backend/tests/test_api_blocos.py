@@ -188,3 +188,31 @@ def test_detalhe_de_bloco_inexistente_responde_404(client):
 
 def test_detalhe_exige_login(client):
     assert client.get("/blocos/b1").status_code == 401
+
+
+def test_lista_traz_o_score_do_bloco_ponderado_pelo_capital(client):
+    bloco = client.get("/blocos", headers=cabecalho("investidor")).json()[0]
+
+    assert bloco["score"] == 61.0
+    assert bloco["nota_risco"] == "A-"
+
+
+def test_detalhe_traz_o_score_de_cada_empresa_e_o_do_bloco(client):
+    corpo = client.get("/blocos/b1", headers=cabecalho("investidor")).json()
+
+    assert (corpo["score"], corpo["nota_risco"]) == (61.0, "A-")
+    por_id = {e["id_empresa"]: (e["score"], e["nota_risco"]) for e in corpo["empresas"]}
+    assert por_id == {"e1": (80.0, "A+"), "e2": (60.0, "A-")}
+
+
+def test_sem_scores_o_bloco_fica_sem_nota(client):
+    from main import app
+
+    from app.api.dependencias import obter_leitor_de_scores
+
+    app.dependency_overrides[obter_leitor_de_scores] = lambda: lambda: {}
+
+    bloco = client.get("/blocos", headers=cabecalho("gestora")).json()[0]
+
+    assert bloco["score"] is None
+    assert bloco["nota_risco"] is None

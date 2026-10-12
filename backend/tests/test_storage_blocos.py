@@ -188,14 +188,26 @@ def linha_empresa(**campos):
     return linha(**{**base, **campos})
 
 
-def test_listar_blocos_devolve_um_item_por_bloco(monkeypatch):
-    cliente = ClienteFalso([linha_bloco(), linha_bloco(id_bloco="b2", etiqueta="Rubi")])
+def test_listar_blocos_devolve_um_item_por_bloco_com_as_fatias(monkeypatch):
+    cliente = ClienteFalso(
+        [linha_bloco(), linha_bloco(id_bloco="b2", etiqueta="Rubi")],
+        [
+            linha(id_bloco="b1", id_empresa="e1", capital_estimado=D("400")),
+            linha(id_bloco="b1", id_empresa="e2", capital_estimado=D("600")),
+            linha(id_bloco="b2", id_empresa="e3", capital_estimado=D("1000")),
+        ],
+    )
     usar(monkeypatch, blocos, cliente)
 
     lista = blocos.listar_blocos()
 
     assert [b.id_bloco for b in lista] == ["b1", "b2"]
     assert lista[0].quantidade_empresas == 2
+    assert [(p.id_empresa, p.capital_estimado) for p in lista[0].participacoes] == [
+        ("e1", D("400")),
+        ("e2", D("600")),
+    ]
+    assert [p.id_empresa for p in lista[1].participacoes] == ["e3"]
     assert "ORDER BY b.criado_em DESC" in cliente.consultas[0][0]
 
 

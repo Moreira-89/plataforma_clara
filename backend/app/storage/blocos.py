@@ -33,6 +33,7 @@ from app.domain.blocos import (
     BlocoListado,
     BlocoValidado,
     EmpresaDoBlocoDetalhada,
+    Participacao,
 )
 from app.domain.erros import (
     BlocoNaoEncontradoError,
@@ -183,7 +184,7 @@ _COLUNAS_BLOCO = """
 """
 
 
-def _para_bloco(linha) -> BlocoListado:
+def _para_bloco(linha, participacoes: tuple[Participacao, ...] = ()) -> BlocoListado:
     return BlocoListado(
         id_bloco=linha.id_bloco,
         codigo_identificacao=linha.codigo_identificacao,
@@ -194,6 +195,7 @@ def _para_bloco(linha) -> BlocoListado:
         responsavel_tecnico=linha.responsavel_tecnico,
         observacao=linha.observacao,
         quantidade_empresas=linha.quantidade_empresas,
+        participacoes=participacoes,
     )
 
 
@@ -202,7 +204,7 @@ def listar_blocos() -> list[BlocoListado]:
     Lista os blocos criados, do mais novo para o mais antigo. Bloqueante.
 
     Returns:
-        list[BlocoListado]: Os blocos, cada um com a quantidade de empresas.
+        list[BlocoListado]: Os blocos, cada um com a quantidade de empresas e a fatia de cada uma.
 
     Raises:
         DadosIndisponiveisError: Tabela de blocos fora do ar.
@@ -215,8 +217,16 @@ def listar_blocos() -> list[BlocoListado]:
                  b.data_vencimento, b.responsavel_tecnico, b.observacao, b.criado_em
         ORDER BY b.criado_em DESC
     """
+    fatias_sql = (
+        f"SELECT id_bloco, id_empresa, capital_estimado FROM {tabela(TABELA_BLOCOS_EMPRESAS)}"
+    )
     try:
-        return [_para_bloco(linha) for linha in cliente_compartilhado().query(sql).result()]
+        cliente = cliente_compartilhado()
+        linhas = list(cliente.query(sql).result())
+        fatias: dict[str, list[Participacao]] = {}
+        for f in cliente.query(fatias_sql).result():
+            fatias.setdefault(f.id_bloco, []).append(Participacao(f.id_empresa, f.capital_estimado))
+        return [_para_bloco(linha, tuple(fatias.get(linha.id_bloco, ()))) for linha in linhas]
     except (NotFound, Forbidden) as e:
         logger.error("Tabela de blocos inacessível: %s", e)
         raise DadosIndisponiveisError("Os dados de blocos estão indisponíveis.") from e
