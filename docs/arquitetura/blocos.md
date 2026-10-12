@@ -56,8 +56,8 @@ rodar de novo sem apagar nada.
 | `GET /blocos/etiquetas` | qualquer perfil | As pedras e as cores. |
 | `GET /empresas?busca=` | gestora | Busca por nome fantasia ou CNPJ (2+ caracteres, até 20 resultados), só empresas fora de qualquer bloco. |
 | `POST /blocos` | gestora | Valida e cria o bloco. Responde 201 com o código gerado. |
-| `GET /blocos` | qualquer perfil | Os blocos criados, do mais novo para o mais antigo, cada um com a cor da etiqueta e a quantidade de empresas. |
-| `GET /blocos/{bloco_id}` | qualquer perfil | Um bloco com as suas empresas, da maior para a menor fatia. |
+| `GET /blocos` | qualquer perfil | Os blocos criados, do mais novo para o mais antigo, cada um com a cor da etiqueta, a quantidade de empresas, o score e a nota de risco. |
+| `GET /blocos/{bloco_id}` | qualquer perfil | Um bloco com as suas empresas, da maior para a menor fatia, cada uma com o seu score e nota. |
 
 Erros de `POST /blocos`: dados inválidos ou soma diferente de 100% (422), empresa fora do
 cadastro (422), empresa já em outro bloco (409), tabela fora do ar (503). Em
@@ -76,6 +76,23 @@ falhar. A `cor` vem da etiqueta; fica vazia se a pedra sair da lista.
    `BEGIN TRANSACTION … COMMIT` com parâmetros), para não sobrar bloco pela metade.
 
 As consultas são parametrizadas: o texto digitado nunca entra no SQL.
+
+## Score de risco (dados de demonstração)
+
+Os scores são **fictícios**: foram sorteados (inteiros de 0 a 100, semente fixa) para cada uma das
+490 empresas do cadastro e gravados em `backend/dados/scores_empresas.csv`, com as colunas
+`id_empresa` e `score`. Não há modelo nem tabela por trás.
+
+- **Leitura:** `storage/scores.py` lê o CSV uma vez por processo (em cache) e ignora linhas
+  malformadas ou fora de 0 a 100. Sem o arquivo, as telas mostram "—" em vez de falhar. Depois de
+  editar o CSV é preciso reiniciar o backend.
+- **Cálculo:** `GET /blocos` e `GET /blocos/{id}` devolvem `score` e `nota_risco` do bloco, e o
+  detalhe também os de cada empresa. O score do bloco é a média ponderada pelo capital estimado de
+  cada empresa (`domain/risco.py`, `score_ponderado`; empresas sem score ficam de fora). A nota vem
+  da escala já existente em `classificar_nota`.
+- **Empacotamento:** o arquivo vai para a imagem do backend pelo `COPY . .` do Dockerfile.
+- **Para trocar por um score real:** basta o CSV (ou uma tabela, mudando só o `storage/scores.py`)
+  trazer o score do modelo; o resto continua igual.
 
 ## Blocos de exemplo
 

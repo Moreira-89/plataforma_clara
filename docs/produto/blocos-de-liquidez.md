@@ -44,21 +44,27 @@ que cada um vê depois de entrar.
 
 **Cartões.** Um cartão por bloco criado, sempre do mais recente para o mais antigo.
 Cada cartão mostra a etiqueta (com a cor da pedra), o código do bloco (os 8 primeiros
-caracteres do id), o score de risco, a quantidade de empresas, o vencimento e o botão
+caracteres do id), a nota de risco, a quantidade de empresas, o vencimento e o botão
 **Ver mais detalhes**.
 
 **Busca e filtros.** A barra de busca procura pelo código do bloco (o id) ou pelo nome da
 etiqueta. **Ver tudo** limpa a busca e volta à ordem padrão. O filtro de ordem tem
-**Mais recentes** e **Maior score**; o segundo fica desativado até o score existir.
+**Mais recentes** (o padrão) e **Maior score**.
 
 **Pop-up "Ver mais detalhes".** Mostra a etiqueta, a data de vencimento, o score do bloco e
 a tabela de empresas, com nome, CNPJ, ramo, capital estimado e score de risco de cada uma.
 
-!!! warning "Score de risco ainda não existe nos dados"
-    Nenhuma tabela tem o score hoje (a `tb_empresas_fidc` não traz essa coluna), e a
-    plataforma não inventa número. Os cartões e o pop-up mostram **—** e o aviso "score de
-    risco indisponível". Quando a fonte do score for integrada, o score entra nos cartões, no
-    pop-up e no filtro **Maior score**.
+**Score de risco.** Cada empresa tem um score de 0 a 100 (maior score, menor risco), traduzido numa
+nota: **A+** a partir de 80, **A** a partir de 70, **A-** a partir de 60, **B+** a partir de 50, **B** a
+partir de 40 e **C-** abaixo disso. O score do bloco é a **média dos scores das empresas, ponderada
+pelo capital** que cada uma recebe no bloco. Os cartões mostram só a **nota**; o pop-up mostra a nota
+e o número (por exemplo, "A- · 67") do bloco e de cada empresa. O filtro **Maior score** ordena os
+blocos do maior para o menor.
+
+!!! info "Dados de demonstração"
+    Os scores são **fictícios**: foram sorteados de 0 a 100 para cada empresa, sem modelo por trás,
+    e ficam em `backend/dados/scores_empresas.csv`. As empresas (Faker) e os blocos de exemplo também
+    são fictícios. As telas não trazem esse aviso; ele fica aqui, no README e na apresentação.
 
 **Menu lateral.** Todas as telas de quem está logado (a Gestão de Blocos e os Blocos de
 Liquidez) têm o mesmo menu à esquerda, fixo: o logo no topo, o item da área do perfil
@@ -124,5 +130,5 @@ Os detalhes técnicos (tabelas, rotas e erros) estão em
 - **Uma empresa em vários blocos.** Hoje vale "um só", como a gestora definiu para o
   momento, mas o grupo ainda vai confirmar. Se mudar, a busca deixa de filtrar e a
   gravação deixa de recusar.
-- **Score de risco** do bloco e de cada empresa: de onde vem e quando entra (ver aviso acima).
+- **Score real:** o modelo de machine learning (Random Forest, de 0 a 100, a partir do histórico) ainda não existe; hoje os scores são de demonstração (ver aviso acima).
 - **Alocar dinheiro:** como o investidor aporta ainda não foi definido; o botão está desativado.
