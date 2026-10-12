@@ -4,9 +4,16 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-# Build arg, não variável de runtime: o Vite embute o valor no bundle.
+# Build args, não variáveis de runtime: o Vite embute os valores no bundle. No Railway, as
+# variáveis do serviço chegam aqui como build args, mas só as declaradas com ARG.
 ARG VITE_API_URL=
-ENV VITE_API_URL=$VITE_API_URL
+ARG VITE_FIREBASE_API_KEY=
+ARG VITE_FIREBASE_AUTH_DOMAIN=
+ARG VITE_FIREBASE_PROJECT_ID=
+ENV VITE_API_URL=$VITE_API_URL \
+    VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY \
+    VITE_FIREBASE_AUTH_DOMAIN=$VITE_FIREBASE_AUTH_DOMAIN \
+    VITE_FIREBASE_PROJECT_ID=$VITE_FIREBASE_PROJECT_ID
 RUN npm run build
 
 FROM nginx:alpine

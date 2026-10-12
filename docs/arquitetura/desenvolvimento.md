@@ -136,6 +136,39 @@ Usa a credencial e o `BIGQUERY_DATASET` do `backend/.env` (recomendado: `tabelas
 pode rodar de novo sem apagar nada. O cadastro de empresas fica em outro dataset
 (`BIGQUERY_DATASET_EMPRESAS`, padrão `dados_fidc`). Detalhes em [Blocos de Liquidez](blocos.md).
 
+## Deploy no Railway
+
+Dois serviços, cada um com o `Dockerfile` da sua pasta (`backend/` e `frontend/`) como raiz.
+
+**Backend** (variáveis do serviço):
+
+| Variável | Valor |
+| --- | --- |
+| `GOOGLE_APPLICATION_CREDENTIALS` | O JSON da service account em **uma linha só**, sem aspas. |
+| `PROJECT_ID` | `plataforma-clara` |
+| `BIGQUERY_DATASET` | `tabelas_silvers` (tabelas de blocos) |
+| `BIGQUERY_DATASET_EMPRESAS` | `dados_fidc` (cadastro de empresas) |
+| `CORS_ORIGENS` | A URL pública do frontend, com `https://` e sem barra no final. |
+| `GROQ_API_KEY` | Só para o relatório em PDF (hoje em 501). |
+
+**Frontend**: as variáveis abaixo entram **no build**, não em tempo de execução. O Vite as embute
+no bundle, e o `frontend/Dockerfile` as recebe como build args (`ARG`). Mudou o valor, é preciso
+refazer o build do serviço.
+
+| Variável | Valor |
+| --- | --- |
+| `VITE_API_URL` | A URL pública do backend. |
+| `VITE_FIREBASE_API_KEY` | A `apiKey` do app Web no console do Firebase. |
+| `VITE_FIREBASE_AUTH_DOMAIN` | O `authDomain` do app Web. |
+| `VITE_FIREBASE_PROJECT_ID` | `plataforma-clara` |
+
+**Firebase:** em Authentication → Configurações → Domínios autorizados, acrescente o domínio
+público do frontend; sem isso o login falha na versão publicada.
+
+**Conferir depois de publicar:** `GET <backend>/health` responde `{"status":"ok"}`; a home do
+frontend abre; o login funciona; a Gestão de Blocos lista os blocos. Um erro de CORS no
+console do navegador quer dizer que `CORS_ORIGENS` não bate exatamente com a URL do frontend.
+
 ## Qualidade
 
 ```bash
