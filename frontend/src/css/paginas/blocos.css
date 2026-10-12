@@ -23,6 +23,7 @@
 .codigo-bloco { font-family: var(--font-mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
 .linha-score { display: flex; justify-content: space-between; align-items: center; padding: var(--space-sm) 0; border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); font-size: 14px; }
 .linha-score strong { font-family: var(--font-mono); color: var(--muted); }
+.linha-score .nota-risco { font-size: 18px; font-weight: 600; color: var(--ink); }
 .meta-bloco { font-size: 13px; color: var(--muted); }
 .cartao-bloco .btn { width: 100%; }
 .vazio { grid-column: 1 / -1; padding: var(--space-xxl) 0; text-align: center; color: var(--muted); }
@@ -42,7 +43,6 @@
 .observacao-detalhe { margin-bottom: var(--space-lg); font-size: 14px; }
 .tabela-detalhe { overflow-x: auto; }
 .tabela-detalhe .tabela td:nth-child(n+4), .tabela-detalhe .tabela th:nth-child(n+4) { text-align: right; }
-.nota-score { margin-top: var(--space-base); font-size: 13px; color: var(--muted); }
 .rodape-detalhe { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-base); margin-top: var(--space-lg); }
 .rodape-detalhe small { color: var(--muted); }
 

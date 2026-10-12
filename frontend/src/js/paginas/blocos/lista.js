@@ -8,11 +8,12 @@ import { $ } from '../../nucleo/ui.js'
 const PERFIL_DA_PAGINA = document.body.dataset.perfil
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const SEM_SCORE = '—'
-const AVISO_SCORE = 'Score de risco indisponível: a fonte do score ainda não foi integrada.'
 
 const menu = montarMenu(PERFIL_DA_PAGINA)
 let blocos = []
 
+// Nota e número juntos no pop-up (por exemplo, "A · 74"); os cartões mostram só a nota.
+const rotuloScore = (nota, score) => (score == null ? SEM_SCORE : `${nota} · ${Math.round(score)}`)
 const codigoCurto = (id) => id.slice(0, 8).toUpperCase()
 const dataBr = (iso) => iso.split('-').reverse().join('/')
 const cnpjFormatado = (c) => c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
@@ -43,8 +44,9 @@ function desenharCartoes() {
   const termo = $('#busca').value.trim()
   const lista = $('#cartoes')
   lista.replaceChildren()
-  // A ordem "mais recentes" é a da própria API; "maior score" só entra quando o score existir.
-  const visiveis = blocos.filter((b) => combina(b, termo))
+  // "Mais recentes" é a ordem da própria API; "Maior score" ordena do maior para o menor, sem score por último.
+  let visiveis = blocos.filter((b) => combina(b, termo))
+  if ($('#ordem').value === 'score') visiveis = [...visiveis].sort((a, b) => (b.score ?? -1) - (a.score ?? -1))
 
   if (!visiveis.length) {
     lista.append(criar('p', 'vazio', blocos.length ? 'Nenhum bloco encontrado para essa busca.' : 'Nenhum bloco criado ainda.'))
@@ -60,9 +62,7 @@ function desenharCartoes() {
     topo.append(etiqueta, criar('span', 'codigo-bloco', `Cod: ${codigoCurto(bloco.id_bloco)}`))
 
     const score = criar('div', 'linha-score')
-    const valor = criar('strong', '', SEM_SCORE)
-    valor.title = AVISO_SCORE
-    score.append(criar('span', '', 'Score de risco'), valor)
+    score.append(criar('span', '', 'Score de risco'), criar('strong', 'nota-risco', bloco.nota_risco ?? SEM_SCORE))
 
     const empresas = `${bloco.quantidade_empresas} ${bloco.quantidade_empresas === 1 ? 'empresa' : 'empresas'}`
     const meta = criar('p', 'meta-bloco', `${empresas} · vence em ${dataBr(bloco.data_vencimento)}`)
@@ -101,9 +101,7 @@ function tabelaEmpresas(empresas) {
       criar('td', '', e.ramo_atividade ?? '—'),
       criar('td', 'numero', moeda.format(Number(e.capital_estimado))),
     )
-    const score = criar('td', 'numero', SEM_SCORE)
-    score.title = AVISO_SCORE
-    tr.append(score)
+    tr.append(criar('td', 'numero', rotuloScore(e.nota_risco, e.score)))
     corpo.append(tr)
   }
   tabela.append(corpo)
@@ -134,7 +132,7 @@ async function abrirDetalhe(resumo) {
   resumoDetalhe.append(
     linha('Etiqueta', bloco.etiqueta),
     linha('Data de vencimento', dataBr(bloco.data_vencimento)),
-    linha('Score de risco do bloco', SEM_SCORE),
+    linha('Score de risco do bloco', rotuloScore(bloco.nota_risco, bloco.score)),
   )
   const partes = [resumoDetalhe]
 
@@ -144,7 +142,7 @@ async function abrirDetalhe(resumo) {
     if (bloco.observacao) partes.push(criar('p', 'observacao-detalhe', `Observação: ${bloco.observacao}`))
   }
 
-  partes.push(tabelaEmpresas(bloco.empresas), criar('p', 'nota-score', AVISO_SCORE))
+  partes.push(tabelaEmpresas(bloco.empresas))
 
   if (PERFIL_DA_PAGINA === 'investidor') {
     const rodape = criar('div', 'rodape-detalhe')
