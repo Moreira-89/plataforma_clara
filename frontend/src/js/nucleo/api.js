@@ -1,7 +1,7 @@
 import { obterToken } from './firebase.js'
 
 // Em dev o proxy do Vite atende /api; em produção a URL vem do build.
-const API = import.meta.env.VITE_API_URL || '/api'
+const API = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '')
 
 // Devolve { status, corpo } sem lançar em 4xx/5xx: a tela mostra o status.
 export async function chamar(metodo, caminho, corpo, { autenticado = true } = {}) {

@@ -35,8 +35,12 @@ services:
     build:
       context: ./frontend
       args:
-        # O Vite embute a URL no bundle em tempo de build.
+        # O Vite embute esses valores no bundle em tempo de build. A config do Firebase vem
+        # do ambiente do host (ou de um .env na raiz), igual ao frontend/.env.
         VITE_API_URL: http://localhost:8000
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:-}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID:-plataforma-clara}
     depends_on:
       - backend
     environment:
