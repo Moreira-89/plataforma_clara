@@ -165,6 +165,10 @@ refazer o build do serviço.
 **Firebase:** em Authentication → Configurações → Domínios autorizados, acrescente o domínio
 público do frontend; sem isso o login falha na versão publicada.
 
+**Se o login mostrar "A configuração do Firebase está ausente ou inválida":** alguma das três
+variáveis `VITE_FIREBASE_*` não chegou ao build do frontend (faltou defini-la, ou o build é anterior
+a ela). Defina a variável no serviço e refaça o build.
+
 **Conferir depois de publicar:** `GET <backend>/health` responde `{"status":"ok"}`; a home do
 frontend abre; o login funciona; a Gestão de Blocos lista os blocos. Um erro de CORS no
 console do navegador quer dizer que `CORS_ORIGENS` não bate exatamente com a URL do frontend.
