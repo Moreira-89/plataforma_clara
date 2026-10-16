@@ -24,9 +24,7 @@ Raises:
 """
 
 import asyncio
-from collections.abc import Mapping
 from datetime import datetime
-from decimal import Decimal
 from typing import Annotated
 from uuid import uuid4
 
@@ -44,6 +42,7 @@ from app.api.dependencias import (
     obter_listador_de_blocos,
     obter_usuario_atual,
 )
+from app.api.mapeamento_blocos import listagem_do_bloco, risco
 from app.api.schemas.auth import UsuarioAtual
 from app.api.schemas.blocos import (
     BlocoCriado,
@@ -58,12 +57,9 @@ from app.domain.blocos import (
     ETIQUETAS,
     FUSO_BRASIL,
     AlocacaoEmpresa,
-    BlocoListado,
-    cor_da_etiqueta,
     montar_bloco,
 )
 from app.domain.perfis import Perfil
-from app.domain.risco import classificar_nota, score_ponderado
 
 router = APIRouter(prefix="/blocos", tags=["blocos"], dependencies=[Depends(obter_usuario_atual)])
 
@@ -110,19 +106,6 @@ async def criar_bloco(
     )
 
 
-def _risco(score: float | None) -> dict:
-    return {"score": score, "nota_risco": None if score is None else classificar_nota(score)}
-
-
-def _listagem(
-    bloco: BlocoListado, pares: list[tuple[str, Decimal]], scores: Mapping[str, float]
-) -> dict:
-    """Campos do bloco com a cor e o score ponderado pelo capital de cada empresa."""
-    score = score_ponderado((scores.get(id_empresa), capital) for id_empresa, capital in pares)
-    base = {k: v for k, v in vars(bloco).items() if k != "participacoes"}
-    return {**base, "cor": cor_da_etiqueta(bloco.etiqueta), **_risco(score)}
-
-
 @router.get("", response_model=list[BlocoListagem])
 async def listar_blocos(
     listar: Annotated[ListadorDeBlocos, Depends(obter_listador_de_blocos)],
@@ -132,7 +115,9 @@ async def listar_blocos(
     blocos, scores = await asyncio.gather(asyncio.to_thread(listar), asyncio.to_thread(ler_scores))
     return [
         BlocoListagem(
-            **_listagem(b, [(p.id_empresa, p.capital_estimado) for p in b.participacoes], scores)
+            **listagem_do_bloco(
+                b, [(p.id_empresa, p.capital_estimado) for p in b.participacoes], scores
+            )
         )
         for b in blocos
     ]
@@ -150,9 +135,9 @@ async def detalhar_bloco(
     )
     pares = [(e.id_empresa, e.capital_estimado) for e in detalhado.empresas]
     return BlocoDetalhe(
-        **_listagem(detalhado.bloco, pares, scores),
+        **listagem_do_bloco(detalhado.bloco, pares, scores),
         empresas=[
-            EmpresaDoBlocoDetalhe(**vars(e), **_risco(scores.get(e.id_empresa)))
+            EmpresaDoBlocoDetalhe(**vars(e), **risco(scores.get(e.id_empresa)))
             for e in detalhado.empresas
         ],
     )

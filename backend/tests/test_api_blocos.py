@@ -216,3 +216,65 @@ def test_sem_scores_o_bloco_fica_sem_nota(client):
 
     assert bloco["score"] is None
     assert bloco["nota_risco"] is None
+
+
+def muitos_blocos(leitura_de_blocos, quantidade=60):
+    from dataclasses import replace
+
+    from conftest import BLOCO_A
+
+    leitura_de_blocos.blocos = [replace(BLOCO_A, id_bloco=f"b{i}") for i in range(quantidade)]
+
+
+def test_investimentos_exigem_login_e_perfil_de_investidor(client):
+    assert client.get("/investimentos").status_code == 401
+    assert client.get("/investimentos", headers=cabecalho("gestora")).status_code == 403
+
+
+def test_investidor_ve_alguns_blocos_com_o_valor_investido(client, leitura_de_blocos):
+    muitos_blocos(leitura_de_blocos)
+
+    resposta = client.get("/investimentos", headers=cabecalho("investidor"))
+
+    assert resposta.status_code == 200
+    carteira = resposta.json()
+    assert 0 < len(carteira) < 60
+    primeiro = carteira[0]
+    assert primeiro["etiqueta"] == "Safira"
+    assert primeiro["cor"] == "#0F52BA"
+    assert primeiro["nota_risco"] == "A-"
+    assert float(primeiro["valor_investido"]) % 5000 == 0
+
+
+def test_a_carteira_e_estavel_entre_chamadas(client, leitura_de_blocos):
+    muitos_blocos(leitura_de_blocos)
+
+    primeira = client.get("/investimentos", headers=cabecalho("investidor")).json()
+    segunda = client.get("/investimentos", headers=cabecalho("investidor")).json()
+
+    assert primeira == segunda
+
+
+def test_cada_investidor_tem_a_sua_carteira(client, leitura_de_blocos):
+    muitos_blocos(leitura_de_blocos)
+
+    um = client.get("/investimentos", headers=cabecalho("investidor")).json()
+    outro = client.get("/investimentos", headers=cabecalho("investidor2")).json()
+
+    assert {b["id_bloco"] for b in um} != {b["id_bloco"] for b in outro}
+
+
+def test_a_carteira_mantem_a_ordem_da_lista_de_blocos(client, leitura_de_blocos):
+    muitos_blocos(leitura_de_blocos)
+    ordem = [b.id_bloco for b in leitura_de_blocos.blocos]
+
+    carteira = client.get("/investimentos", headers=cabecalho("investidor")).json()
+
+    ids = [b["id_bloco"] for b in carteira]
+    assert ids == sorted(ids, key=ordem.index)
+
+
+def test_investimentos_com_tabela_fora_do_ar_respondem_503(client, leitura_de_blocos):
+    leitura_de_blocos.erro = DadosIndisponiveisError("fora do ar")
+
+    assert client.get("/investimentos", headers=cabecalho("investidor")).status_code == 503

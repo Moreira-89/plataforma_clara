@@ -17,9 +17,17 @@ Raises:
 
 from fastapi import APIRouter
 
-from app.api.endpoints import auth, blocos, dashboard, empresas, relatorios, saude
+from app.api.endpoints import (
+    auth,
+    blocos,
+    dashboard,
+    empresas,
+    investimentos,
+    relatorios,
+    saude,
+)
 
 router = APIRouter()
 
-for modulo in (saude, auth, dashboard, blocos, empresas, relatorios):
+for modulo in (saude, auth, dashboard, blocos, empresas, investimentos, relatorios):
     router.include_router(modulo.router)

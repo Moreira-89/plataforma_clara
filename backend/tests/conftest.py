@@ -43,6 +43,7 @@ from app.domain.perfis import DadosCadastro, Perfil
 # Texto do Bearer -> claims que o verificador falso devolve.
 TOKENS = {
     "investidor": {"uid": "u-inv", "email": "inv@exemplo.com", "perfil": "investidor"},
+    "investidor2": {"uid": "u-inv2", "email": "inv2@exemplo.com", "perfil": "investidor"},
     "gestora": {"uid": "u-ges", "email": "ges@exemplo.com", "perfil": "gestora"},
     "sem-perfil": {"uid": "u-x", "email": "x@exemplo.com"},
 }

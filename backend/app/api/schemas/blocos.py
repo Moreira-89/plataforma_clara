@@ -115,3 +115,9 @@ class BlocoDetalhe(BlocoListagem):
     """Um bloco já criado, com as suas empresas."""
 
     empresas: list[EmpresaDoBlocoDetalhe]
+
+
+class BlocoInvestido(BlocoListagem):
+    """Um bloco da carteira do investidor, com o valor que ele investiu."""
+
+    valor_investido: Decimal
