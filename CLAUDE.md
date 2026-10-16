@@ -99,11 +99,11 @@ backend/
   app/
     agents/                #   IA: relatorio.py e os assets do PDF
     api/lifespan.py        #   ciclo de vida da aplicação
-    api/endpoints/         #   saude, auth, dashboard, blocos, relatorios
+    api/endpoints/         #   saude, auth, dashboard, blocos, empresas, investimentos, relatorios
     api/dependencias.py    #   usuário do token e controle de acesso por perfil
     api/schemas/           #   contratos Pydantic de entrada e saída
     config/                #   settings.py (env) e logging.py
-    domain/                #   risco, metricas, formatacao, identidade, erros
+    domain/                #   risco, metricas, formatacao, identidade, blocos, investimentos, erros
     jobs/                  #   criar_gestora.py e criar_tabelas_blocos.py (CLIs)
     storage/               #   bigquery, empresas, blocos, scores, firebase (token + Firestore), usuarios, credenciais
   dados/                   # scores_empresas.csv (scores de demonstração, lidos por storage/scores.py)
@@ -115,7 +115,7 @@ frontend/
   paginas/                 # uma pasta por área, um HTML por tela
     login.html, cadastro.html
     gestora/gestao-blocos.html   # inclui o pop-up de criação de bloco
-    investidor/blocos-de-liquidez.html
+    investidor/blocos-de-liquidez.html, blocos-investidos.html
   src/css/                 # tokens, base, componentes (principal.css junta os três)
     paginas/               #   um CSS por tela ou grupo de telas
   src/js/nucleo/           # api, firebase, rotas, ui, menu — usados por todas as telas
@@ -152,7 +152,7 @@ Instruções do dono do projeto. Valem sobre qualquer padrão default.
 
 - Nunca commitar `.env` ou credenciais de service account. Não manter arquivo de credencial na raiz do repositório — o `COPY . .` do Docker o levaria para dentro da imagem.
 - Nunca reintroduzir número inventado como se fosse dado real. A evolução do AUM, o rendimento projetado e a rentabilidade por bloco eram fatores fixos e um hash do nome do bloco, exibidos ao lado de números reais sem rótulo. Foram removidos. Fora dos dados de demonstração, ou vêm de dado real, ou vão rotulados como estimativa.
-- **Exceção, por decisão do dono do projeto:** os dados de demonstração (empresas geradas com Faker, blocos de exemplo e scores sorteados em `backend/dados/scores_empresas.csv`) são fictícios e o front-end **não** os rotula. A documentação, o README e a apresentação declaram que são fictícios. Nenhum outro número inventado pode aparecer nas telas.
+- **Exceção, por decisão do dono do projeto:** os dados de demonstração (empresas geradas com Faker, blocos de exemplo, scores sorteados em `backend/dados/scores_empresas.csv` e a carteira de investimentos de cada investidor, sorteada de forma estável em `domain/investimentos.py`) são fictícios e o front-end **não** os rotula. A documentação, o README e a apresentação declaram que são fictícios. Nenhum outro número inventado pode aparecer nas telas.
 - Nunca implementar autenticação própria: quem cuida de identidade e senha é o Firebase. O backend verifica o token e lê as claims.
 - Nunca chamar a API do Groq fora de `agents/relatorio.py` — é o único lugar com o retry progressivo (5 tentativas com cortes crescentes na amostra de aportes, nos grupos de empresa e no texto de referência) tratado para `APIStatusError` 413.
 - Nunca importar camada de entrega dentro de `domain/`. É essa regra que faz trocar de stack ser uma troca, e não uma reescrita.
@@ -181,7 +181,8 @@ Não criar variável de ambiente nova sem que algo a consuma.
 Não invente que existe. Nesta ordem:
 
 1. **Fonte dos dados de aportes.** O upload de CSV foi removido de propósito (não é assim que a plataforma vai operar). Ainda não existe nenhum mecanismo que traga esses dados para a plataforma — nem CSV, nem consulta a serviço externo, nada. É a decisão mais urgente em aberto.
-2. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `/blocos` (etiquetas, criar, listar e detalhar) e `GET /empresas`; a busca de empresas lê `dados_fidc.tb_empresas_fidc`. `/dashboard` e `/relatorios` exigem o perfil certo, mas depois da checagem respondem 501 até terem fonte de dados.
-3. **Redis** — declarado no compose, sem cliente na aplicação.
-4. **Score de risco real.** Hoje os scores são de demonstração (CSV sorteado). O modelo de machine learning que o grupo imagina não existe, nem o histórico de aportes que ele usaria.
-5. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.
+2. **Investimento real.** O botão "Alocar dinheiro" só mostra uma confirmação e não grava nada; os "Blocos Investidos" vêm de uma carteira de demonstração. Como o investidor aporta de verdade não foi definido.
+3. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `/blocos` (etiquetas, criar, listar e detalhar), `GET /empresas` e `GET /investimentos` (carteira de demonstração); a busca de empresas lê `dados_fidc.tb_empresas_fidc`. `/dashboard` e `/relatorios` exigem o perfil certo, mas depois da checagem respondem 501 até terem fonte de dados.
+4. **Redis** — declarado no compose, sem cliente na aplicação.
+5. **Score de risco real.** Hoje os scores são de demonstração (CSV sorteado). O modelo de machine learning que o grupo imagina não existe, nem o histórico de aportes que ele usaria.
+6. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.

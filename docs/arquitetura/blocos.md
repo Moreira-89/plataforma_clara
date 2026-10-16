@@ -77,6 +77,15 @@ falhar. A `cor` vem da etiqueta; fica vazia se a pedra sair da lista.
 
 As consultas são parametrizadas: o texto digitado nunca entra no SQL.
 
+## Investimentos do investidor (dados de demonstração)
+
+`GET /investimentos` (só investidor) lista os blocos em que a conta logada "já investiu", com os mesmos
+campos da lista de blocos (cor, score e nota) mais `valor_investido`, na ordem da lista (do mais recente
+ao mais antigo). Não há tabela nem aporte real: `domain/investimentos.py` decide a carteira a partir de
+um hash SHA-256 de (uid do investidor, id do bloco), então o resultado é estável, não depende dos demais
+blocos e difere de uma conta para outra. Cerca de 40% dos blocos entram, com valor múltiplo de R$ 5 mil
+entre R$ 5 mil e R$ 500 mil. Trocar isso por investimentos reais é mudar a origem dessa lista.
+
 ## Score de risco (dados de demonstração)
 
 Os scores são **fictícios**: foram sorteados (inteiros de 0 a 100, semente fixa) para cada uma das

@@ -80,6 +80,7 @@ recurso tem o seu arquivo em `api/endpoints/` com um `APIRouter` próprio.
 | `GET /blocos/etiquetas` | qualquer perfil | funciona |
 | `POST /blocos` | gestora | funciona |
 | `GET /empresas?busca=` | gestora | funciona |
+| `GET /investimentos` | investidor | funciona (carteira de demonstração) |
 | `GET /blocos`, `GET /blocos/{bloco_id}` | qualquer perfil | funciona |
 | `POST /relatorios`, `GET /relatorios/{id}` | investidor | 501, dependem da fonte dos aportes |
 

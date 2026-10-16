@@ -39,7 +39,7 @@ que cada um vê depois de entrar.
 | Nome | **Gestão de Blocos** | **Blocos de Liquidez** |
 | Cartões, busca e "Ver mais detalhes" | sim | sim |
 | Botão **Criar novo bloco** | sim (abre o formulário num pop-up) | não |
-| Botão **Alocar dinheiro** no pop-up | não | sim, ainda desativado ("em breve") |
+| Botão **Alocar dinheiro** no pop-up | não | sim; pede e mostra a confirmação do investimento, sem gravar nada ainda |
 | Responsável técnico, data de criação e observação no pop-up | sim | não |
 
 **Cartões.** Um cartão por bloco criado, sempre do mais recente para o mais antigo.
@@ -71,6 +71,25 @@ Liquidez) têm o mesmo menu à esquerda, fixo: o logo no topo, o item da área d
 (destacado quando é a tela atual) e, no rodapé, o e-mail de quem entrou e o botão **Sair**.
 A home não tem esse menu. Telas novas entram na lista de itens do menu e passam a aparecer em
 todas as páginas.
+
+## Telas do investidor
+
+**Alocar dinheiro.** No pop-up de detalhes de um bloco, o investidor clica em **Alocar dinheiro**; a
+tela pergunta "Confirmar o investimento no bloco ...?", com **Cancelar** e **Confirmar investimento**,
+e depois mostra "Investimento confirmado.". Ainda não há aporte de verdade por trás: a confirmação não
+grava nada.
+
+**Blocos Investidos.** Lista os blocos em que o investidor já investiu, com um painel por pedra
+(a Safira tem um painel com todos os blocos Safira dele, a Rubi outro, e assim por diante). Os
+cartões são os mesmos da tela de Blocos de Liquidez, com a linha **Investido: R$ ...**. Dentro de cada
+painel os blocos vão do mais recente ao mais antigo, e os painéis seguem a ordem do bloco mais novo
+de cada pedra. O botão **Ver mais detalhes** aparece, mas ainda está desativado: a lógica dele será
+definida depois. O menu lateral do investidor tem os dois itens: Blocos de Liquidez e Blocos Investidos.
+
+**Carteira de exemplo.** Como não existe aporte real, cada conta de investidor recebe uma carteira de
+**demonstração**: cerca de 40% dos blocos, com um valor fictício em cada (múltiplo de R$ 5 mil, de
+R$ 5 mil a R$ 500 mil). O sorteio é estável: a mesma conta vê sempre os mesmos blocos e valores, e
+contas diferentes veem carteiras diferentes, o que permite que mais de um colega teste.
 
 ## O formulário de criação (gestora)
 
@@ -131,4 +150,6 @@ Os detalhes técnicos (tabelas, rotas e erros) estão em
   momento, mas o grupo ainda vai confirmar. Se mudar, a busca deixa de filtrar e a
   gravação deixa de recusar.
 - **Score real:** o modelo de machine learning (Random Forest, de 0 a 100, a partir do histórico) ainda não existe; hoje os scores são de demonstração (ver aviso acima).
-- **Alocar dinheiro:** como o investidor aporta ainda não foi definido; o botão está desativado.
+- **Alocar dinheiro:** como o investidor aporta de verdade ainda não foi definido; hoje o botão só confirma, sem gravar.
+- **Ver mais detalhes em Blocos Investidos:** a lógica do botão será definida pelo grupo; hoje ele aparece desativado.
+- **Filtros em Blocos Investidos:** o desenho prevê um botão de filtros, ainda sem definição.
