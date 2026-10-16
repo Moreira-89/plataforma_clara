@@ -5,6 +5,7 @@ export const LOGIN = '/paginas/login.html'
 export const HOME = '/'
 export const GESTAO_BLOCOS = '/paginas/gestora/gestao-blocos.html'
 export const BLOCOS_INVESTIDOR = '/paginas/investidor/blocos-de-liquidez.html'
+export const BLOCOS_INVESTIDOS = '/paginas/investidor/blocos-investidos.html'
 
 // Token recusado (ex.: conta apagada): desfaz a sessão local para não ficar preso nela.
 export async function encerrarSeInvalida(resposta) {

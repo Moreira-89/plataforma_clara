@@ -3,34 +3,22 @@ import { aoMudarSessao } from '../../nucleo/firebase.js'
 import { montarMenu } from '../../nucleo/menu.js'
 import { LOGIN, destinoDoPerfil, encerrarSeInvalida } from '../../nucleo/rotas.js'
 import { $ } from '../../nucleo/ui.js'
+import {
+  SEM_SCORE,
+  cnpjFormatado,
+  codigoCurto,
+  criar,
+  dataBr,
+  moeda,
+  montarCartao,
+  rotuloScore,
+  seloEtiqueta,
+} from './cartao.js'
 
 // A mesma tela serve a gestora e o investidor; o perfil vem do <body data-perfil>.
 const PERFIL_DA_PAGINA = document.body.dataset.perfil
-const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-const SEM_SCORE = '—'
-
 const menu = montarMenu(PERFIL_DA_PAGINA)
 let blocos = []
-
-// Nota e número juntos no pop-up (por exemplo, "A · 74"); os cartões mostram só a nota.
-const rotuloScore = (nota, score) => (score == null ? SEM_SCORE : `${nota} · ${Math.round(score)}`)
-const codigoCurto = (id) => id.slice(0, 8).toUpperCase()
-const dataBr = (iso) => iso.split('-').reverse().join('/')
-const cnpjFormatado = (c) => c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
-
-function criar(tag, classe, texto) {
-  const el = document.createElement(tag)
-  if (classe) el.className = classe
-  if (texto !== undefined) el.textContent = texto
-  return el
-}
-
-function seloEtiqueta(cor) {
-  const selo = criar('i', 'selo-etiqueta')
-  selo.style.background = cor ?? 'var(--surface-strong)'
-  selo.setAttribute('aria-hidden', 'true')
-  return selo
-}
 
 // Busca pelo código (início do id ou código completo) ou pelo nome da etiqueta.
 function combina(bloco, termo) {
@@ -53,27 +41,7 @@ function desenharCartoes() {
     return
   }
 
-  for (const bloco of visiveis) {
-    const cartao = criar('article', 'cartao cartao-bloco')
-
-    const topo = criar('div', 'cartao-topo')
-    const etiqueta = criar('span', 'etiqueta-bloco')
-    etiqueta.append(seloEtiqueta(bloco.cor), criar('span', '', bloco.etiqueta))
-    topo.append(etiqueta, criar('span', 'codigo-bloco', `Cod: ${codigoCurto(bloco.id_bloco)}`))
-
-    const score = criar('div', 'linha-score')
-    score.append(criar('span', '', 'Score de risco'), criar('strong', 'nota-risco', bloco.nota_risco ?? SEM_SCORE))
-
-    const empresas = `${bloco.quantidade_empresas} ${bloco.quantidade_empresas === 1 ? 'empresa' : 'empresas'}`
-    const meta = criar('p', 'meta-bloco', `${empresas} · vence em ${dataBr(bloco.data_vencimento)}`)
-
-    const botao = criar('button', 'btn btn-secundario', 'Ver mais detalhes')
-    botao.type = 'button'
-    botao.addEventListener('click', () => abrirDetalhe(bloco))
-
-    cartao.append(topo, score, meta, botao)
-    lista.append(cartao)
-  }
+  for (const bloco of visiveis) lista.append(montarCartao(bloco, { aoDetalhes: () => abrirDetalhe(bloco) }))
 }
 
 function linha(rotulo, valor) {
@@ -107,6 +75,30 @@ function tabelaEmpresas(empresas) {
   tabela.append(corpo)
   rolagem.append(tabela)
   return rolagem
+}
+
+// "Alocar dinheiro" ainda não grava nada: só pede e mostra a confirmação do investimento.
+function mostrarAlocar(rodape, bloco) {
+  const alocar = criar('button', 'btn btn-primario', 'Alocar dinheiro')
+  alocar.type = 'button'
+  alocar.addEventListener('click', () => pedirConfirmacao(rodape, bloco))
+  rodape.replaceChildren(alocar)
+}
+
+function pedirConfirmacao(rodape, bloco) {
+  const pergunta = criar('p', 'confirmacao-texto', `Confirmar o investimento no bloco ${bloco.etiqueta} (${codigoCurto(bloco.id_bloco)})?`)
+  const cancelar = criar('button', 'btn btn-secundario', 'Cancelar')
+  cancelar.type = 'button'
+  cancelar.addEventListener('click', () => mostrarAlocar(rodape, bloco))
+  const confirmar = criar('button', 'btn btn-primario', 'Confirmar investimento')
+  confirmar.type = 'button'
+  confirmar.addEventListener('click', () => {
+    const fechar = criar('button', 'btn btn-secundario', 'Fechar')
+    fechar.type = 'button'
+    fechar.addEventListener('click', () => $('#detalhe').close())
+    rodape.replaceChildren(criar('p', 'confirmacao-texto sucesso-texto', 'Investimento confirmado.'), fechar)
+  })
+  rodape.replaceChildren(pergunta, cancelar, confirmar)
 }
 
 async function abrirDetalhe(resumo) {
@@ -146,10 +138,7 @@ async function abrirDetalhe(resumo) {
 
   if (PERFIL_DA_PAGINA === 'investidor') {
     const rodape = criar('div', 'rodape-detalhe')
-    const alocar = criar('button', 'btn btn-primario', 'Alocar dinheiro')
-    alocar.type = 'button'
-    alocar.disabled = true
-    rodape.append(criar('small', '', 'Em breve'), alocar)
+    mostrarAlocar(rodape, bloco)
     partes.push(rodape)
   }
   corpo.replaceChildren(...partes)

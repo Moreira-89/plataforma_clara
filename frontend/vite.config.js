@@ -25,6 +25,7 @@ export default defineConfig({
         cadastro: pagina('paginas/cadastro'),
         gestaoBlocos: pagina('paginas/gestora/gestao-blocos'),
         blocosInvestidor: pagina('paginas/investidor/blocos-de-liquidez'),
+        blocosInvestidos: pagina('paginas/investidor/blocos-investidos'),
       },
     },
   },

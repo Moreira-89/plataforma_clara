@@ -23,6 +23,7 @@
 .btn-primario { background: var(--primary); color: var(--on-primary); }
 .btn-primario:hover, .btn-primario:active { background: var(--primary-active); }
 .btn-primario:disabled { background: var(--primary-disabled); cursor: not-allowed; }
+.btn-secundario:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn-secundario { background: var(--surface-strong); color: var(--ink); }
 .btn-contorno-escuro { background: transparent; color: var(--on-dark); border-color: var(--on-dark); }
 .btn-texto { background: transparent; color: var(--primary); padding: 0; height: auto; }

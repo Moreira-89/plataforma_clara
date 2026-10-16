@@ -1,10 +1,14 @@
+import logoUrl from '../../img/logo-clara.png'
 import { sair } from './firebase.js'
-import { BLOCOS_INVESTIDOR, GESTAO_BLOCOS, HOME, destinoDoPerfil } from './rotas.js'
+import { BLOCOS_INVESTIDOR, BLOCOS_INVESTIDOS, GESTAO_BLOCOS, HOME, destinoDoPerfil } from './rotas.js'
 
 // Telas de cada perfil. Tela nova entra aqui e aparece no menu de todas as páginas.
 const ITENS = {
   gestora: [{ rotulo: 'Gestão de Blocos', href: GESTAO_BLOCOS }],
-  investidor: [{ rotulo: 'Blocos de Liquidez', href: BLOCOS_INVESTIDOR }],
+  investidor: [
+    { rotulo: 'Blocos de Liquidez', href: BLOCOS_INVESTIDOR },
+    { rotulo: 'Blocos Investidos', href: BLOCOS_INVESTIDOS },
+  ],
 }
 
 function criar(tag, classe, texto) {
@@ -23,7 +27,7 @@ export function montarMenu(perfil) {
   const marca = criar('a', 'marca')
   marca.href = destinoDoPerfil(perfil)
   const logo = criar('img')
-  logo.src = '/src/img/logo-clara.png'
+  logo.src = logoUrl
   logo.alt = 'Plataforma Clara'
   marca.append(logo)
 
