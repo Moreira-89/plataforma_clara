@@ -9,8 +9,10 @@
  *   3. `distribuirAdesivos` reparte as 54 unidades entre os itens pela participação de cada um
  *      (maior resto), com no mínimo 1 adesivo por item.
  *   4. Os itens recebem os adesivos em sequência, face a face (o maior começa pela face da frente).
- *   5. Ao aparecer, o cubo surge e os adesivos acendem em sequência (animação em CSS, com `--ordem`).
- *   6. Passar o mouse destaca todos os adesivos do item e chama `aoPassar`; arrastar gira o cubo;
+ *   5. Itens que repetem a mesma cor ganham, além do tom, uma textura própria (`estilosDosItens`),
+ *      para as empresas de um bloco se distinguirem mesmo sendo da mesma cor.
+ *   6. Ao aparecer, o cubo surge e os adesivos acendem em sequência (animação em CSS, com `--ordem`).
+ *   7. Passar o mouse destaca todos os adesivos do item e chama `aoPassar`; arrastar gira o cubo;
  *      clicar sem arrastar chama `aoClicar` (opcional).
  */
 import { criar } from './cartao.js'
@@ -18,7 +20,8 @@ import { criar } from './cartao.js'
 const FACES = ['frente', 'direita', 'topo', 'tras', 'esquerda', 'base'] // ordem de preenchimento
 const ADESIVOS_POR_FACE = 9
 export const TOTAL_DE_ADESIVOS = FACES.length * ADESIVOS_POR_FACE
-const TONS = [1, 0.74, 1.26, 0.58, 1.42, 0.87, 1.13, 0.66] // variação de brilho entre itens da mesma cor
+const TONS = [1, 0.72, 1.28] // variação de brilho entre itens da mesma cor
+const PADROES = 8 // texturas diferentes (0 é a cor lisa); ver `data-padrao` em cubo.css
 const GIRO_AUTOMATICO = 0.25 // graus por quadro
 const SENSIBILIDADE = 0.5 // graus por pixel arrastado
 const LIMIAR_DE_ARRASTO = 5 // pixels
@@ -42,6 +45,16 @@ export function distribuirAdesivos(participacoes, total = TOTAL_DE_ADESIVOS) {
   return contagens
 }
 
+// Tom e textura de cada item: o primeiro de cada cor fica liso; os seguintes alternam tom e textura.
+export function estilosDosItens(itens) {
+  const vistos = new Map()
+  return itens.map((item) => {
+    const n = vistos.get(item.cor) ?? 0
+    vistos.set(item.cor, n + 1)
+    return { tom: TONS[n % TONS.length], padrao: n % PADROES }
+  })
+}
+
 // Um adesivo por item, no mínimo: passando de 54 itens, os menores viram "Outras empresas".
 function limitarItens(itens) {
   if (itens.length <= TOTAL_DE_ADESIVOS) return itens
@@ -57,12 +70,7 @@ export function montarCubo(raiz, entrada, { aoPassar, aoSair, aoClicar }) {
   const itens = limitarItens(entrada)
   const contagens = distribuirAdesivos(itens.map((i) => i.participacao))
   const dono = contagens.flatMap((quantidade, indice) => Array(quantidade).fill(indice))
-  const vistos = new Map()
-  const tons = itens.map((item) => {
-    const n = vistos.get(item.cor) ?? 0
-    vistos.set(item.cor, n + 1)
-    return TONS[n % TONS.length]
-  })
+  const estilos = estilosDosItens(itens)
 
   const cena = criar('div', 'cubo-cena')
   const cubo = criar('div', 'cubo')
@@ -73,7 +81,8 @@ export function montarCubo(raiz, entrada, { aoPassar, aoSair, aoClicar }) {
       const adesivo = criar('div', 'cubo-adesivo')
       adesivo.dataset.indice = indice
       adesivo.style.setProperty('--cor', itens[indice].cor ?? 'var(--muted)')
-      adesivo.style.setProperty('--tom', tons[indice])
+      adesivo.style.setProperty('--tom', estilos[indice].tom)
+      adesivo.dataset.padrao = estilos[indice].padrao
       adesivo.style.setProperty('--ordem', f * ADESIVOS_POR_FACE + c)
       face.append(adesivo)
     }

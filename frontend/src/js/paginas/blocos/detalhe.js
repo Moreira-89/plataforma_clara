@@ -3,7 +3,7 @@ import { chamar, textoDoErro } from '../../nucleo/api.js'
 import { LOGIN, encerrarSeInvalida } from '../../nucleo/rotas.js'
 import { $ } from '../../nucleo/ui.js'
 import { SEM_SCORE, cnpjFormatado, codigoCurto, criar, dataBr, moeda, rotuloScore, seloEtiqueta } from './cartao.js'
-import { montarCubo } from './cubo.js'
+import { estilosDosItens, montarCubo } from './cubo.js'
 
 const percentual = (valor) => `${Number(valor).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`
 
@@ -15,8 +15,19 @@ function linha(rotulo, valor) {
   return caixa
 }
 
+// Mesma cor e textura que a empresa tem no cubo, para ligar a linha da tabela à região do cubo.
+function amostraDaEmpresa(cor, estilo) {
+  const amostra = criar('i', 'amostra-cubo')
+  amostra.style.setProperty('--cor', cor ?? 'var(--surface-strong)')
+  if (estilo) {
+    amostra.style.setProperty('--tom', estilo.tom)
+    amostra.dataset.padrao = estilo.padrao
+  }
+  return amostra
+}
+
 // Com `valorInvestido`, a tabela mostra a fatia de cada empresa no bloco e o capital do investidor nela.
-function tabelaEmpresas(empresas, valorInvestido) {
+function tabelaEmpresas(empresas, valorInvestido, cor, estilos) {
   const jaInvestiu = valorInvestido != null
   const titulos = ['Empresa', 'CNPJ', 'Ramo']
   if (jaInvestiu) titulos.push('% do bloco')
@@ -33,10 +44,14 @@ function tabelaEmpresas(empresas, valorInvestido) {
   tabela.append(topo)
 
   const corpo = criar('tbody')
-  for (const e of empresas) {
+  empresas.forEach((e, i) => {
     const tr = criar('tr')
+    const nome = criar('div', 'nome-empresa')
+    nome.append(amostraDaEmpresa(cor, estilos[i]), e.nome_fantasia ?? `Empresa ${e.id_empresa}`)
+    const celulaNome = criar('td')
+    celulaNome.append(nome)
     tr.append(
-      criar('td', '', e.nome_fantasia ?? `Empresa ${e.id_empresa}`),
+      celulaNome,
       criar('td', '', cnpjFormatado(e.cnpj)),
       criar('td', '', e.ramo_atividade ?? '—'),
     )
@@ -48,7 +63,7 @@ function tabelaEmpresas(empresas, valorInvestido) {
     }
     tr.append(criar('td', 'numero', rotuloScore(e.nota_risco, e.score)))
     corpo.append(tr)
-  }
+  })
   tabela.append(corpo)
   rolagem.append(tabela)
   return rolagem
@@ -66,13 +81,15 @@ function secaoBlocoVisual() {
   return { secao, raiz, dica }
 }
 
-function desenharBlocoVisual(visual, bloco) {
-  const itens = bloco.empresas.map((e) => ({
+const itensDoBloco = (bloco) =>
+  bloco.empresas.map((e) => ({
     nome: e.nome_fantasia ?? cnpjFormatado(e.cnpj),
     cor: bloco.cor,
     etiqueta: bloco.etiqueta,
     participacao: Number(e.percentual_liquidez) / 100,
   }))
+
+function desenharBlocoVisual(visual, itens) {
   encerrarCubo = montarCubo(visual.raiz, itens, {
     aoPassar: (item, x, y) => {
       visual.dica.replaceChildren(criar('span', '', item.nome), criar('strong', 'numero', percentual(item.participacao * 100)))
@@ -154,7 +171,8 @@ export async function abrirDetalhe(resumo, { perfil, valorInvestido } = {}) {
   }
 
   const visual = secaoBlocoVisual()
-  partes.push(visual.secao, tabelaEmpresas(bloco.empresas, valorInvestido))
+  const itens = itensDoBloco(bloco)
+  partes.push(visual.secao, tabelaEmpresas(bloco.empresas, valorInvestido, bloco.cor, estilosDosItens(itens)))
 
   if (perfil === 'investidor' && !jaInvestiu) {
     const rodape = criar('div', 'rodape-detalhe')
@@ -162,7 +180,7 @@ export async function abrirDetalhe(resumo, { perfil, valorInvestido } = {}) {
     partes.push(rodape)
   }
   corpo.replaceChildren(...partes)
-  desenharBlocoVisual(visual, bloco)
+  desenharBlocoVisual(visual, itens)
 }
 
 // Botão de fechar e clique no fundo escuro (fora do conteúdo) fecham o pop-up.

@@ -60,3 +60,4 @@
 /* Ficha: bloco visual entre o resumo e a tabela de empresas. */
 .ficha-visual { margin-bottom: var(--space-lg); }
 .ficha-visual h3 { margin-bottom: var(--space-sm); font-size: 16px; font-weight: 600; color: var(--ink); }
+.nome-empresa { display: flex; align-items: center; gap: var(--space-xs); }

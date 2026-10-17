@@ -15,6 +15,8 @@
   --on-primary: #ffffff;
   --on-dark: #ffffff;
   --on-dark-soft: #a8acb3;
+  --textura-clara: rgba(255, 255, 255, 0.5);
+  --textura-escura: rgba(0, 0, 0, 0.3);
   --semantic-up: #05b169;
   --semantic-down: #cf202f;
 

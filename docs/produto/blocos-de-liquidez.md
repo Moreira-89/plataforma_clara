@@ -66,7 +66,11 @@ proporcionalidade e o comportamento são os mesmos em todas.
 - A repartição usa o método do maior resto e dá ao menos 1 adesivo a cada empresa. Cada adesivo vale
   cerca de 1,85%, então o cubo é aproximado; a porcentagem exata aparece no balão e a tabela traz os
   valores. Passando de 54 empresas, as menores se juntam em "Outras empresas" (em cinza).
-- A cor é a da etiqueta (pedra) do bloco, com tons diferentes para distinguir as empresas.
+- A cor é a da etiqueta (pedra) do bloco. Como todas as empresas do bloco têm a mesma cor, cada uma
+  recebe também um **tom** e uma **textura** própria sobre a cor (lisa, listras, bolinhas, grade,
+  xadrez e outras, com traços claros e escuros para aparecerem em qualquer cor). Na tabela da ficha, uma
+  pequena amostra com a mesma cor e textura fica ao lado do nome de cada empresa, ligando a linha à
+  região do cubo.
 - Passar o mouse destaca todos os adesivos da empresa e mostra um balão com o nome e a porcentagem.
 - Ao abrir, o cubo surge e os adesivos acendem em sequência (cerca de 1 segundo, só `opacity` e
   `transform`, leve para a GPU); a animação é desligada para quem pede menos movimento no sistema.
@@ -92,7 +96,7 @@ todas as páginas.
 ## Telas do investidor
 
 **Visão geral.** É a primeira tela do investidor depois do login. Tem duas faixas no topo (o **total
-investido**, e a quantidade de etiquetas e de blocos investidos) e quatro blocos:
+investido**, e a quantidade de blocos investidos) e quatro blocos:
 
 - **Rendimento nos últimos 12 meses:** um gráfico em largura total com **barras** do rendimento de cada
   mês (R$, eixo da esquerda) e uma **linha** do rendimento acumulado (%, eixo da direita); passar o mouse
@@ -111,7 +115,7 @@ Todos os números vêm da carteira (o rendimento é calculado sobre o total inve
 **O cubo da Visão geral.** É o mesmo componente do bloco visual da ficha (CSS 3D, 54 adesivos que
 representam **100% do dinheiro do investidor**), mas lê a carteira inteira: cada **empresa** ocupa uma
 região proporcional à fatia dela nesse dinheiro (a mesma que o ranking mostra). A cor é a da etiqueta
-(pedra) do bloco da empresa, com tons diferentes para distinguir as empresas. Passar o mouse destaca a
+(pedra) do bloco da empresa; empresas que repetem a mesma cor ganham tom e textura próprios (como na ficha). Passar o mouse destaca a
 região da empresa e mostra um balão com nome, valor investido e percentual; clicar leva a **Blocos
 Investidos** filtrado pela etiqueta da empresa (em "Outras empresas" não há clique). O cubo da ficha de
 cada bloco, descrito acima, mostra só as empresas de um bloco.
