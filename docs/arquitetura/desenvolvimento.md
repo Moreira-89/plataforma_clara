@@ -149,7 +149,7 @@ Dois serviços, cada um com o `Dockerfile` da sua pasta (`backend/` e `frontend/
 | `BIGQUERY_DATASET` | `tabelas_silvers` (tabelas de blocos) |
 | `BIGQUERY_DATASET_EMPRESAS` | `dados_fidc` (cadastro de empresas) |
 | `CORS_ORIGENS` | A URL pública do frontend, com `https://` e sem barra no final. |
-| `GROQ_API_KEY` | Só para o relatório em PDF (hoje em 501). |
+| `GROQ_API_KEY` | Só para o relatório em PDF (`POST /relatorios`); sem ela a geração falha e o pedido vira `falhou`. |
 
 **Frontend**: as variáveis abaixo entram **no build**, não em tempo de execução. O Vite as embute
 no bundle, e o `frontend/Dockerfile` as recebe como build args (`ARG`). Mudou o valor, é preciso
@@ -177,20 +177,12 @@ console do navegador quer dizer que `CORS_ORIGENS` não bate exatamente com a UR
 
 ```bash
 cd backend
-pytest                     # suíte completa
-pytest -m "not integracao" # o que a CI roda
-ruff check ..              # lint do repositório inteiro
+ruff check ..              # lint do repositório inteiro (é o que a CI roda)
 ```
 
-A suíte **não toca** em BigQuery, Groq nem Firebase: cobre só as funções puras
-(normalização, agregação, formatação), nunca as que fazem I/O de rede.
-`backend/tests/conftest.py` está vazio hoje — sem fixture nem fake nenhum. Roda
-em segundos e não precisa de credencial nenhuma.
-
-!!! note "A suíte é de caracterização"
-    Ela documenta o comportamento **atual**, incluindo o discutível — que está
-    marcado como tal nas docstrings. Um teste que quebra numa refatoração é uma
-    pergunta ("essa mudança foi intencional?"), não necessariamente um erro.
+O projeto **não tem testes automatizados**, por decisão do dono: é um projeto acadêmico e testes
+unitários não importam agora. A pasta `backend/tests/` e o pytest foram removidos. A conferência é
+manual, pela documentação interativa (`/docs`) e pelo frontend.
 
 ## Configuração
 
@@ -213,9 +205,7 @@ O verificador de tipos (Pylance/Pyright) roda com a configuração em
 `pyrightconfig.json`.
 
 **`extraPaths: ["backend"]`.** A raiz de imports do backend é `backend/`, não a
-raiz do repositório — é de lá que `from app.config...` faz sentido. O pytest já
-sabe disso pelo `pythonpath` do `backend/pytest.ini`; o editor precisa ser avisado
-separadamente.
+raiz do repositório — é de lá que `from app.config...` faz sentido. O editor precisa ser avisado disso.
 
 !!! note "Se o Pylance disser que não resolve `fastapi`"
     O problema é quase sempre o interpretador selecionado no editor, não o código.

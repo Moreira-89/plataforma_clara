@@ -77,6 +77,36 @@ falhar. A `cor` vem da etiqueta; fica vazia se a pedra sair da lista.
 
 As consultas são parametrizadas: o texto digitado nunca entra no SQL.
 
+## Investimentos do investidor (dados de demonstração)
+
+`GET /investimentos` (só investidor) lista os blocos em que a conta logada "já investiu", com os mesmos
+campos da lista de blocos (cor, score e nota) mais `valor_investido`, na ordem da lista (do mais recente
+ao mais antigo). Não há tabela nem aporte real: `domain/investimentos.py` decide a carteira a partir de
+um hash SHA-256 de (uid do investidor, id do bloco), então o resultado é estável, não depende dos demais
+blocos e difere de uma conta para outra. Cerca de 40% dos blocos entram, com valor múltiplo de R$ 5 mil
+entre R$ 5 mil e R$ 500 mil. Trocar isso por investimentos reais é mudar a origem dessa lista.
+
+`GET /investimentos/resumo` (só investidor) soma a mesma carteira por etiqueta e devolve o
+`total_investido` e, para cada pedra, `etiqueta`, `cor`, `total_investido`, `quantidade_blocos` e
+`participacao` (fração de 0 a 1), da maior para a menor. A soma é regra de negócio e mora em
+`domain/investimentos.py` (`resumir_por_etiqueta`); o endpoint só junta a cor da pedra.
+
+`GET /investimentos/empresas` (só investidor) devolve o ranking das empresas da carteira, da que mais
+recebe do dinheiro do investidor para a que menos. Para cada bloco investido o endpoint busca o
+detalhe (uma consulta por bloco, em paralelo) e `domain/investimentos.py` (`ranquear_empresas`)
+distribui o valor investido pela fatia de cada empresa no bloco (valor × percentual de liquidez); se a
+empresa aparece em mais de um bloco, os valores se somam. Cada item traz nome, CNPJ, ramo, etiqueta e
+cor, `capital_investido`, `participacao` (fração do total investido), score e nota. Sem o cadastro de
+empresas o nome vem vazio e a tela mostra o CNPJ.
+
+`GET /investimentos/rendimento` (só investidor) devolve o rendimento mensal dos 12 meses **fechados** antes
+de hoje (horário de Brasília), do mais antigo para o mais novo: `total_investido`, `rendimento_total`,
+`acumulado_percentual` e, para cada mês, `mes` (primeiro dia), `taxa_percentual`, `rendimento` (em R$) e
+`acumulado_percentual` (composto). Como não existe histórico de aportes, o dado é de demonstração:
+`domain/investimentos.py` (`rendimento_dos_ultimos_meses`) sorteia a taxa de cada mês a partir do hash de
+(investidor, mês), entre 0,60% e 1,60%, então a série não muda entre chamadas nem quando chega o mês
+seguinte; o rendimento em R$ é o total investido vezes a taxa. Sem nada investido, `meses` vem vazio.
+
 ## Score de risco (dados de demonstração)
 
 Os scores são **fictícios**: foram sorteados (inteiros de 0 a 100, semente fixa) para cada uma das
@@ -96,8 +126,9 @@ Os scores são **fictícios**: foram sorteados (inteiros de 0 a 100, semente fix
 
 ## Blocos de exemplo
 
-Os blocos que aparecem hoje na plataforma são **dados fictícios de demonstração**: 12 blocos
-montados com as empresas do cadastro, com responsável, capital, vencimento, datas de criação e
+Os blocos que aparecem hoje na plataforma são **dados fictícios de demonstração**: 26 blocos
+(12 com uma pedra cada e 14 que repetem pedras, para os painéis de Blocos Investidos terem vários
+blocos por pedra) montados com as empresas do cadastro, com responsável, capital, vencimento, datas de criação e
 distribuição da liquidez sorteados (cada bloco soma exatamente 100%, e nenhuma empresa está em
 dois blocos). Foram gravados com `criado_por_uid = 'seed-demo'`, pelas mesmas regras e pela mesma
 transação da tela. O script que os gerou foi removido. Para apagá-los, no BigQuery:

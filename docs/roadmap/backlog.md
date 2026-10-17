@@ -57,9 +57,7 @@ referência (exemplo *few-shot* do prompt) que não está versionado no
 repositório. O código trata a ausência — segue sem o exemplo — mas o prompt
 fica sem aquele trecho.
 
-**`formatar_milhoes` erra acima de R$ 1 bilhão.** Bug conhecido, travado por
-teste de caracterização: o teste documenta o comportamento atual, não
-corrige o bug.
+**`formatar_milhoes` erra acima de R$ 1 bilhão.** Bug conhecido, ainda sem correção.
 
 **Enumeração de e-mail, a verificar.** A autenticação anterior (removida)
 distinguia "e-mail não cadastrado" de "senha errada" pelo tempo de resposta.

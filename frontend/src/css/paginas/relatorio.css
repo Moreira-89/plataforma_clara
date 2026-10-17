@@ -1,0 +1,33 @@
+/* Relatório do investidor: pedido e etapas à esquerda, prévia do PDF à direita. */
+.relatorio-grade { display: grid; grid-template-columns: minmax(320px, 440px) minmax(0, 1fr); gap: var(--space-lg); align-items: start; margin-top: var(--space-xl); }
+.relatorio-lateral { display: grid; gap: var(--space-lg); }
+.relatorio-pedido h2 { font-size: 24px; line-height: 1.2; letter-spacing: -0.3px; }
+.relatorio-sub { margin-top: var(--space-xs); font-size: 14px; color: var(--muted); }
+.relatorio-itens { display: grid; gap: var(--space-xs); margin: var(--space-lg) 0; padding: 0; list-style: none; }
+.relatorio-itens li { display: flex; align-items: center; gap: var(--space-sm); font-size: 14px; color: var(--ink); }
+.relatorio-itens li::before { content: ''; width: 8px; height: 8px; border-radius: var(--radius-full); background: var(--primary); }
+
+.relatorio-andamento[hidden] { display: none; }
+.relatorio-etapas { display: flex; gap: var(--space-xs); margin: 0 0 var(--space-lg); padding: 0; list-style: none; }
+.relatorio-etapas li {
+  flex: 1; padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-pill); background: var(--surface-strong);
+  text-align: center; font-size: 13px; font-weight: 500; color: var(--muted);
+}
+.relatorio-etapas li.feita { background: var(--ink); color: var(--on-dark); }
+.relatorio-etapas li.atual { background: var(--primary); color: var(--on-primary); }
+.relatorio-etapas li.sucesso { background: var(--semantic-up); color: var(--on-primary); }
+.relatorio-etapas.falhou li.atual { background: var(--semantic-down); }
+.relatorio-mensagem { min-height: 24px; font-size: 14px; color: var(--ink); }
+.relatorio-mensagem.erro { color: var(--semantic-down); }
+.relatorio-acoes { display: flex; gap: var(--space-sm); margin-top: var(--space-base); }
+.relatorio-acoes [hidden] { display: none; }
+
+/* Prévia: o PDF aparece num iframe, a partir de uma URL local do arquivo baixado. */
+.previa { display: flex; flex-direction: column; gap: var(--space-base); padding: var(--space-lg); height: calc(100vh - 180px); min-height: 560px; }
+.previa-topo { display: flex; justify-content: space-between; align-items: center; gap: var(--space-base); }
+.previa-topo h2 { font-size: 20px; }
+.previa-corpo { position: relative; flex: 1; min-height: 0; border: 1px solid var(--hairline); border-radius: var(--radius-md); background: var(--surface-soft); overflow: hidden; }
+.previa-vazia { position: absolute; inset: 0; display: grid; place-content: center; padding: var(--space-xl); text-align: center; font-size: 14px; color: var(--muted); }
+.previa-vazia.erro { color: var(--semantic-down); }
+.previa-frame { width: 100%; height: 100%; border: 0; background: var(--canvas); }
+.previa-frame[hidden], .previa-vazia[hidden] { display: none; }

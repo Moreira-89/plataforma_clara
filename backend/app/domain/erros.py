@@ -65,3 +65,15 @@ class DadosIndisponiveisError(ErroDeNegocio):
 
 class BlocoNaoEncontradoError(ErroDeNegocio):
     """Não existe bloco de liquidez com o identificador informado."""
+
+
+class SemInvestimentosError(ErroDeNegocio):
+    """O investidor ainda não tem investimentos para gerar o relatório."""
+
+
+class RelatorioNaoEncontradoError(ErroDeNegocio):
+    """Não existe relatório com esse identificador para o investidor."""
+
+
+class RelatorioNaoProntoError(ErroDeNegocio):
+    """O relatório pedido ainda não terminou de ser gerado, ou falhou."""

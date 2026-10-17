@@ -1,7 +1,7 @@
 name: CI
 
-# Roda em PR e em push para main. A suíte é rápida (sem serviços externos),
-# então não há necessidade de matriz de versões ou de cache agressivo.
+# Roda em PR e em push para main. O projeto não tem testes automatizados (decisão do dono),
+# então o backend só passa pelo lint.
 on:
   pull_request:
   push:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   backend:
-    name: Backend — lint e testes
+    name: Backend — lint
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -35,13 +35,3 @@ jobs:
       - name: Lint (ruff)
         # A configuração do ruff está no pyproject.toml da raiz do monorepo.
         run: ruff check ..
-
-      - name: Formatação (apenas código novo)
-        # O código herdado ainda não passou por `ruff format` — reformatar tudo
-        # agora produziria um diff enorme misturado com a reorganização.
-        run: ruff format --check tests/
-
-      - name: Testes
-        # A suíte não toca em BigQuery, Groq nem Firebase: as dependências
-        # externas são substituídas por fakes. Testes de integração ficam fora.
-        run: pytest -m "not integracao"

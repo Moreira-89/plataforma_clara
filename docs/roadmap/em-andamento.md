@@ -11,6 +11,10 @@ não é assim que a plataforma vai operar com usuários reais. Falta decidir de
 onde os dados vêm (provavelmente consulta a um serviço externo que já os
 tenha) e como chegam ao BigQuery.
 
+Enquanto isso, as telas do investidor e o relatório por IA usam a **carteira de demonstração** e não
+dependem dessa decisão. Com investimento real, a fonte troca em `api/carteira.py`, que alimenta o
+ranking, o cubo e o relatório.
+
 Junto com isso, decidir o **CNPJ alfanumérico** (emitido desde julho de 2026):
 hoje o cadastro o recusa, porque o documento normalizado, que liga o usuário
 aos aportes, só mantém dígitos. Depende de como a fonte representa o CNPJ.
@@ -34,16 +38,15 @@ falta só quem as alimente.
 Funcionam: `GET /health`, `/auth/*` e os blocos de liquidez (`GET /blocos/etiquetas`,
 `POST /blocos`, `GET /blocos`, `GET /blocos/{id}` e `GET /empresas`; ver
 [Blocos de Liquidez](../arquitetura/blocos.md)), já com o cadastro real de empresas
-(`dados_fidc.tb_empresas_fidc`). As demais rotas já existem no contrato e respondem 501
-até terem implementação. Planejadas:
+(`dados_fidc.tb_empresas_fidc`), a carteira de demonstração do investidor
+(`/investimentos`) e os relatórios (`/relatorios`, ver [Relatório](../produto/relatorio.md)).
+O dashboard já existe no contrato e responde 501 até ter implementação. Planejadas:
 
 - `GET /dashboard/gestora`, `GET /dashboard/investidor`
-- `POST /relatorios` + `GET /relatorios/{id}`
 - OpenAPI documentado
 
 O que já está pronto para eles chamarem:
 
-- `agents.relatorio.gerar_relatorio_consolidado_investidor` — PDF por IA
 - `domain.metricas` — consolidação de KPIs e montagem das visões (sem quem
   as alimente, ver item 2)
 

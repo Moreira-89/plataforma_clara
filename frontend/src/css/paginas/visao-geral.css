@@ -1,0 +1,81 @@
+/* Visão geral do investidor: faixas de totais, gráfico de rendimento, ranking de empresas, cubo 3D e chat. */
+.visao {
+  display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--space-lg); margin-top: var(--space-xl);
+  grid-template-areas: "total resumo" "grafico grafico" "rank cubo" "rank chat";
+}
+.faixa, .painel { border: 1px solid var(--hairline); border-radius: var(--radius-xl); background: var(--canvas); }
+.faixa-total { grid-area: total; }
+.faixa-contagem { grid-area: resumo; }
+.painel-grafico { grid-area: grafico; }
+.painel-ranking { grid-area: rank; }
+.painel-chat { grid-area: chat; }
+.cubo-area { grid-area: cubo; }
+.cubo-area .cubo-palco { height: 380px; --lado: 250px; }
+.faixa { display: flex; justify-content: space-between; align-items: center; gap: var(--space-base); padding: var(--space-base) var(--space-lg); font-size: 14px; color: var(--muted); }
+.faixa strong { color: var(--ink); }
+.faixa-total { background: var(--surface-dark); color: var(--on-dark-soft); border-color: transparent; }
+.faixa-total strong { color: var(--on-dark); font-size: 32px; line-height: 1.1; letter-spacing: -0.6px; }
+.faixa-contagem { justify-content: space-around; }
+.faixa-contagem strong { margin-left: var(--space-xs); font-size: 24px; }
+
+.painel { padding: var(--space-xl); }
+.painel h2 { font-size: 24px; line-height: 1.2; letter-spacing: -0.3px; }
+.painel-sub { margin-top: var(--space-xs); font-size: 14px; color: var(--muted); }
+
+/* Gráfico de rendimento: barras (R$ por mês) e linha (% acumulado), em SVG. */
+.grafico-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-lg); }
+.grafico-resumo { display: flex; gap: var(--space-xl); margin: 0; }
+.grafico-resumo div { text-align: right; }
+.grafico-resumo dt { font-size: 13px; color: var(--muted); }
+.grafico-resumo dd { margin: 0; font-size: 24px; line-height: 1.2; letter-spacing: -0.3px; color: var(--ink); }
+.grafico-area { position: relative; margin-top: var(--space-base); }
+.grafico-svg { display: block; width: 100%; height: auto; }
+.grafico-grade line { stroke: var(--hairline); stroke-width: 1; }
+.grafico-eixo text { fill: var(--muted); font: 400 11px var(--font-sans); }
+.grafico-barra { fill: var(--primary); opacity: 0.8; transition: opacity 0.15s; }
+.grafico-barra.ativa { opacity: 1; }
+.grafico-linha { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.grafico-ponto { fill: var(--canvas); stroke: var(--ink); stroke-width: 2; }
+.grafico-alvo { fill: transparent; }
+.dica-grafico { flex-direction: column; align-items: flex-start; gap: 2px; border-radius: var(--radius-md); }
+.grafico-legenda { display: flex; justify-content: center; gap: var(--space-lg); margin: var(--space-sm) 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--muted); }
+.grafico-legenda li { display: flex; align-items: center; gap: var(--space-xs); }
+.legenda-barra { width: 12px; height: 12px; border-radius: 3px; background: var(--primary); }
+.legenda-linha { width: 16px; height: 0; border-top: 2px solid var(--ink); }
+
+/* Ranking: posição, empresa (com ramo e etiqueta), valor e barra de participação. */
+.ranking { display: grid; gap: var(--space-xs); list-style: none; padding: 0; margin: var(--space-base) 0 0; counter-reset: posicao; }
+.linha-ranking {
+  display: grid; grid-template-columns: 32px 1fr auto; gap: 6px var(--space-sm); align-items: center;
+  padding: var(--space-sm) var(--space-base); border-radius: var(--radius-md); counter-increment: posicao;
+}
+.linha-ranking:hover { background: var(--surface-soft); }
+.linha-ranking::before {
+  content: counter(posicao); display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-full);
+  background: var(--surface-strong); color: var(--ink); font: 500 13px var(--font-mono);
+}
+.linha-ranking:nth-child(-n+3)::before { background: var(--primary); color: var(--on-primary); }
+.linha-ranking .empresa { display: grid; min-width: 0; }
+.linha-ranking .empresa strong { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.linha-ranking .empresa small { display: flex; align-items: center; gap: var(--space-xs); font-size: 13px; color: var(--muted); }
+.linha-ranking .selo { width: 10px; height: 10px; border-radius: var(--radius-full); background: var(--cor); box-shadow: inset 0 0 0 1px var(--hairline); flex: none; }
+.linha-ranking .valores { text-align: right; color: var(--ink); font-size: 14px; }
+.linha-ranking .valores small { display: block; font-size: 13px; color: var(--muted); }
+.linha-ranking .barra-fina { grid-column: 2 / -1; }
+.barra-fina { height: 6px; border-radius: var(--radius-pill); background: var(--surface-strong); overflow: hidden; }
+.barra-fina i { display: block; height: 100%; width: var(--largura, 0); border-radius: var(--radius-pill); background: var(--primary); }
+
+/* Chat: mensagens com rolagem e campo de envio. */
+.painel-chat { display: flex; flex-direction: column; gap: var(--space-base); padding: var(--space-lg); }
+.painel-chat h2 { font-size: 20px; }
+.chat-mensagens { display: flex; flex: 1 1 0; flex-direction: column; gap: var(--space-xs); min-height: 220px; max-height: 480px; overflow-y: auto; padding: var(--space-xs) 2px; }
+.chat-balao { max-width: 85%; padding: var(--space-xs) var(--space-base); border-radius: var(--radius-md); font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+.chat-balao.assistente { align-self: flex-start; background: var(--surface-strong); color: var(--ink); }
+.chat-balao.usuario { align-self: flex-end; background: var(--primary); color: var(--on-primary); }
+.chat-form { display: flex; gap: var(--space-xs); }
+.chat-form input {
+  flex: 1; min-width: 0; height: 44px; padding: 0 var(--space-base); border: 1px solid var(--hairline); border-radius: var(--radius-pill);
+  background: var(--surface-strong); font: 400 14px var(--font-sans); color: var(--ink);
+}
+.chat-form input:focus { outline: none; border-color: var(--primary); background: var(--canvas); }
+.chat-form .btn { height: 44px; }

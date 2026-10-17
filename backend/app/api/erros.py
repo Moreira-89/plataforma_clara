@@ -36,6 +36,9 @@ _STATUS_POR_ERRO: dict[type[erros.ErroDeNegocio], int] = {
     erros.EmpresaJaEmBlocoError: status.HTTP_409_CONFLICT,
     erros.BlocoNaoEncontradoError: status.HTTP_404_NOT_FOUND,
     erros.DadosIndisponiveisError: status.HTTP_503_SERVICE_UNAVAILABLE,
+    erros.SemInvestimentosError: status.HTTP_409_CONFLICT,
+    erros.RelatorioNaoEncontradoError: status.HTTP_404_NOT_FOUND,
+    erros.RelatorioNaoProntoError: status.HTTP_409_CONFLICT,
 }
 
 

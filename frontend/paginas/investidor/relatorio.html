@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/css/principal.css" />
+    <link rel="stylesheet" href="/src/css/paginas/blocos.css" />
+    <link rel="stylesheet" href="/src/css/paginas/relatorio.css" />
+    <title>Relatório — Plataforma Clara</title>
+  </head>
+  <body data-perfil="investidor" class="com-menu">
+    <aside id="menu"></aside>
+
+    <main class="pagina-blocos pagina-relatorio" id="conteudo" hidden>
+      <span class="rotulo">Investidor</span>
+      <h1 class="titulo-pagina">Relatório</h1>
+      <p>Peça um relatório em PDF sobre os seus investimentos e baixe quando ele estiver pronto.</p>
+
+      <div class="relatorio-grade">
+        <div class="relatorio-lateral">
+          <section class="cartao relatorio-pedido">
+            <h2>Relatório consolidado de investimentos</h2>
+            <p class="relatorio-sub">Um PDF gerado por inteligência artificial a partir dos seus investimentos. É apenas informativo: não traz recomendações de investimento.</p>
+            <ul class="relatorio-itens">
+              <li>Situação atual da carteira</li>
+              <li>Movimentações de rating</li>
+              <li>Risco de crédito agregado</li>
+            </ul>
+            <button class="btn btn-primario" id="gerar" type="button">Gerar relatório</button>
+          </section>
+
+          <section class="cartao relatorio-andamento" id="andamento" aria-live="polite" hidden>
+            <ol class="relatorio-etapas" aria-label="Etapas do relatório">
+              <li data-etapa="solicitado">Solicitado</li>
+              <li data-etapa="gerando">Gerando</li>
+              <li data-etapa="pronto">Pronto</li>
+            </ol>
+            <p id="andamento-texto" class="relatorio-mensagem"></p>
+            <div class="relatorio-acoes">
+              <button class="btn btn-secundario" id="tentar-de-novo" type="button" hidden>Tentar de novo</button>
+            </div>
+          </section>
+        </div>
+
+        <section class="cartao previa" aria-labelledby="previa-titulo">
+          <header class="previa-topo">
+            <h2 id="previa-titulo">Prévia do relatório</h2>
+            <button class="btn btn-primario" id="baixar" type="button" disabled>Baixar PDF</button>
+          </header>
+          <div class="previa-corpo">
+            <p id="previa-vazia" class="previa-vazia">A prévia aparece aqui quando o relatório ficar pronto.</p>
+            <iframe id="previa-frame" class="previa-frame" title="Prévia do relatório em PDF" hidden></iframe>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="/src/js/paginas/investidor/relatorio.js"></script>
+  </body>
+</html>

@@ -44,3 +44,4 @@ class UsuarioAtual(BaseModel):
     uid: str
     perfil: Perfil
     email: str | None = None
+    nome: str | None = None

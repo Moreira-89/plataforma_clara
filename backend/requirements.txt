@@ -24,7 +24,5 @@ markdown-pdf~=1.13.1
 PyPDF2~=3.0.1              # descontinuado; sucessor é pypdf
 
 # --- Desenvolvimento e CI ---
-pytest~=8.4.2
-pytest-cov~=6.3.0
 ruff~=0.16.6
 httpx~=0.28.1

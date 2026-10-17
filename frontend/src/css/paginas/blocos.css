@@ -16,6 +16,7 @@
 
 .grade-blocos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-lg); }
 .cartao-bloco { display: grid; gap: var(--space-base); padding: var(--space-lg); }
+.cartao-bloco.clicavel { cursor: pointer; }
 .cartao-bloco:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04); }
 .cartao-topo { display: flex; justify-content: space-between; align-items: center; gap: var(--space-sm); }
 .etiqueta-bloco { display: inline-flex; align-items: center; gap: var(--space-xs); font-size: 20px; font-weight: 600; color: var(--ink); }
@@ -26,12 +27,14 @@
 .linha-score .nota-risco { font-size: 18px; font-weight: 600; color: var(--ink); }
 .meta-bloco { font-size: 13px; color: var(--muted); }
 .cartao-bloco .btn { width: 100%; }
+.resumo-lista { margin-bottom: var(--space-base); font-size: 13px; color: var(--muted); }
 .vazio { grid-column: 1 / -1; padding: var(--space-xxl) 0; text-align: center; color: var(--muted); }
 
 .detalhe-bloco {
   width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 64px); padding: var(--space-xl);
   border: 0; border-radius: var(--radius-xl); color: var(--body); background: var(--canvas);
 }
+.detalhe-bloco.detalhe-largo { width: min(1120px, calc(100vw - 32px)); }
 .detalhe-bloco::backdrop { background: rgba(10, 11, 13, 0.6); }
 .detalhe-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-base); margin-bottom: var(--space-lg); }
 .detalhe-topo h2 { display: flex; align-items: center; gap: var(--space-sm); font-size: 28px; line-height: 1.13; }
@@ -44,8 +47,16 @@
 .tabela-detalhe { overflow-x: auto; }
 .tabela-detalhe .tabela td:nth-child(n+4), .tabela-detalhe .tabela th:nth-child(n+4) { text-align: right; }
 .rodape-detalhe { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-base); margin-top: var(--space-lg); }
+.confirmacao-texto { margin-right: auto; color: var(--ink); font-weight: 500; }
+.sucesso-texto { color: var(--semantic-up); }
+.valor-investido { font-size: 14px; color: var(--muted); }
+.valor-investido strong { color: var(--ink); }
 .rodape-detalhe small { color: var(--muted); }
 
 @media (max-width: 768px) {
   .barra-blocos #criar-bloco { margin-left: 0; width: 100%; }
 }
+
+/* Ficha: bloco visual entre o resumo e a tabela de empresas. */
+.ficha-visual { margin-bottom: var(--space-lg); }
+.ficha-visual h3 { margin-bottom: var(--space-sm); font-size: 16px; font-weight: 600; color: var(--ink); }

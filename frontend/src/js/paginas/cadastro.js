@@ -1,12 +1,13 @@
 import { chamar, textoDoErro } from '../nucleo/api.js'
 import { aoMudarSessao, entrar, mensagemDeErro } from '../nucleo/firebase.js'
-import { BLOCOS_INVESTIDOR, LOGIN, destinoPorPerfil } from '../nucleo/rotas.js'
+import { BLOCOS_INVESTIDOR, HOME, LOGIN, destinoPorPerfil } from '../nucleo/rotas.js'
 import { $, enviando, mostrarMensagem } from '../nucleo/ui.js'
 
 aoMudarSessao(async (usuario) => {
   if (!usuario) return
   const destino = await destinoPorPerfil()
   if (destino === LOGIN) window.location.href = LOGIN
+  else if (destino === HOME) mostrarMensagem('Conta criada, mas não foi possível carregar o seu perfil. Tente entrar de novo.', true)
   else window.location.href = destino
 })
 
