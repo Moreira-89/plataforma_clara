@@ -6,7 +6,8 @@ Compartilhado pelas rotas que devolvem blocos (`/blocos` e `/investimentos`).
 COMO FUNCIONA:
     1. `risco` devolve `score` e `nota_risco` de um score numérico (ou ambos vazios).
     2. `listagem_do_bloco` junta os campos do bloco com a cor da pedra e o score ponderado pelo
-       capital que cada empresa recebe.
+       capital que cada empresa recebe, e as fatias (em %) de cada empresa no bloco, para a barra
+       de empresas dos cartões.
 
 Args:
     Nenhum.
@@ -21,7 +22,7 @@ Raises:
 from collections.abc import Mapping
 from decimal import Decimal
 
-from app.domain.blocos import BlocoListado, cor_da_etiqueta
+from app.domain.blocos import BlocoListado, cor_da_etiqueta, fatias_percentuais
 from app.domain.risco import classificar_nota, score_ponderado
 
 
@@ -36,4 +37,5 @@ def listagem_do_bloco(
     """Campos do bloco com a cor e o score ponderado pelo capital de cada empresa."""
     score = score_ponderado((scores.get(id_empresa), capital) for id_empresa, capital in pares)
     base = {k: v for k, v in vars(bloco).items() if k != "participacoes"}
-    return {**base, "cor": cor_da_etiqueta(bloco.etiqueta), **risco(score)}
+    fatias = fatias_percentuais(bloco.capital_total, [capital for _, capital in pares])
+    return {**base, "cor": cor_da_etiqueta(bloco.etiqueta), "fatias": fatias, **risco(score)}
