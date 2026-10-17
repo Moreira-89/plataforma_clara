@@ -11,6 +11,10 @@ não é assim que a plataforma vai operar com usuários reais. Falta decidir de
 onde os dados vêm (provavelmente consulta a um serviço externo que já os
 tenha) e como chegam ao BigQuery.
 
+Enquanto isso, as telas do investidor e o relatório por IA usam a **carteira de demonstração** e não
+dependem dessa decisão. Com investimento real, a fonte troca em `api/carteira.py`, que alimenta o
+ranking, o cubo e o relatório.
+
 Junto com isso, decidir o **CNPJ alfanumérico** (emitido desde julho de 2026):
 hoje o cadastro o recusa, porque o documento normalizado, que liga o usuário
 aos aportes, só mantém dígitos. Depende de como a fonte representa o CNPJ.

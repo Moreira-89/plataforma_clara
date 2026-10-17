@@ -9,22 +9,20 @@ versão diferente dos mesmos dados.
 ## Fluxo do investidor
 
 1. **Login.** O investidor entra com e-mail e senha.
-2. **Dashboard.** A primeira tela mostra três números consolidados — quanto
-   está alocado no total, o score médio de risco da carteira e quantos
-   aportes ele tem — e a mesma informação quebrada por **Bloco de Liquidez**:
-   volume, score médio e quantidade de aportes daquele bloco.
-3. **Transparência.** Uma tabela mostra, empresa por empresa, em qual bloco o
-   dinheiro do investidor está aplicado, o score daquela empresa e o valor.
-   É a tela que dá nome ao produto: não existe "confia em mim", existe a
-   lista.
-4. **Detalhe de um bloco.** Ao entrar num bloco específico, o investidor vê o
-   volume total daquele bloco, o score médio, o prazo médio dos recebíveis, e
-   a lista de empresas financiadas dentro dele — cada uma com seu peso no
-   volume do bloco, o valor e a nota de risco.
-5. **Relatório.** O investidor pode pedir um relatório consolidado em PDF,
-   escrito em linguagem natural por um assistente de IA, a partir dos dados
-   reais da própria carteira dele — não um texto genérico.
-   A tela já existe; a geração depende da fonte dos aportes (ver [Relatório](relatorio.md)).
+2. **Visão geral.** A primeira tela mostra o total investido, o ranking das empresas que mais recebem do
+   dinheiro dele e um **cubo 3D** em que cada empresa ocupa uma região proporcional à sua fatia (passar
+   o mouse mostra o valor; clicar abre os blocos da etiqueta). Há também a interface do chat "Assistente
+   Clara", ainda sem modelo de linguagem por trás.
+3. **Blocos de Liquidez.** A lista de todos os blocos, com busca e ordenação. Cada cartão abre a **ficha
+   do bloco**: etiqueta, vencimento, score, a tabela de empresas (com CNPJ, ramo, capital e score de
+   cada uma) e o **bloco visual**, um cubo com a porcentagem do capital que vai para cada empresa. É a
+   tela que dá nome ao produto: não existe "confia em mim", existe a lista.
+4. **Blocos Investidos.** Os blocos em que o investidor já investiu, com busca, filtro por etiqueta e
+   ordenação por valor investido, score ou vencimento. A ficha mostra também quanto do dinheiro dele
+   está em cada empresa. Ver [Blocos de Liquidez](blocos-de-liquidez.md).
+5. **Relatório.** O investidor pede um relatório consolidado em PDF, escrito em linguagem natural por um
+   assistente de IA a partir da carteira dele, vê a prévia na própria tela e baixa o arquivo. Ver
+   [Relatório](relatorio.md).
 
 ## Fluxo da gestora
 

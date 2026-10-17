@@ -181,3 +181,5 @@ Não invente que existe. Nesta ordem:
 4. **Redis** — declarado no compose, sem cliente na aplicação.
 5. **Score de risco real.** Hoje os scores são de demonstração (CSV sorteado). O modelo de machine learning que o grupo imagina não existe, nem o histórico de aportes que ele usaria.
 6. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.
+7. **Chatbot.** A interface do "Assistente Clara" existe na Visão geral, sem LLM e sem endpoint (o ponto de ligação é `responder` em `frontend/src/js/paginas/investidor/chat.js`).
+8. **Persistência dos relatórios.** Os PDFs ficam só em memória do processo (`storage/relatorios.py`) e somem ao reiniciar; falta guardá-los em storage.
