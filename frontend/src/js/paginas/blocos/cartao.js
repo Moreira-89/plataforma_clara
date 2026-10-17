@@ -51,6 +51,13 @@ export function montarCartao(bloco, { valorInvestido, aoDetalhes, detalhesDesati
   botao.type = 'button'
   botao.disabled = detalhesDesativado
   if (aoDetalhes) botao.addEventListener('click', aoDetalhes)
+  // O cartão inteiro abre a ficha; o botão já tem o próprio clique.
+  if (aoDetalhes && !detalhesDesativado) {
+    cartao.classList.add('clicavel')
+    cartao.addEventListener('click', (evento) => {
+      if (!evento.target.closest('button')) aoDetalhes()
+    })
+  }
 
   cartao.append(topo, score, meta)
   if (valorInvestido != null) {

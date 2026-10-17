@@ -16,6 +16,7 @@
 
 .grade-blocos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-lg); }
 .cartao-bloco { display: grid; gap: var(--space-base); padding: var(--space-lg); }
+.cartao-bloco.clicavel { cursor: pointer; }
 .cartao-bloco:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04); }
 .cartao-topo { display: flex; justify-content: space-between; align-items: center; gap: var(--space-sm); }
 .etiqueta-bloco { display: inline-flex; align-items: center; gap: var(--space-xs); font-size: 20px; font-weight: 600; color: var(--ink); }
@@ -55,3 +56,7 @@
 @media (max-width: 768px) {
   .barra-blocos #criar-bloco { margin-left: 0; width: 100%; }
 }
+
+/* Ficha: bloco visual entre o resumo e a tabela de empresas. */
+.ficha-visual { margin-bottom: var(--space-lg); }
+.ficha-visual h3 { margin-bottom: var(--space-sm); font-size: 16px; font-weight: 600; color: var(--ink); }

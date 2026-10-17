@@ -3,8 +3,11 @@ import { chamar, textoDoErro } from '../../nucleo/api.js'
 import { LOGIN, encerrarSeInvalida } from '../../nucleo/rotas.js'
 import { $ } from '../../nucleo/ui.js'
 import { SEM_SCORE, cnpjFormatado, codigoCurto, criar, dataBr, moeda, rotuloScore, seloEtiqueta } from './cartao.js'
+import { montarCubo } from './cubo.js'
 
 const percentual = (valor) => `${Number(valor).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`
+
+let encerrarCubo = null // para o giro do cubo da ficha anterior
 
 function linha(rotulo, valor) {
   const caixa = criar('div')
@@ -51,6 +54,37 @@ function tabelaEmpresas(empresas, valorInvestido) {
   return rolagem
 }
 
+// Bloco visual da ficha: lê as empresas e as porcentagens do bloco aberto.
+function secaoBlocoVisual() {
+  const secao = criar('section', 'ficha-visual')
+  const palco = criar('div', 'cubo-ficha')
+  const raiz = criar('div', 'cubo-palco')
+  const dica = criar('div', 'dica-cubo')
+  dica.hidden = true
+  palco.append(raiz, dica, criar('p', 'cubo-ajuda', 'Arraste para girar · passe o mouse para ver a porcentagem de cada empresa'))
+  secao.append(criar('h3', '', 'Distribuição do capital entre as empresas'), palco)
+  return { secao, raiz, dica }
+}
+
+function desenharBlocoVisual(visual, bloco) {
+  const itens = bloco.empresas.map((e) => ({
+    nome: e.nome_fantasia ?? cnpjFormatado(e.cnpj),
+    cor: bloco.cor,
+    etiqueta: bloco.etiqueta,
+    participacao: Number(e.percentual_liquidez) / 100,
+  }))
+  encerrarCubo = montarCubo(visual.raiz, itens, {
+    aoPassar: (item, x, y) => {
+      visual.dica.replaceChildren(criar('span', '', item.nome), criar('strong', 'numero', percentual(item.participacao * 100)))
+      visual.dica.style.setProperty('--cor-dica', item.cor ?? 'var(--hairline)')
+      visual.dica.hidden = false
+      visual.dica.style.left = `${x}px`
+      visual.dica.style.top = `${y}px`
+    },
+    aoSair: () => (visual.dica.hidden = true),
+  })
+}
+
 // "Alocar dinheiro" ainda não grava nada: só pede e mostra a confirmação do investimento.
 function mostrarAlocar(rodape, bloco) {
   const alocar = criar('button', 'btn btn-primario', 'Alocar dinheiro')
@@ -78,6 +112,7 @@ function pedirConfirmacao(rodape, bloco) {
 // Opções: `perfil` ('gestora' ou 'investidor') e `valorInvestido` (quando o investidor já investiu).
 export async function abrirDetalhe(resumo, { perfil, valorInvestido } = {}) {
   const jaInvestiu = valorInvestido != null
+  encerrarCubo?.()
   const dialogo = $('#detalhe')
   const corpo = $('#detalhe-corpo')
   dialogo.classList.toggle('detalhe-largo', jaInvestiu)
@@ -118,7 +153,8 @@ export async function abrirDetalhe(resumo, { perfil, valorInvestido } = {}) {
     if (bloco.observacao) partes.push(criar('p', 'observacao-detalhe', `Observação: ${bloco.observacao}`))
   }
 
-  partes.push(tabelaEmpresas(bloco.empresas, valorInvestido))
+  const visual = secaoBlocoVisual()
+  partes.push(visual.secao, tabelaEmpresas(bloco.empresas, valorInvestido))
 
   if (perfil === 'investidor' && !jaInvestiu) {
     const rodape = criar('div', 'rodape-detalhe')
@@ -126,12 +162,14 @@ export async function abrirDetalhe(resumo, { perfil, valorInvestido } = {}) {
     partes.push(rodape)
   }
   corpo.replaceChildren(...partes)
+  desenharBlocoVisual(visual, bloco)
 }
 
 // Botão de fechar e clique no fundo escuro (fora do conteúdo) fecham o pop-up.
 export function ligarDialogoDeDetalhe() {
   const dialogo = $('#detalhe')
   $('#detalhe-fechar').addEventListener('click', () => dialogo.close())
+  dialogo.addEventListener('close', () => encerrarCubo?.())
   dialogo.addEventListener('click', (evento) => {
     if (evento.target === dialogo) dialogo.close()
   })

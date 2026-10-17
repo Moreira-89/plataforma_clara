@@ -4,8 +4,8 @@ import { montarMenu } from '../../nucleo/menu.js'
 import { BLOCOS_INVESTIDOS, LOGIN, destinoDoPerfil, encerrarSeInvalida } from '../../nucleo/rotas.js'
 import { $ } from '../../nucleo/ui.js'
 import { cnpjFormatado, criar, moeda } from '../blocos/cartao.js'
+import { montarCubo } from '../blocos/cubo.js'
 import { montarChat } from './chat.js'
-import { TOTAL_DE_ADESIVOS, montarCubo } from './cubo.js'
 
 const menu = montarMenu('investidor')
 const percentual = new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 1 })
@@ -52,36 +52,21 @@ function desenharRanking(empresas) {
   }
 }
 
-// Cada empresa tem a sua região (1 adesivo, no mínimo); só passando de 54 empresas o resto vira "Outras empresas".
-function itensDoCubo(empresas) {
-  const nome = (e) => e.nome_fantasia ?? cnpjFormatado(e.cnpj)
-  const mostradas = empresas.length > TOTAL_DE_ADESIVOS ? empresas.slice(0, TOTAL_DE_ADESIVOS - 1) : empresas
-  const itens = mostradas.map((e) => ({
-    nome: nome(e),
+// Cada empresa da carteira é uma região do cubo (a fatia dela no dinheiro do investidor).
+function desenharCubo(empresas) {
+  const dica = $('#dica-cubo')
+  const itens = empresas.map((e) => ({
+    nome: e.nome_fantasia ?? cnpjFormatado(e.cnpj),
     cor: e.cor,
     etiqueta: e.etiqueta,
     capital: Number(e.capital_investido),
     participacao: e.participacao,
   }))
-  const resto = empresas.slice(mostradas.length)
-  if (resto.length) {
-    itens.push({
-      nome: `Outras empresas (${resto.length})`,
-      cor: null,
-      etiqueta: null,
-      capital: resto.reduce((soma, e) => soma + Number(e.capital_investido), 0),
-      participacao: resto.reduce((soma, e) => soma + e.participacao, 0),
-    })
-  }
-  return itens
-}
-
-function desenharCubo(empresas) {
-  const dica = $('#dica-cubo')
   try {
-    montarCubo($('#cubo'), itensDoCubo(empresas), {
+    montarCubo($('#cubo'), itens, {
       aoPassar: (item, x, y) => {
-        dica.replaceChildren(criar('span', '', item.nome), criar('strong', 'numero', moeda.format(item.capital)), criar('span', '', percentual.format(item.participacao)))
+        const detalhe = item.capital == null ? percentual.format(item.participacao) : `${moeda.format(item.capital)} · ${percentual.format(item.participacao)}`
+        dica.replaceChildren(criar('span', '', item.nome), criar('strong', 'numero', detalhe))
         dica.style.setProperty('--cor-dica', item.cor ?? 'var(--hairline)')
         dica.hidden = false
         dica.style.left = `${x}px`
