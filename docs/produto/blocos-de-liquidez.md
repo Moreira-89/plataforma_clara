@@ -44,8 +44,10 @@ que cada um vê depois de entrar.
 
 **Cartões.** Um cartão por bloco criado, sempre do mais recente para o mais antigo.
 Cada cartão mostra a etiqueta (com a cor da pedra), o código do bloco (os 8 primeiros
-caracteres do id), a nota de risco, a quantidade de empresas, o vencimento e o botão
-**Ver mais detalhes**. Clicar em qualquer ponto do cartão abre a ficha do bloco (o pop-up de detalhes).
+caracteres do id), uma **barra com uma fatia por empresa** (do tamanho da participação dela no bloco, em
+tons da cor da etiqueta), a nota de risco (em vermelho abaixo de 40 pontos), a quantidade de empresas, o
+vencimento e o botão **Ver mais detalhes**. Na Gestão aparece também o capital do bloco, e em Blocos
+Investidos o valor investido. Os cartões entram com uma animação escalonada. Clicar em qualquer ponto do cartão abre a ficha do bloco (o pop-up de detalhes).
 
 **Busca e filtros.** A barra de busca procura pelo código do bloco (o id) ou pelo nome da
 etiqueta. **Ver tudo** limpa a busca e volta à ordem padrão. O filtro de ordem tem
@@ -173,15 +175,15 @@ contas diferentes veem carteiras diferentes, o que permite que mais de um colega
 
 Só a gestora vê. Abre num **pop-up** a partir do botão **Criar novo bloco** da Gestão de
 Blocos; ao criar, o pop-up fecha e a lista já mostra o bloco novo no topo, com o código dele
-num aviso. O pop-up tem duas colunas: à esquerda, as empresas, que ocupam a maior parte; à
-direita, os dados do bloco.
+num aviso (toast) e destacado por uma borda azul. O pop-up tem duas colunas: à esquerda, as empresas,
+que ocupam a maior parte; à direita, os dados do bloco e a prévia do bloco visual.
 
 **Dados do bloco**
 
 | Campo | Regra |
 | --- | --- |
 | Etiqueta | Uma das pedras da lista. |
-| Capital total do bloco | Em R$, com até 2 casas. O campo já mostra o valor em BRL enquanto se digita (`1000000` vira `R$ 1.000.000,00`). |
+| Capital total do bloco | Em R$, com até 2 casas. A máscara trata os dígitos como centavos enquanto se digita (`1000000` vira `R$ 10.000,00`). |
 | Data de vencimento | Tem de ser depois do dia da criação. |
 | Nome do responsável técnico | Obrigatório, até 120 caracteres. |
 | Observação | Opcional, até 500 caracteres. Serve para registrar qualquer nota sobre o bloco, útil em manutenções futuras. |
@@ -191,11 +193,10 @@ horário de Brasília.
 
 **Empresas do bloco**
 
-1. A gestora busca por **nome fantasia** ou **CNPJ**. A busca lista nome e CNPJ numa
-   caixa de seleção, e ela marca uma ou várias empresas.
+1. A gestora busca por **nome fantasia** ou **CNPJ**. A busca lista nome, ramo, nota de risco
+   ("Sem score" quando não há) e CNPJ numa caixa de seleção, e ela marca uma ou várias empresas.
 2. As empresas marcadas **continuam selecionadas** quando ela faz outra busca: aparecem como
-   etiquetas acima dos resultados (cada uma com um × para desmarcar), e o botão mostra
-   quantas há. Assim ela pode procurar e marcar empresas diferentes, uma busca após a outra.
+   etiquetas acima dos resultados (cada uma com um × para desmarcar). Assim ela pode procurar e marcar empresas diferentes, uma busca após a outra.
 3. Ao clicar em **Adicionar**, todas as marcadas entram de uma vez numa tabela com nome,
    CNPJ, ramo de atividade, **capital estimado para a empresa** e **porcentagem de
    liquidez aplicada**.
@@ -211,6 +212,11 @@ das porcentagens já distribuídas, e **Disponível** é o que ainda falta distr
 bloco só pode ser criado quando as porcentagens somam **exatamente 100%**, ou seja,
 com Disponível em 0%. Isso impede criar um bloco sem ter dividido o capital entre as
 empresas.
+
+Uma **barra** sob a tabela mostra o quanto já foi distribuído (azul; verde ao fechar 100%; vermelha se
+passar). Com duas ou mais empresas aparece o botão **Dividir igualmente**, que reparte 100% de uma vez
+(a primeira empresa leva o resto dos centésimos). Ao lado dos dados do bloco, a **Prévia do bloco
+visual** (o cubo) aparece assim que há empresas com porcentagem e se atualiza a cada alteração.
 
 ## Regras
 

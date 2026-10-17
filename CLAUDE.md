@@ -108,10 +108,10 @@ frontend/
   vite.config.js           # proxy /api em dev; lista as páginas do build
   index.html               # home
   paginas/                 # uma pasta por área, um HTML por tela
-    login.html, cadastro.html
+    login.html               # Entrar e Criar conta, numa tela dividida (cadastro.html só redireciona para login.html?modo=cadastro)
     gestora/gestao-blocos.html   # inclui o pop-up de criação de bloco
     investidor/visao-geral.html, blocos-de-liquidez.html, blocos-investidos.html, relatorio.html
-  src/css/                 # tokens, base, componentes (principal.css junta os três)
+  src/css/                 # tokens, base, movimento (animações), componentes e cubo (principal.css junta tudo)
     paginas/               #   um CSS por tela ou grupo de telas
   src/js/nucleo/           # api, firebase, rotas, ui, menu — usados por todas as telas
   src/js/paginas/          # um script por tela (espelha paginas/)

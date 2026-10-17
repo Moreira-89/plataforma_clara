@@ -54,9 +54,9 @@ rodar de novo sem apagar nada.
 | Rota | Acesso | O que faz |
 | --- | --- | --- |
 | `GET /blocos/etiquetas` | qualquer perfil | As pedras e as cores. |
-| `GET /empresas?busca=` | gestora | Busca por nome fantasia ou CNPJ (2+ caracteres, até 20 resultados), só empresas fora de qualquer bloco. |
+| `GET /empresas?busca=` | gestora | Busca por nome fantasia ou CNPJ (2+ caracteres, até 20 resultados), só empresas fora de qualquer bloco; cada empresa vem com `score` e `nota_risco` (a busca mostra a nota). |
 | `POST /blocos` | gestora | Valida e cria o bloco. Responde 201 com o código gerado. |
-| `GET /blocos` | qualquer perfil | Os blocos criados, do mais novo para o mais antigo, cada um com a cor da etiqueta, a quantidade de empresas, o score e a nota de risco. |
+| `GET /blocos` | qualquer perfil | Os blocos criados, do mais novo para o mais antigo, cada um com a cor da etiqueta, a quantidade de empresas, as `fatias` (a participação de cada empresa no capital do bloco, em %, da maior para a menor; é o que desenha a barra de empresas do cartão), o score e a nota de risco. |
 | `GET /blocos/{bloco_id}` | qualquer perfil | Um bloco com as suas empresas, da maior para a menor fatia, cada uma com o seu score e nota. |
 
 Erros de `POST /blocos`: dados inválidos ou soma diferente de 100% (422), empresa fora do
