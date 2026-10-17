@@ -36,3 +36,17 @@ export function textoDoErro({ corpo }) {
   if (Array.isArray(detalhe)) return detalhe.map((d) => `${d.loc.slice(1).join('.')}: ${d.msg}`).join('; ')
   return detalhe ?? 'Erro desconhecido.'
 }
+
+// Baixa um arquivo (ex.: PDF) com o token; devolve { status, blob } ou { status, corpo } com o erro.
+export async function baixarArquivo(caminho) {
+  const token = await obterToken()
+  let resposta
+  try {
+    resposta = await fetch(`${API}${caminho}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  } catch {
+    return { status: 0, corpo: { detail: 'Não foi possível falar com o servidor. Tente de novo em instantes.' } }
+  }
+  if (resposta.ok) return { status: resposta.status, blob: await resposta.blob() }
+  const corpo = await resposta.json().catch(() => ({ detail: 'Erro ao baixar o arquivo.' }))
+  return { status: resposta.status, corpo }
+}

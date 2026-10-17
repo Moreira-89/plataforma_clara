@@ -27,6 +27,7 @@ export default defineConfig({
         visaoGeral: pagina('paginas/investidor/visao-geral'),
         blocosInvestidor: pagina('paginas/investidor/blocos-de-liquidez'),
         blocosInvestidos: pagina('paginas/investidor/blocos-investidos'),
+        relatorio: pagina('paginas/investidor/relatorio'),
       },
     },
   },

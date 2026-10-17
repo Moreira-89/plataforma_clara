@@ -87,7 +87,9 @@ investido**, e a quantidade de etiquetas e de blocos investidos) e três blocos:
 
 Todos os números vêm da carteira; nenhum é estimado.
 
-**O cubo.** É um cubo mágico em CSS 3D (sem WebGL nem biblioteca de gráficos), que gira com o mouse. As
+**O cubo.** É um cubo mágico em CSS 3D (sem WebGL nem biblioteca de gráficos), que gira com o mouse. Ao
+aparecer, ele surge e os adesivos acendem em sequência (cerca de 1 segundo, só `opacity` e `transform`,
+leve para a GPU); a animação é desligada para quem pede menos movimento no sistema. As
 6 faces têm 3x3 adesivos, 54 no total, e eles representam **100% do dinheiro do investidor**. Cada
 **empresa** ocupa uma região de adesivos proporcional à fatia dela nesse dinheiro (a mesma que o
 ranking mostra). A repartição usa o método do maior resto e dá ao menos 1 adesivo a cada empresa
@@ -103,15 +105,26 @@ tela pergunta "Confirmar o investimento no bloco ...?", com **Cancelar** e **Con
 e depois mostra "Investimento confirmado.". Ainda não há aporte de verdade por trás: a confirmação não
 grava nada.
 
-**Blocos Investidos.** Lista os blocos em que o investidor já investiu, com um painel por pedra
-(a Safira tem um painel com todos os blocos Safira dele, a Rubi outro, e assim por diante). Os
-cartões são os mesmos da tela de Blocos de Liquidez, com a linha **Investido: R$ ...**. Dentro de cada
-painel os blocos vão do mais recente ao mais antigo, e os painéis seguem a ordem do bloco mais novo
-de cada pedra. O menu lateral do investidor tem três itens: Visão geral, Blocos de Liquidez e Blocos Investidos.
+**Blocos Investidos.** Lista os blocos em que o investidor já investiu, numa grade de cartões igual à da
+tela de Blocos de Liquidez, com a linha **Investido: R$ ...** em cada cartão. O menu lateral do
+investidor tem quatro itens: Visão geral, Blocos de Liquidez, Blocos Investidos e Relatório.
 
-**Filtro por etiqueta.** Vindo do cubo da Visão geral, a tela abre com `?etiqueta=Safira`
-e mostra só os blocos dessa pedra, com o aviso "Filtrando por: Safira" e o botão **Limpar filtro**,
-que volta a mostrar todos os investimentos.
+A barra de filtros tem:
+
+- **Busca** pelo código do bloco ou pelo nome da etiqueta.
+- **Etiqueta:** uma lista com as etiquetas em que o investidor tem blocos. Vindo do cubo da Visão geral,
+  a tela abre com `?etiqueta=Safira` e esse filtro já marcado; a URL acompanha o filtro.
+- **Ordenação:** mais recentes (a ordem de criação do bloco, a padrão), **maior investimento**,
+  menor investimento, maior score e vencimento mais próximo.
+- **Limpar filtros:** volta a busca, a etiqueta e a ordem ao padrão.
+
+Acima dos cartões, uma linha mostra quantos blocos aparecem e quanto o investidor tem investido neles
+("5 de 12 blocos · R$ 480.000,00 investidos").
+
+!!! note "Não há data do investimento"
+    A carteira é de demonstração e não guarda a data em que o investidor aplicou, então não dá para
+    ordenar ou filtrar por ela. Os critérios de data disponíveis são o vencimento do bloco. Quando existir
+    investimento real, a data do aporte entra na lista de ordenação.
 
 O botão **Ver mais detalhes** abre o mesmo pop-up da tela de Blocos de Liquidez, mas com a visão de
 quem já investiu. Ele mostra a etiqueta, a data de vencimento e o score do bloco, e acrescenta:
@@ -192,4 +205,4 @@ Os detalhes técnicos (tabelas, rotas e erros) estão em
 - **Alocar dinheiro:** como o investidor aporta de verdade ainda não foi definido; hoje o botão só confirma, sem gravar.
 - **Chatbot:** falta decidir a LLM, o endpoint e o que o assistente pode consultar. O ponto de ligação no frontend é a função `responder` em `src/js/paginas/investidor/chat.js`.
 - **Outras visualizações da Visão geral:** além do cubo, dos totais e do ranking, o grupo ainda não definiu gráficos.
-- **Filtros em Blocos Investidos:** o desenho prevê um botão de filtros, ainda sem definição.
+- **Filtros em Blocos Investidos:** outros filtros possíveis (faixa de valor investido, nota de risco mínima, vencimento até uma data) ainda não foram pedidos.

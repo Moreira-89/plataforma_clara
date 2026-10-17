@@ -24,6 +24,7 @@ versão diferente dos mesmos dados.
 5. **Relatório.** O investidor pode pedir um relatório consolidado em PDF,
    escrito em linguagem natural por um assistente de IA, a partir dos dados
    reais da própria carteira dele — não um texto genérico.
+   A tela já existe; a geração depende da fonte dos aportes (ver [Relatório](relatorio.md)).
 
 ## Fluxo da gestora
 

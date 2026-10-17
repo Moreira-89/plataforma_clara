@@ -3,7 +3,7 @@ import { aoMudarSessao } from '../../nucleo/firebase.js'
 import { montarMenu } from '../../nucleo/menu.js'
 import { LOGIN, destinoDoPerfil, encerrarSeInvalida } from '../../nucleo/rotas.js'
 import { $ } from '../../nucleo/ui.js'
-import { criar, montarCartao } from './cartao.js'
+import { combinaBusca, criar, montarCartao } from './cartao.js'
 import { abrirDetalhe, ligarDialogoDeDetalhe } from './detalhe.js'
 
 // A mesma tela serve a gestora e o investidor; o perfil vem do <body data-perfil>.
@@ -11,20 +11,12 @@ const PERFIL_DA_PAGINA = document.body.dataset.perfil
 const menu = montarMenu(PERFIL_DA_PAGINA)
 let blocos = []
 
-// Busca pelo código (início do id ou código completo) ou pelo nome da etiqueta.
-function combina(bloco, termo) {
-  if (!termo) return true
-  const alvo = termo.toLowerCase().replace(/\s+/g, '')
-  const campos = [bloco.id_bloco, bloco.codigo_identificacao, bloco.etiqueta]
-  return campos.some((c) => c.toLowerCase().replace(/\s+/g, '').includes(alvo))
-}
-
 function desenharCartoes() {
   const termo = $('#busca').value.trim()
   const lista = $('#cartoes')
   lista.replaceChildren()
   // "Mais recentes" é a ordem da própria API; "Maior score" ordena do maior para o menor, sem score por último.
-  let visiveis = blocos.filter((b) => combina(b, termo))
+  let visiveis = blocos.filter((b) => combinaBusca(b, termo))
   if ($('#ordem').value === 'score') visiveis = [...visiveis].sort((a, b) => (b.score ?? -1) - (a.score ?? -1))
 
   if (!visiveis.length) {

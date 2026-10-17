@@ -74,6 +74,7 @@
   --lado: 250px;
   display: grid; place-items: center; width: 100%; height: 100%;
   perspective: 1400px; cursor: grab; touch-action: none; user-select: none;
+  animation: cubo-surge 0.7s ease-out;
 }
 .cubo-cena:active { cursor: grabbing; }
 .cubo { position: relative; width: var(--lado); height: var(--lado); transform-style: preserve-3d; }
@@ -92,3 +93,11 @@
   filter: brightness(var(--tom, 1)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 .cubo-adesivo.destaque { filter: brightness(calc(var(--tom, 1) + 0.25)); box-shadow: 0 0 0 3px var(--canvas), inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
+
+/* Entrada: o cubo surge e os adesivos acendem em sequência. Só opacity e transform, leves para a GPU. */
+@keyframes cubo-surge { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes adesivo-monta { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: scale(1); } }
+.cubo-adesivo { animation: adesivo-monta 0.4s ease-out backwards; animation-delay: calc(var(--ordem, 0) * 18ms + 0.25s); }
+@media (prefers-reduced-motion: reduce) {
+  .cubo-cena, .cubo-adesivo { animation: none; }
+}

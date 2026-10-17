@@ -115,7 +115,7 @@ frontend/
   paginas/                 # uma pasta por área, um HTML por tela
     login.html, cadastro.html
     gestora/gestao-blocos.html   # inclui o pop-up de criação de bloco
-    investidor/visao-geral.html, blocos-de-liquidez.html, blocos-investidos.html
+    investidor/visao-geral.html, blocos-de-liquidez.html, blocos-investidos.html, relatorio.html
   src/css/                 # tokens, base, componentes (principal.css junta os três)
     paginas/               #   um CSS por tela ou grupo de telas
   src/js/nucleo/           # api, firebase, rotas, ui, menu — usados por todas as telas

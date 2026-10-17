@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/css/principal.css" />
     <link rel="stylesheet" href="/src/css/paginas/blocos.css" />
-    <link rel="stylesheet" href="/src/css/paginas/blocos-investidos.css" />
     <title>Blocos Investidos — Plataforma Clara</title>
   </head>
   <body data-perfil="investidor" class="com-menu">
@@ -17,14 +16,32 @@
     <main class="pagina-blocos" id="conteudo" hidden>
       <span class="rotulo">Investidor</span>
       <h1 class="titulo-pagina">Blocos Investidos</h1>
-      <p>Os blocos em que você já investiu, agrupados por pedra, do mais recente para o mais antigo.</p>
+      <p>Os blocos em que você já investiu. Busque, filtre por etiqueta e ordene pelo valor que você aplicou.</p>
+
+      <div class="barra-blocos">
+        <input id="busca" type="search" placeholder="Buscar por código ou etiqueta" autocomplete="off" aria-label="Buscar bloco" />
+        <label class="ordem">
+          <span class="so-leitor">Etiqueta</span>
+          <select id="filtro-etiqueta" aria-label="Filtrar por etiqueta">
+            <option value="">Todas as etiquetas</option>
+          </select>
+        </label>
+        <label class="ordem">
+          <span class="so-leitor">Ordenar por</span>
+          <select id="ordem" aria-label="Ordenar blocos">
+            <option value="recentes">Mais recentes</option>
+            <option value="maior-valor">Maior investimento</option>
+            <option value="menor-valor">Menor investimento</option>
+            <option value="score">Maior score</option>
+            <option value="vencimento">Vencimento mais próximo</option>
+          </select>
+        </label>
+        <button class="btn btn-secundario" id="ver-tudo" type="button">Limpar filtros</button>
+      </div>
 
       <p id="estado" class="mensagem" role="status"></p>
-      <div id="filtro" class="filtro-etiqueta" hidden>
-        <span id="filtro-texto"></span>
-        <button class="btn btn-secundario" id="filtro-limpar" type="button">Limpar filtro</button>
-      </div>
-      <div id="grupos" aria-live="polite"></div>
+      <p id="resumo" class="resumo-lista"></p>
+      <section id="cartoes" class="grade-blocos" aria-live="polite"></section>
     </main>
     <dialog id="detalhe" class="detalhe-bloco" aria-labelledby="detalhe-titulo">
       <div class="detalhe-topo">

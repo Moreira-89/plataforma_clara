@@ -7,7 +7,8 @@
  *   2. `distribuirAdesivos` reparte as 54 unidades entre os itens pela participação de cada um
  *      (maior resto), com no mínimo 1 adesivo por item.
  *   3. Os itens recebem os adesivos em sequência, face a face (o maior começa pela face da frente).
- *   4. Passar o mouse destaca todos os adesivos do item e chama `aoPassar`; arrastar gira o cubo;
+ *   4. Ao aparecer, o cubo surge e os adesivos acendem em sequência (animação em CSS, com `--ordem`).
+ *   5. Passar o mouse destaca todos os adesivos do item e chama `aoPassar`; arrastar gira o cubo;
  *      clicar sem arrastar chama `aoClicar`.
  */
 import { criar } from '../blocos/cartao.js'
@@ -60,6 +61,7 @@ export function montarCubo(raiz, itens, { aoPassar, aoSair, aoClicar }) {
       adesivo.dataset.indice = indice
       adesivo.style.setProperty('--cor', itens[indice].cor ?? 'var(--muted)')
       adesivo.style.setProperty('--tom', tons[indice])
+      adesivo.style.setProperty('--ordem', f * ADESIVOS_POR_FACE + c)
       face.append(adesivo)
     }
     cubo.append(face)

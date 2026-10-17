@@ -3,62 +3,83 @@ import { aoMudarSessao } from '../../nucleo/firebase.js'
 import { montarMenu } from '../../nucleo/menu.js'
 import { LOGIN, destinoDoPerfil, encerrarSeInvalida } from '../../nucleo/rotas.js'
 import { $ } from '../../nucleo/ui.js'
-import { criar, montarCartao, seloEtiqueta } from '../blocos/cartao.js'
+import { combinaBusca, criar, moeda, montarCartao } from '../blocos/cartao.js'
 import { abrirDetalhe, ligarDialogoDeDetalhe } from '../blocos/detalhe.js'
 
 const menu = montarMenu('investidor')
 let blocos = []
-// Filtro vindo da visão geral (?etiqueta=Safira); "Limpar filtro" volta a mostrar tudo.
-let filtro = new URLSearchParams(window.location.search).get('etiqueta')
 
-// Agrupa por pedra. A API já devolve do bloco mais recente ao mais antigo, então a ordem dos
-// grupos (pelo bloco mais novo de cada um) e a dos cartões dentro de cada grupo seguem essa regra.
-function agruparPorEtiqueta(blocos) {
-  const grupos = new Map()
-  for (const bloco of blocos) {
-    if (!grupos.has(bloco.etiqueta)) grupos.set(bloco.etiqueta, { cor: bloco.cor, blocos: [] })
-    grupos.get(bloco.etiqueta).blocos.push(bloco)
+// "Mais recentes" é a ordem da própria API (criação do bloco); os demais critérios ordenam aqui.
+const ORDENS = {
+  recentes: null,
+  'maior-valor': (a, b) => Number(b.valor_investido) - Number(a.valor_investido),
+  'menor-valor': (a, b) => Number(a.valor_investido) - Number(b.valor_investido),
+  score: (a, b) => (b.score ?? -1) - (a.score ?? -1),
+  vencimento: (a, b) => a.data_vencimento.localeCompare(b.data_vencimento),
+}
+
+// Mantém o ?etiqueta= da URL igual ao filtro (a visão geral abre a tela já filtrada).
+function sincronizarUrl(etiqueta) {
+  const url = new URL(window.location.href)
+  if (etiqueta) url.searchParams.set('etiqueta', etiqueta)
+  else url.searchParams.delete('etiqueta')
+  window.history.replaceState(null, '', url)
+}
+
+function preencherEtiquetas(etiquetaDaUrl) {
+  const filtro = $('#filtro-etiqueta')
+  const nomes = new Set(blocos.map((b) => b.etiqueta))
+  if (etiquetaDaUrl) nomes.add(etiquetaDaUrl)
+  for (const nome of [...nomes].sort((a, b) => a.localeCompare(b))) {
+    const opcao = criar('option', '', nome)
+    opcao.value = nome
+    filtro.append(opcao)
   }
-  return grupos
+  filtro.value = etiquetaDaUrl ?? ''
 }
 
 function desenhar() {
-  const raiz = $('#grupos')
-  raiz.replaceChildren()
-  $('#filtro').hidden = !filtro
-  if (filtro) $('#filtro-texto').textContent = `Filtrando por: ${filtro}`
+  const termo = $('#busca').value.trim()
+  const etiqueta = $('#filtro-etiqueta').value
+  const lista = $('#cartoes')
+  lista.replaceChildren()
 
-  const visiveis = filtro ? blocos.filter((b) => b.etiqueta === filtro) : blocos
+  let visiveis = blocos.filter((b) => (!etiqueta || b.etiqueta === etiqueta) && combinaBusca(b, termo))
+  const ordem = ORDENS[$('#ordem').value]
+  if (ordem) visiveis = [...visiveis].sort(ordem)
+
+  const total = visiveis.reduce((soma, b) => soma + Number(b.valor_investido), 0)
+  $('#resumo').textContent = blocos.length ? `${visiveis.length} de ${blocos.length} blocos · ${moeda.format(total)} investidos` : ''
+
   if (!visiveis.length) {
-    const vazio = filtro ? `Você não tem investimentos na etiqueta ${filtro}.` : 'Você ainda não investiu em nenhum bloco.'
-    raiz.append(criar('p', 'vazio', vazio))
+    lista.append(criar('p', 'vazio', blocos.length ? 'Nenhum bloco encontrado para esses filtros.' : 'Você ainda não investiu em nenhum bloco.'))
     return
   }
-
-  for (const [etiqueta, grupo] of agruparPorEtiqueta(visiveis)) {
-    const secao = criar('section', 'grupo-etiqueta')
-    secao.style.setProperty('--cor-etiqueta', grupo.cor ?? 'var(--surface-strong)')
-
-    const topo = criar('div', 'grupo-topo')
-    const quantidade = grupo.blocos.length
-    topo.append(
-      seloEtiqueta(grupo.cor),
-      criar('h2', '', etiqueta),
-      criar('span', 'grupo-quantidade', `${quantidade} ${quantidade === 1 ? 'bloco' : 'blocos'}`),
+  for (const bloco of visiveis) {
+    lista.append(
+      montarCartao(bloco, {
+        valorInvestido: bloco.valor_investido,
+        aoDetalhes: () => abrirDetalhe(bloco, { perfil: 'investidor', valorInvestido: bloco.valor_investido }),
+      }),
     )
-
-    const grade = criar('div', 'grade-blocos')
-    for (const bloco of grupo.blocos) {
-      grade.append(
-        montarCartao(bloco, {
-          valorInvestido: bloco.valor_investido,
-          aoDetalhes: () => abrirDetalhe(bloco, { perfil: 'investidor', valorInvestido: bloco.valor_investido }),
-        }),
-      )
-    }
-    secao.append(topo, grade)
-    raiz.append(secao)
   }
+}
+
+function ligarControles() {
+  $('#busca').addEventListener('input', desenhar)
+  $('#ordem').addEventListener('change', desenhar)
+  $('#filtro-etiqueta').addEventListener('change', () => {
+    sincronizarUrl($('#filtro-etiqueta').value)
+    desenhar()
+  })
+  $('#ver-tudo').addEventListener('click', () => {
+    $('#busca').value = ''
+    $('#ordem').value = 'recentes'
+    $('#filtro-etiqueta').value = ''
+    sincronizarUrl('')
+    desenhar()
+  })
+  ligarDialogoDeDetalhe()
 }
 
 function avisar(texto) {
@@ -76,12 +97,7 @@ async function carregar() {
   }
   $('#estado').textContent = ''
   blocos = resposta.corpo
-  desenhar()
-}
-
-function limparFiltro() {
-  filtro = null
-  window.history.replaceState(null, '', window.location.pathname)
+  preencherEtiquetas(new URLSearchParams(window.location.search).get('etiqueta'))
   desenhar()
 }
 
@@ -101,8 +117,7 @@ aoMudarSessao(async (usuario) => {
   }
   menu.definirUsuario(usuario.email)
   $('#conteudo').hidden = false
-  ligarDialogoDeDetalhe()
-  $('#filtro-limpar').addEventListener('click', limparFiltro)
+  ligarControles()
   if (perfil.status !== 200) {
     avisar(`Não foi possível verificar o seu perfil: ${textoDoErro(perfil)}`)
     return

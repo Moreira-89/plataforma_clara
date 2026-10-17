@@ -26,6 +26,7 @@
 .linha-score .nota-risco { font-size: 18px; font-weight: 600; color: var(--ink); }
 .meta-bloco { font-size: 13px; color: var(--muted); }
 .cartao-bloco .btn { width: 100%; }
+.resumo-lista { margin-bottom: var(--space-base); font-size: 13px; color: var(--muted); }
 .vazio { grid-column: 1 / -1; padding: var(--space-xxl) 0; text-align: center; color: var(--muted); }
 
 .detalhe-bloco {

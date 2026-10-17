@@ -9,6 +9,14 @@ export const codigoCurto = (id) => id.slice(0, 8).toUpperCase()
 export const dataBr = (iso) => iso.split('-').reverse().join('/')
 export const cnpjFormatado = (c) => c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
 
+// Busca pelo código (início do id ou código completo) ou pelo nome da etiqueta; sem termo, tudo combina.
+export function combinaBusca(bloco, termo) {
+  if (!termo) return true
+  const alvo = termo.toLowerCase().replace(/\s+/g, '')
+  const campos = [bloco.id_bloco, bloco.codigo_identificacao, bloco.etiqueta]
+  return campos.some((c) => c.toLowerCase().replace(/\s+/g, '').includes(alvo))
+}
+
 export function criar(tag, classe, texto) {
   const el = document.createElement(tag)
   if (classe) el.className = classe

@@ -1,6 +1,6 @@
 import logoUrl from '../../img/logo-clara.png'
 import { sair } from './firebase.js'
-import { BLOCOS_INVESTIDOR, BLOCOS_INVESTIDOS, GESTAO_BLOCOS, HOME, VISAO_GERAL, destinoDoPerfil } from './rotas.js'
+import { BLOCOS_INVESTIDOR, BLOCOS_INVESTIDOS, GESTAO_BLOCOS, HOME, RELATORIO, VISAO_GERAL, destinoDoPerfil } from './rotas.js'
 
 // Telas de cada perfil. Tela nova entra aqui e aparece no menu de todas as páginas.
 const ITENS = {
@@ -9,6 +9,7 @@ const ITENS = {
     { rotulo: 'Visão geral', href: VISAO_GERAL },
     { rotulo: 'Blocos de Liquidez', href: BLOCOS_INVESTIDOR },
     { rotulo: 'Blocos Investidos', href: BLOCOS_INVESTIDOS },
+    { rotulo: 'Relatório', href: RELATORIO },
   ],
 }
 
