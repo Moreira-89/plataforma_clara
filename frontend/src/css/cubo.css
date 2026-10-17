@@ -1,55 +1,45 @@
-/* Bloco visual (cubo 3D): usado na ficha de cada bloco. `--lado` é a aresta; `--cor`/`--tom` vêm do JS. */
-.cubo-ficha { position: relative; border: 1px solid var(--hairline); border-radius: var(--radius-xl); background: var(--surface-soft); overflow: hidden; }
-.cubo-palco { width: 100%; height: 280px; --lado: 170px; }
-.cubo-ajuda { padding: 0 var(--space-base) var(--space-sm); text-align: center; font-size: 13px; color: var(--muted); pointer-events: none; }
-.dica-cubo {
+/* Bloco visual (cubo 3D em CSS): 6 faces de 3x3 adesivos = 54 unidades = 100%. `--lado` e `--altura` vêm do JS. */
+.cubo-bloco-visual { display: block; position: relative; --lado: 170px; --altura: 280px; --cor-ajuda: var(--muted); }
+.cubo-palco { width: 100%; height: var(--altura); }
+.cubo-cena { display: grid; place-items: center; width: 100%; height: 100%; perspective: 1400px; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.cubo-cena:active { cursor: grabbing; }
+.cubo-cena.entra { animation: cubo-surge 0.7s var(--ease); }
+.cubo { position: relative; width: var(--lado); height: var(--lado); transform-style: preserve-3d; will-change: transform; }
+.cubo-face {
+  position: absolute; inset: 0; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  gap: var(--space-xs); padding: var(--space-xs); background: var(--surface-dark); backface-visibility: hidden; border-radius: var(--radius-sm);
+}
+.cubo-adesivo {
+  border-radius: var(--radius-md); background-color: var(--cor); filter: brightness(var(--tom, 1));
+  box-shadow: inset 0 0 0 1px var(--anel-claro); transition: transform 0.18s var(--ease);
+}
+.entra .cubo-adesivo { animation: cubo-monta 0.4s var(--ease) backwards; animation-delay: calc(var(--ordem, 0) * 18ms + 0.25s); }
+.cubo-adesivo.ligado {
+  filter: brightness(calc(var(--tom, 1) + 0.25)); box-shadow: 0 0 0 3px var(--canvas), inset 0 0 0 1px var(--anel-claro);
+  transform: scale(0.92);
+}
+@keyframes cubo-surge { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes cubo-monta { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: scale(1); } }
+
+/* Texturas sobre a cor (traços claros e escuros, para aparecerem em qualquer cor); 0 é liso. */
+[data-p="1"] { background-image: repeating-linear-gradient(45deg, var(--textura-clara) 0 4px, var(--textura-escura) 4px 8px); }
+[data-p="2"] { background-image: radial-gradient(var(--textura-clara) 2.5px, transparent 3px), radial-gradient(var(--textura-escura) 2.5px, transparent 3px); background-size: 12px 12px; background-position: 0 0, 6px 6px; }
+[data-p="3"] { background-image: linear-gradient(var(--textura-clara) 2px, transparent 2px), linear-gradient(90deg, var(--textura-escura) 2px, transparent 2px); background-size: 12px 12px; }
+[data-p="4"] { background-image: repeating-linear-gradient(0deg, var(--textura-escura) 0 3px, var(--textura-clara) 3px 6px); }
+[data-p="5"] { background-image: repeating-linear-gradient(45deg, var(--textura-clara) 0 2px, transparent 2px 9px), repeating-linear-gradient(-45deg, var(--textura-escura) 0 2px, transparent 2px 9px); }
+[data-p="6"] { background-image: repeating-linear-gradient(90deg, var(--textura-clara) 0 4px, var(--textura-escura) 4px 8px); }
+[data-p="7"] { background-image: conic-gradient(var(--textura-escura) 25%, var(--textura-clara) 0 50%, var(--textura-escura) 0 75%, var(--textura-clara) 0); background-size: 14px 14px; }
+
+.cubo-dica {
   position: absolute; z-index: 1; display: flex; gap: var(--space-xs); align-items: baseline; padding: 6px var(--space-sm);
   border: 1px solid var(--cor-dica, var(--hairline)); border-radius: var(--radius-pill); background: var(--surface-dark);
   color: var(--on-dark-soft); font-size: 13px; pointer-events: none; white-space: nowrap; transform: translate(-50%, calc(-100% - 14px));
 }
-.dica-cubo[hidden] { display: none; }
-.dica-cubo strong { color: var(--on-dark); font-size: 14px; }
+.cubo-dica[hidden] { display: none; }
+.cubo-dica strong { color: var(--on-dark); font: 500 14px var(--font-mono); }
+.cubo-ajuda { margin: 0; padding: 0 var(--space-base) var(--space-sm); text-align: center; font-size: 13px; color: var(--cor-ajuda); pointer-events: none; }
 
-/* Cubo em CSS 3D: seis faces 3x3 de adesivos; `--lado` é a aresta e `--cor`/`--tom` vêm do JS. */
-.cubo-cena {
-  display: grid; place-items: center; width: 100%; height: 100%;
-  perspective: 1400px; cursor: grab; touch-action: none; user-select: none;
-  animation: cubo-surge 0.7s ease-out;
-}
-.cubo-cena:active { cursor: grabbing; }
-.cubo { position: relative; width: var(--lado); height: var(--lado); transform-style: preserve-3d; }
-.cubo-face {
-  position: absolute; inset: 0; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr);
-  gap: var(--space-xs); padding: var(--space-xs); background: var(--surface-dark); backface-visibility: hidden;
-}
-.cubo-frente { transform: translateZ(calc(var(--lado) / 2)); }
-.cubo-tras { transform: rotateY(180deg) translateZ(calc(var(--lado) / 2)); }
-.cubo-direita { transform: rotateY(90deg) translateZ(calc(var(--lado) / 2)); }
-.cubo-esquerda { transform: rotateY(-90deg) translateZ(calc(var(--lado) / 2)); }
-.cubo-topo { transform: rotateX(90deg) translateZ(calc(var(--lado) / 2)); }
-.cubo-base { transform: rotateX(-90deg) translateZ(calc(var(--lado) / 2)); }
-.cubo-adesivo {
-  border-radius: var(--radius-md); background-color: var(--cor);
-  filter: brightness(var(--tom, 1)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-}
-.cubo-adesivo.destaque { filter: brightness(calc(var(--tom, 1) + 0.25)); box-shadow: 0 0 0 3px var(--canvas), inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
-
-/* Entrada: o cubo surge e os adesivos acendem em sequência. Só opacity e transform, leves para a GPU. */
-@keyframes cubo-surge { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
-@keyframes adesivo-monta { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: scale(1); } }
-.cubo-adesivo { animation: adesivo-monta 0.4s ease-out backwards; animation-delay: calc(var(--ordem, 0) * 18ms + 0.25s); }
 @media (prefers-reduced-motion: reduce) {
-  .cubo-cena, .cubo-adesivo { animation: none; }
+  .cubo-cena.entra, .entra .cubo-adesivo { animation: none; }
+  .cubo-adesivo { transition: none; }
 }
-
-/* Texturas sobre a cor (traços claros e escuros, para aparecerem em qualquer cor). `data-padrao` 0 é liso. */
-[data-padrao="1"] { background-image: repeating-linear-gradient(45deg, var(--textura-clara) 0 4px, var(--textura-escura) 4px 8px); }
-[data-padrao="2"] { background-image: radial-gradient(var(--textura-clara) 2.5px, transparent 3px), radial-gradient(var(--textura-escura) 2.5px, transparent 3px); background-size: 12px 12px; background-position: 0 0, 6px 6px; }
-[data-padrao="3"] { background-image: linear-gradient(var(--textura-clara) 2px, transparent 2px), linear-gradient(90deg, var(--textura-escura) 2px, transparent 2px); background-size: 12px 12px; }
-[data-padrao="4"] { background-image: repeating-linear-gradient(0deg, var(--textura-escura) 0 3px, var(--textura-clara) 3px 6px); }
-[data-padrao="5"] { background-image: repeating-linear-gradient(45deg, var(--textura-clara) 0 2px, transparent 2px 9px), repeating-linear-gradient(-45deg, var(--textura-escura) 0 2px, transparent 2px 9px); }
-[data-padrao="6"] { background-image: repeating-linear-gradient(90deg, var(--textura-clara) 0 4px, var(--textura-escura) 4px 8px); }
-[data-padrao="7"] { background-image: conic-gradient(var(--textura-escura) 25%, var(--textura-clara) 0 50%, var(--textura-escura) 0 75%, var(--textura-clara) 0); background-size: 14px 14px; }
-
-/* Amostra da cor e textura de uma empresa (legenda na tabela da ficha). */
-.amostra-cubo { display: inline-block; width: 18px; height: 18px; border-radius: 5px; background-color: var(--cor); filter: brightness(var(--tom, 1)); box-shadow: inset 0 0 0 1px var(--hairline); vertical-align: middle; flex: none; }

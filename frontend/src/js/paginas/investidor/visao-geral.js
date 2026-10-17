@@ -3,21 +3,49 @@ import { aoMudarSessao } from '../../nucleo/firebase.js'
 import { montarMenu } from '../../nucleo/menu.js'
 import { BLOCOS_INVESTIDOS, LOGIN, destinoDoPerfil, encerrarSeInvalida } from '../../nucleo/rotas.js'
 import { $ } from '../../nucleo/ui.js'
-import { cnpjFormatado, criar, moeda } from '../blocos/cartao.js'
+import { cnpjFormatado, criar, moeda, percentual } from '../blocos/cartao.js'
 import { montarCubo } from '../blocos/cubo.js'
 import { montarChat } from './chat.js'
 import { montarGraficoRendimento } from './grafico-rendimento.js'
 
 const menu = montarMenu('investidor')
-const percentual = new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 1 })
 const LIMITE_DO_RANKING = 10
+const SEM_COR = 'var(--surface-strong)'
 
 const paraEtiqueta = (etiqueta) => `${BLOCOS_INVESTIDOS}?etiqueta=${encodeURIComponent(etiqueta)}`
-const corDe = (etiqueta) => etiqueta.cor ?? 'var(--surface-strong)'
+const pctFixo = (v, casas = 2) => `${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas })}%`
+const nomeDaEmpresa = (e) => e.nome_fantasia ?? cnpjFormatado(e.cnpj)
 
-function desenharIndicadores(total, etiquetas) {
+function avisar(seletor, texto) {
+  const estado = $(seletor)
+  estado.textContent = texto
+  estado.classList.add('erro')
+}
+
+// Painel escuro: total, blocos, barra de alocação por etiqueta e legenda.
+function desenharTotais(resumo) {
+  const { total_investido: total, etiquetas } = resumo
   $('#total').textContent = moeda.format(Number(total))
   $('#qtd-blocos').textContent = etiquetas.reduce((soma, e) => soma + e.quantidade_blocos, 0)
+
+  const barra = $('#aloc-barra')
+  const legenda = $('#aloc-legenda')
+  barra.replaceChildren()
+  legenda.replaceChildren()
+  etiquetas.forEach((etiqueta, i) => {
+    const cor = etiqueta.cor ?? 'var(--muted)'
+    const segmento = criar('i')
+    segmento.style.setProperty('--fatia', Number(etiqueta.total_investido))
+    segmento.style.setProperty('--cor', cor)
+    segmento.style.setProperty('--atraso', `${150 + i * 80}ms`)
+    barra.append(segmento)
+
+    const item = criar('li')
+    const ponto = criar('i')
+    ponto.style.setProperty('--cor', cor)
+    item.append(ponto, criar('span', '', etiqueta.etiqueta), criar('span', '', percentual(etiqueta.participacao * 100, 1)))
+    legenda.append(item)
+  })
 }
 
 // Ranking das empresas da carteira (as 10 que mais recebem); o nome cai para o CNPJ sem cadastro.
@@ -30,84 +58,70 @@ function desenharRanking(empresas) {
   }
   $('#ranking-estado').textContent = ''
   const maior = Number(empresas[0].capital_investido)
-  for (const empresa of empresas.slice(0, LIMITE_DO_RANKING)) {
+  empresas.slice(0, LIMITE_DO_RANKING).forEach((empresa, i) => {
     const capital = Number(empresa.capital_investido)
+    const botao = criar('button')
+    botao.type = 'button'
+    botao.setAttribute('aria-label', `${nomeDaEmpresa(empresa)}, ${moeda.format(capital)}. Abrir blocos ${empresa.etiqueta}`)
+    botao.addEventListener('click', () => (window.location.href = paraEtiqueta(empresa.etiqueta)))
+
+    const posicao = criar('span', i < 3 ? 'posicao destaque' : 'posicao', String(i + 1))
     const nome = criar('span', 'empresa')
     const detalhe = criar('small')
-    const selo = criar('i', 'selo')
-    selo.style.setProperty('--cor', corDe(empresa))
-    detalhe.append(selo, `${empresa.ramo_atividade ?? 'Ramo não informado'} · ${empresa.etiqueta}`)
-    nome.append(criar('strong', '', empresa.nome_fantasia ?? cnpjFormatado(empresa.cnpj)), detalhe)
-
+    const ponto = criar('i')
+    ponto.style.setProperty('--cor', empresa.cor ?? SEM_COR)
+    detalhe.append(ponto, criar('span', '', `${empresa.ramo_atividade ?? 'Ramo não informado'} · ${empresa.etiqueta}`))
+    nome.append(criar('strong', '', nomeDaEmpresa(empresa)), detalhe)
     const valores = criar('span', 'valores')
-    valores.append(criar('strong', 'numero', moeda.format(capital)), criar('small', '', percentual.format(empresa.participacao)))
-    const barra = criar('div', 'barra-fina')
+    valores.append(criar('strong', '', moeda.format(capital)), criar('small', '', percentual(empresa.participacao * 100, 1)))
+    const trilha = criar('span', 'trilha')
     const preenchimento = criar('i')
-    preenchimento.style.setProperty('--largura', `${(capital / maior) * 100}%`)
-    barra.append(preenchimento)
+    preenchimento.style.setProperty('--largura', capital / maior)
+    preenchimento.style.setProperty('--atraso', `${300 + i * 60}ms`)
+    trilha.append(preenchimento)
 
-    const linha = criar('li', 'linha-ranking')
-    linha.append(nome, valores, barra)
-    lista.append(linha)
-  }
+    botao.append(posicao, nome, valores, trilha)
+    const item = criar('li')
+    item.append(botao)
+    lista.append(item)
+  })
 }
 
 // Cada empresa da carteira é uma região do cubo (a fatia dela no dinheiro do investidor).
 function desenharCubo(empresas) {
-  const dica = $('#dica-cubo')
   const itens = empresas.map((e) => ({
-    nome: e.nome_fantasia ?? cnpjFormatado(e.cnpj),
+    nome: nomeDaEmpresa(e),
     cor: e.cor,
     etiqueta: e.etiqueta,
-    capital: Number(e.capital_investido),
     participacao: e.participacao,
+    detalhe: `${moeda.format(Number(e.capital_investido))} · ${percentual(e.participacao * 100, 1)}`,
   }))
-  try {
-    montarCubo($('#cubo'), itens, {
-      aoPassar: (item, x, y) => {
-        const detalhe = item.capital == null ? percentual.format(item.participacao) : `${moeda.format(item.capital)} · ${percentual.format(item.participacao)}`
-        dica.replaceChildren(criar('span', '', item.nome), criar('strong', 'numero', detalhe))
-        dica.style.setProperty('--cor-dica', item.cor ?? 'var(--hairline)')
-        dica.hidden = false
-        dica.style.left = `${x}px`
-        dica.style.top = `${y}px`
-      },
-      aoSair: () => (dica.hidden = true),
-      aoClicar: (item) => item.etiqueta && (window.location.href = paraEtiqueta(item.etiqueta)),
-    })
-  } catch {
-    $('#cubo').replaceChildren(criar('p', 'vazio', 'Não foi possível montar o cubo.'))
-  }
-}
-
-function avisar(texto) {
-  const estado = $('#estado')
-  estado.textContent = texto
-  estado.classList.add('erro')
+  montarCubo($('#cubo'), itens, {
+    lado: 230,
+    altura: 360,
+    ajuda: 'Arraste para girar · passe o mouse para ver o valor · clique para abrir os blocos',
+    aoClicar: (item) => item.etiqueta && (window.location.href = paraEtiqueta(item.etiqueta)),
+  })
 }
 
 async function carregarRendimento() {
   const resposta = await chamar('GET', '/investimentos/rendimento')
   if (resposta.status !== 200) {
-    const estado = $('#grafico-estado')
-    estado.textContent = `Não foi possível carregar o rendimento: ${textoDoErro(resposta)}`
-    estado.classList.add('erro')
+    avisar('#grafico-estado', `Não foi possível carregar o rendimento: ${textoDoErro(resposta)}`)
     return
   }
   const { rendimento_total: total, acumulado_percentual: acumulado, meses } = resposta.corpo
   if (!meses.length) return
   $('#rendimento-total').textContent = moeda.format(Number(total))
-  $('#rendimento-acumulado').textContent = `${Number(acumulado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}%`
-  montarGraficoRendimento($('#grafico'), $('#dica-grafico'), meses)
+  $('#rendimento-acumulado').textContent = pctFixo(acumulado)
+  montarGraficoRendimento($('#grafico'), meses)
 }
 
-async function carregarRanking() {
+async function carregarEmpresas() {
   $('#ranking-estado').textContent = 'Carregando ranking...'
   const resposta = await chamar('GET', '/investimentos/empresas')
   if (resposta.status !== 200) {
-    const estado = $('#ranking-estado')
-    estado.textContent = `Não foi possível carregar o ranking: ${textoDoErro(resposta)}`
-    estado.classList.add('erro')
+    avisar('#ranking-estado', `Não foi possível carregar o ranking: ${textoDoErro(resposta)}`)
     return
   }
   desenharRanking(resposta.corpo)
@@ -118,19 +132,17 @@ async function carregar() {
   $('#estado').textContent = 'Carregando sua visão geral...'
   const resposta = await chamar('GET', '/investimentos/resumo')
   if (resposta.status !== 200) {
-    avisar(`Não foi possível carregar a sua visão geral: ${textoDoErro(resposta)}`)
+    avisar('#estado', `Não foi possível carregar a sua visão geral: ${textoDoErro(resposta)}`)
     return
   }
-  const { total_investido: total, etiquetas } = resposta.corpo
-  if (!etiquetas.length) {
+  if (!resposta.corpo.etiquetas.length) {
     $('#estado').textContent = 'Você ainda não investiu em nenhum bloco.'
     return
   }
   $('#estado').textContent = ''
-  const dados = etiquetas.map((e) => ({ ...e, total: Number(e.total_investido) }))
   $('#visao').hidden = false
-  desenharIndicadores(total, dados)
-  await Promise.all([carregarRendimento(), carregarRanking()])
+  desenharTotais(resposta.corpo)
+  await Promise.all([carregarRendimento(), carregarEmpresas()])
 }
 
 aoMudarSessao(async (usuario) => {
@@ -151,7 +163,7 @@ aoMudarSessao(async (usuario) => {
   $('#conteudo').hidden = false
   montarChat()
   if (perfil.status !== 200) {
-    avisar(`Não foi possível verificar o seu perfil: ${textoDoErro(perfil)}`)
+    avisar('#estado', `Não foi possível verificar o seu perfil: ${textoDoErro(perfil)}`)
     return
   }
   await carregar()

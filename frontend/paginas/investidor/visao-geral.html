@@ -14,69 +14,73 @@
   <body data-perfil="investidor" class="com-menu">
     <aside id="menu"></aside>
 
-    <main class="pagina-blocos pagina-visao" id="conteudo" hidden>
+    <main class="pagina-blocos" id="conteudo" hidden>
       <span class="rotulo">Investidor</span>
       <h1 class="titulo-pagina">Visão geral</h1>
 
-      <p id="estado" class="mensagem" role="status"></p>
+      <p id="estado" class="mensagem estado-lista" role="status"></p>
 
-      <div id="visao" class="visao" hidden>
-        <section class="faixa faixa-total">
-          <span>Total investido</span>
-          <strong id="total" class="numero"></strong>
-        </section>
-        <section class="faixa faixa-contagem">
-          <span>Blocos investidos</span>
-          <strong id="qtd-blocos" class="numero"></strong>
+      <div id="visao" hidden>
+        <section class="totais" aria-label="Totais">
+          <div class="totais-topo">
+            <div>
+              <span>Total investido</span>
+              <strong id="total" class="totais-valor"></strong>
+            </div>
+            <dl class="totais-dl">
+              <div><dt>Blocos investidos</dt><dd id="qtd-blocos"></dd></div>
+              <div><dt>Rendimento no período</dt><dd id="rendimento-total" class="positivo"></dd></div>
+              <div><dt>Acumulado</dt><dd id="rendimento-acumulado"></dd></div>
+            </dl>
+          </div>
+          <div class="totais-aloc">
+            <div id="aloc-barra" class="aloc-barra" aria-hidden="true"></div>
+            <ul id="aloc-legenda" class="aloc-legenda"></ul>
+          </div>
         </section>
 
         <section class="painel painel-grafico" aria-labelledby="grafico-titulo">
-          <header class="grafico-topo">
+          <header class="painel-topo">
             <div>
               <h2 id="grafico-titulo">Rendimento nos últimos 12 meses</h2>
               <p class="painel-sub">Rendimento mensal da carteira e acumulado no período.</p>
             </div>
-            <dl class="grafico-resumo">
-              <div><dt>Rendimento no período</dt><dd id="rendimento-total" class="numero"></dd></div>
-              <div><dt>Acumulado</dt><dd id="rendimento-acumulado" class="numero"></dd></div>
-            </dl>
+            <ul class="grafico-legenda" aria-hidden="true">
+              <li><i class="legenda-barra"></i>Rendimento mensal (R$)</li>
+              <li><i class="legenda-linha"></i>Acumulado (%)</li>
+            </ul>
           </header>
-          <p id="grafico-estado" class="mensagem" role="status"></p>
-          <div class="grafico-area">
-            <div id="grafico"></div>
-            <div id="dica-grafico" class="dica-cubo dica-grafico" hidden></div>
+          <p id="grafico-estado" class="mensagem estado-lista" role="status"></p>
+          <div id="grafico" class="grafico-area"></div>
+        </section>
+
+        <div class="visao-linha">
+          <section class="painel painel-ranking" aria-labelledby="ranking-titulo">
+            <h2 id="ranking-titulo">Ranking de empresas</h2>
+            <p class="painel-sub">As empresas que mais recebem do seu dinheiro, somando os blocos em que você investiu.</p>
+            <p id="ranking-estado" class="mensagem estado-lista" role="status"></p>
+            <ol id="ranking" class="ranking"></ol>
+          </section>
+
+          <div class="visao-coluna">
+            <section class="ficha-cubo" aria-label="Cubo da carteira">
+              <div id="cubo" role="img" aria-label="Cubo 3D com uma região por empresa da carteira"></div>
+            </section>
+
+            <section class="painel painel-chat" aria-labelledby="chat-titulo">
+              <header>
+                <h2 id="chat-titulo">Assistente Clara</h2>
+                <p class="painel-sub">Tire dúvidas sobre os seus investimentos.</p>
+              </header>
+              <div id="chat-log" class="chat-log" role="log" aria-live="polite"></div>
+              <form id="chat-form" class="chat-form" autocomplete="off">
+                <label class="so-leitor" for="chat-texto">Mensagem</label>
+                <input id="chat-texto" type="text" maxlength="500" placeholder="Escreva sua pergunta..." />
+                <button class="btn btn-primario" type="submit">Enviar</button>
+              </form>
+            </section>
           </div>
-          <ul class="grafico-legenda" aria-hidden="true">
-            <li><i class="legenda-barra"></i>Rendimento mensal (R$)</li>
-            <li><i class="legenda-linha"></i>Acumulado (%)</li>
-          </ul>
-        </section>
-
-        <section class="painel painel-ranking">
-          <h2>Ranking de empresas</h2>
-          <p class="painel-sub">As empresas que mais recebem do seu dinheiro, somando os blocos em que você investiu.</p>
-          <p id="ranking-estado" class="mensagem" role="status"></p>
-          <ol id="ranking" class="ranking"></ol>
-        </section>
-
-        <section class="cubo-ficha cubo-area">
-          <div id="cubo" class="cubo-palco" role="img" aria-label="Cubo 3D com uma região por empresa da carteira"></div>
-          <div id="dica-cubo" class="dica-cubo" hidden></div>
-          <p class="cubo-ajuda">Arraste para girar · passe o mouse para ver o valor · clique para abrir os blocos</p>
-        </section>
-
-        <section class="painel painel-chat" aria-labelledby="chat-titulo">
-          <header class="chat-topo">
-            <h2 id="chat-titulo">Assistente Clara</h2>
-            <p class="painel-sub">Tire dúvidas sobre os seus investimentos.</p>
-          </header>
-          <div id="chat-mensagens" class="chat-mensagens" role="log" aria-live="polite"></div>
-          <form id="chat-form" class="chat-form" autocomplete="off">
-            <label class="so-leitor" for="chat-texto">Mensagem</label>
-            <input id="chat-texto" type="text" maxlength="500" placeholder="Escreva sua pergunta..." />
-            <button class="btn btn-primario" type="submit">Enviar</button>
-          </form>
-        </section>
+        </div>
       </div>
     </main>
     <script type="module" src="/src/js/paginas/investidor/visao-geral.js"></script>

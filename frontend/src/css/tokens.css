@@ -1,4 +1,4 @@
-/* Tokens do design_system.md. Nenhum valor literal fora deste arquivo. */
+/* Tokens do design_system.md e do design da plataforma. Nenhum valor de cor fora deste arquivo. */
 :root {
   --primary: #0052ff;
   --primary-active: #003ecc;
@@ -7,23 +7,36 @@
   --body: #5b616e;
   --muted: #7c828a;
   --hairline: #dee1e6;
+  --hairline-strong: #c9cdd3;
   --canvas: #ffffff;
   --surface-soft: #f7f7f7;
   --surface-strong: #eef0f3;
   --surface-dark: #0a0b0d;
   --surface-dark-elevated: #16181c;
+  --surface-dark-high: #23262c;
+  --hairline-dark: #2a2d33;
   --on-primary: #ffffff;
   --on-dark: #ffffff;
   --on-dark-soft: #a8acb3;
-  --textura-clara: rgba(255, 255, 255, 0.5);
-  --textura-escura: rgba(0, 0, 0, 0.3);
+  --texto-apagado: #b8bcc3;
   --semantic-up: #05b169;
   --semantic-down: #cf202f;
+
+  /* Texturas do cubo: traços claros e escuros sobre a cor. */
+  --textura-clara: rgba(255, 255, 255, 0.5);
+  --textura-escura: rgba(0, 0, 0, 0.3);
+  --anel-claro: rgba(255, 255, 255, 0.12);
+  --contorno-claro: rgba(255, 255, 255, 0.9);
+  --vidro-escuro: rgba(10, 11, 13, 0.82);
+  --veu: rgba(10, 11, 13, 0.6);
+  --sombra-cartao: 0 4px 12px rgba(0, 0, 0, 0.04);
 
   --font-sans: 'Inter', -apple-system, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
+  --radius-sm: 6px;
   --radius-md: 12px;
+  --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-pill: 100px;
   --radius-full: 9999px;
@@ -37,4 +50,5 @@
   --space-section: 96px;
 
   --max-width: 1200px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 }

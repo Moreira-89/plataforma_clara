@@ -1,80 +1,112 @@
-/* Visão geral do investidor: faixas de totais, gráfico de rendimento, ranking de empresas, cubo 3D e chat. */
-.visao {
-  display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--space-lg); margin-top: var(--space-xl);
-  grid-template-areas: "total resumo" "grafico grafico" "rank cubo" "rank chat";
-}
-.faixa, .painel { border: 1px solid var(--hairline); border-radius: var(--radius-xl); background: var(--canvas); }
-.faixa-total { grid-area: total; }
-.faixa-contagem { grid-area: resumo; }
-.painel-grafico { grid-area: grafico; }
-.painel-ranking { grid-area: rank; }
-.painel-chat { grid-area: chat; }
-.cubo-area { grid-area: cubo; }
-.cubo-area .cubo-palco { height: 380px; --lado: 250px; }
-.faixa { display: flex; justify-content: space-between; align-items: center; gap: var(--space-base); padding: var(--space-base) var(--space-lg); font-size: 14px; color: var(--muted); }
-.faixa strong { color: var(--ink); }
-.faixa-total { background: var(--surface-dark); color: var(--on-dark-soft); border-color: transparent; }
-.faixa-total strong { color: var(--on-dark); font-size: 32px; line-height: 1.1; letter-spacing: -0.6px; }
-.faixa-contagem strong { font-size: 24px; }
+/* Visão geral do investidor: totais, alocação por etiqueta, gráfico de rendimento, ranking, cubo e chat. */
 
-.painel { padding: var(--space-xl); }
+/* --- totais (painel escuro) --- */
+.totais {
+  margin-top: var(--space-xl); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: var(--space-xl) var(--space-xxl);
+  padding: clamp(24px, 3vw, 40px); border-radius: var(--radius-xl); background: var(--surface-dark); color: var(--on-dark-soft);
+}
+.totais-topo { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: var(--space-lg) var(--space-xxl); }
+.totais-topo > div > span { font-size: 14px; }
+.totais-valor { display: block; margin-top: var(--space-xs); color: var(--on-dark); font: 500 clamp(40px, 6vw, 80px) / 1 var(--font-mono); letter-spacing: -0.04em; }
+.totais-dl { display: flex; gap: 40px; margin: 0; flex-wrap: wrap; }
+.totais-dl dt { font-size: 13px; }
+.totais-dl dd { margin: 4px 0 0; color: var(--on-dark); font: 500 28px/1.1 var(--font-mono); }
+.totais-dl dd.positivo { color: var(--semantic-up); }
+.totais-aloc { grid-column: 1 / -1; }
+.aloc-barra { display: flex; gap: 4px; height: 12px; }
+.aloc-barra i {
+  flex: var(--fatia); border-radius: var(--radius-pill); background: var(--cor); transform-origin: left;
+  animation: cl-grow-x 1s var(--ease) both; animation-delay: var(--atraso, 0ms);
+}
+.aloc-legenda { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-lg); margin: var(--space-base) 0 0; padding: 0; list-style: none; font-size: 13px; }
+.aloc-legenda li { display: flex; align-items: center; gap: var(--space-xs); }
+.aloc-legenda i { width: 10px; height: 10px; border-radius: var(--radius-full); background: var(--cor); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2); }
+.aloc-legenda li > span:first-of-type { color: var(--on-dark); }
+.aloc-legenda li > span:last-of-type { font-family: var(--font-mono); }
+
+/* --- painéis --- */
+.painel { margin-top: var(--space-lg); padding: clamp(20px, 3vw, 32px); border: 1px solid var(--hairline); border-radius: var(--radius-xl); }
 .painel h2 { font-size: 24px; line-height: 1.2; letter-spacing: -0.3px; }
 .painel-sub { margin-top: var(--space-xs); font-size: 14px; color: var(--muted); }
+.painel-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-base) var(--space-lg); flex-wrap: wrap; }
 
-/* Gráfico de rendimento: barras (R$ por mês) e linha (% acumulado), em SVG. */
-.grafico-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-lg); }
-.grafico-resumo { display: flex; gap: var(--space-xl); margin: 0; }
-.grafico-resumo div { text-align: right; }
-.grafico-resumo dt { font-size: 13px; color: var(--muted); }
-.grafico-resumo dd { margin: 0; font-size: 24px; line-height: 1.2; letter-spacing: -0.3px; color: var(--ink); }
-.grafico-area { position: relative; margin-top: var(--space-base); }
-.grafico-svg { display: block; width: 100%; height: auto; }
-.grafico-grade line { stroke: var(--hairline); stroke-width: 1; }
-.grafico-eixo text { fill: var(--muted); font: 400 11px var(--font-sans); }
-.grafico-barra { fill: var(--primary); opacity: 0.8; transition: opacity 0.15s; }
-.grafico-barra.ativa { opacity: 1; }
-.grafico-linha { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.grafico-ponto { fill: var(--canvas); stroke: var(--ink); stroke-width: 2; }
-.grafico-alvo { fill: transparent; }
-.dica-grafico { flex-direction: column; align-items: flex-start; gap: 2px; border-radius: var(--radius-md); }
-.grafico-legenda { display: flex; justify-content: center; gap: var(--space-lg); margin: var(--space-sm) 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--muted); }
+/* --- gráfico de rendimento: barras (R$ por mês) e linha (% acumulado) em SVG, rótulos em HTML --- */
+.grafico-legenda { display: flex; gap: var(--space-lg); margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--muted); }
 .grafico-legenda li { display: flex; align-items: center; gap: var(--space-xs); }
 .legenda-barra { width: 12px; height: 12px; border-radius: 3px; background: var(--primary); }
-.legenda-linha { width: 16px; height: 0; border-top: 2px solid var(--ink); }
-
-/* Ranking: posição, empresa (com ramo e etiqueta), valor e barra de participação. */
-.ranking { display: grid; gap: var(--space-xs); list-style: none; padding: 0; margin: var(--space-base) 0 0; counter-reset: posicao; }
-.linha-ranking {
-  display: grid; grid-template-columns: 32px 1fr auto; gap: 6px var(--space-sm); align-items: center;
-  padding: var(--space-sm) var(--space-base); border-radius: var(--radius-md); counter-increment: posicao;
+.legenda-linha { width: 16px; border-top: 2px solid var(--ink); }
+.grafico-area { position: relative; margin-top: var(--space-base); }
+.grafico-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.grafico-grade { stroke: var(--surface-strong); stroke-width: 1; }
+.grafico-barra {
+  fill: var(--primary); transform-box: fill-box; transform-origin: 50% 100%; transition: opacity 0.15s;
+  animation: cl-grow 0.9s var(--ease) both; animation-delay: var(--atraso, 0ms);
 }
-.linha-ranking:hover { background: var(--surface-soft); }
-.linha-ranking::before {
-  content: counter(posicao); display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-full);
-  background: var(--surface-strong); color: var(--ink); font: 500 13px var(--font-mono);
+.grafico-linha {
+  fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; stroke-dasharray: 1;
+  animation: cl-draw 1.4s 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
-.linha-ranking:nth-child(-n+3)::before { background: var(--primary); color: var(--on-primary); }
-.linha-ranking .empresa { display: grid; min-width: 0; }
-.linha-ranking .empresa strong { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.linha-ranking .empresa small { display: flex; align-items: center; gap: var(--space-xs); font-size: 13px; color: var(--muted); }
-.linha-ranking .selo { width: 10px; height: 10px; border-radius: var(--radius-full); background: var(--cor); box-shadow: inset 0 0 0 1px var(--hairline); flex: none; }
-.linha-ranking .valores { text-align: right; color: var(--ink); font-size: 14px; }
-.linha-ranking .valores small { display: block; font-size: 13px; color: var(--muted); }
-.linha-ranking .barra-fina { grid-column: 2 / -1; }
-.barra-fina { height: 6px; border-radius: var(--radius-pill); background: var(--surface-strong); overflow: hidden; }
-.barra-fina i { display: block; height: 100%; width: var(--largura, 0); border-radius: var(--radius-pill); background: var(--primary); }
+.grafico-ponto { fill: var(--canvas); stroke: var(--ink); stroke-width: 2; transition: r 0.15s; }
+.grafico-alvo { fill: transparent; }
+.grafico-rotulos { position: absolute; inset: 0; pointer-events: none; font-size: 11px; color: var(--muted); }
+.grafico-rotulos span { position: absolute; white-space: nowrap; }
+.grafico-rotulos .esquerda { transform: translateY(-50%); padding-right: var(--space-xs); }
+.grafico-rotulos .direita { transform: translateY(-50%); padding-left: var(--space-xs); }
+.grafico-rotulos .mes { bottom: 0; transform: translateX(-50%); }
+.grafico-dica {
+  position: absolute; display: grid; gap: 2px; padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-md); background: var(--ink);
+  color: var(--on-dark-soft); font-size: 13px; white-space: nowrap; pointer-events: none; transform: translate(-50%, calc(-100% - 14px));
+}
+.grafico-dica[hidden] { display: none; }
+.grafico-dica strong { color: var(--on-dark); font-weight: 600; }
+.grafico-dica b { color: var(--on-dark); font: 400 13px var(--font-mono); }
 
-/* Chat: mensagens com rolagem e campo de envio. */
-.painel-chat { display: flex; flex-direction: column; gap: var(--space-base); padding: var(--space-lg); }
-.painel-chat h2 { font-size: 20px; }
-.chat-mensagens { display: flex; flex: 1 1 0; flex-direction: column; gap: var(--space-xs); min-height: 220px; max-height: 480px; overflow-y: auto; padding: var(--space-xs) 2px; }
-.chat-balao { max-width: 85%; padding: var(--space-xs) var(--space-base); border-radius: var(--radius-md); font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
-.chat-balao.assistente { align-self: flex-start; background: var(--surface-strong); color: var(--ink); }
-.chat-balao.usuario { align-self: flex-end; background: var(--primary); color: var(--on-primary); }
+/* --- ranking, cubo e chat --- */
+.visao-linha { margin-top: var(--space-lg); display: flex; flex-wrap: wrap; gap: var(--space-lg); align-items: stretch; }
+.visao-linha .painel { margin-top: 0; }
+.painel-ranking { flex: 1.5 1 520px; min-width: 0; }
+.visao-coluna { flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: var(--space-lg); }
+
+.ranking { display: grid; gap: 4px; list-style: none; padding: 0; margin: var(--space-base) 0 0; }
+.ranking button {
+  width: 100%; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 6px var(--space-sm); align-items: center; padding: var(--space-sm) var(--space-base);
+  border: 0; border-radius: var(--radius-md); background: transparent; text-align: left; cursor: pointer; transition: background 0.18s;
+}
+.ranking button:hover { background: var(--surface-soft); }
+.ranking .posicao {
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-full); background: var(--surface-strong); color: var(--ink);
+  font: 500 13px var(--font-mono);
+}
+.ranking .posicao.destaque { background: var(--primary); color: var(--on-primary); }
+.ranking .empresa { display: grid; min-width: 0; }
+.ranking .empresa strong { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ranking .empresa small { display: flex; align-items: center; gap: var(--space-xs); font-size: 13px; color: var(--muted); min-width: 0; }
+.ranking .empresa small i { flex: none; width: 10px; height: 10px; border-radius: var(--radius-full); background: var(--cor); box-shadow: inset 0 0 0 1px var(--hairline); }
+.ranking .empresa small span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ranking .valores { text-align: right; color: var(--ink); font-size: 14px; }
+.ranking .valores strong { font: 500 14px var(--font-mono); }
+.ranking .valores small { display: block; font-size: 13px; color: var(--muted); }
+.ranking .trilha { grid-column: 2 / -1; height: 6px; border-radius: var(--radius-pill); background: var(--surface-strong); overflow: hidden; }
+.ranking .trilha i {
+  display: block; height: 100%; width: 100%; border-radius: var(--radius-pill); background: var(--primary); transform-origin: left; transform: scaleX(var(--largura));
+  animation: cl-grow-x 1.1s var(--ease) both; animation-delay: var(--atraso, 0ms);
+}
+
+.painel-chat { flex: 1; display: flex; flex-direction: column; gap: var(--space-base); padding: var(--space-lg); }
+.painel-chat h2 { font-size: 20px; line-height: 1.2; letter-spacing: -0.3px; }
+.chat-log { flex: 1 1 0; display: flex; flex-direction: column; gap: var(--space-xs); min-height: 200px; max-height: 420px; overflow-y: auto; padding: var(--space-xs) 2px; }
+.chat-balao {
+  align-self: flex-start; max-width: 85%; padding: var(--space-xs) var(--space-base); border-radius: var(--radius-md); font-size: 14px; line-height: 1.45;
+  overflow-wrap: anywhere; background: var(--surface-strong); color: var(--ink); transform-origin: left; animation: cl-in 0.35s var(--ease) both;
+}
+.chat-balao.meu { align-self: flex-end; background: var(--primary); color: var(--on-primary); transform-origin: right; }
+.chat-digitando { align-self: flex-start; display: flex; gap: 4px; padding: 14px var(--space-base); border-radius: var(--radius-md); background: var(--surface-strong); }
+.chat-digitando i { width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--body); animation: cl-dot 1s infinite; }
+.chat-digitando i:nth-child(2) { animation-delay: 0.15s; }
+.chat-digitando i:nth-child(3) { animation-delay: 0.3s; }
 .chat-form { display: flex; gap: var(--space-xs); }
 .chat-form input {
   flex: 1; min-width: 0; height: 44px; padding: 0 var(--space-base); border: 1px solid var(--hairline); border-radius: var(--radius-pill);
-  background: var(--surface-strong); font: 400 14px var(--font-sans); color: var(--ink);
+  background: var(--surface-strong); font: 400 14px var(--font-sans); color: var(--ink); transition: border-color 0.15s, background 0.15s;
 }
-.chat-form input:focus { outline: none; border-color: var(--primary); background: var(--canvas); }
-.chat-form .btn { height: 44px; }
+.chat-form input:focus { border-color: var(--primary); background: var(--canvas); }

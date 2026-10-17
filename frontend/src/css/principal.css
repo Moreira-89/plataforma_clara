@@ -1,5 +1,6 @@
 /* Estilos comuns a todas as páginas. */
 @import './tokens.css';
 @import './base.css';
+@import './movimento.css';
 @import './componentes.css';
 @import './cubo.css';
