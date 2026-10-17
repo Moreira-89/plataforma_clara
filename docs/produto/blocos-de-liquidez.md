@@ -83,8 +83,19 @@ grava nada.
 (a Safira tem um painel com todos os blocos Safira dele, a Rubi outro, e assim por diante). Os
 cartões são os mesmos da tela de Blocos de Liquidez, com a linha **Investido: R$ ...**. Dentro de cada
 painel os blocos vão do mais recente ao mais antigo, e os painéis seguem a ordem do bloco mais novo
-de cada pedra. O botão **Ver mais detalhes** aparece, mas ainda está desativado: a lógica dele será
-definida depois. O menu lateral do investidor tem os dois itens: Blocos de Liquidez e Blocos Investidos.
+de cada pedra. O menu lateral do investidor tem os dois itens: Blocos de Liquidez e Blocos Investidos.
+
+O botão **Ver mais detalhes** abre o mesmo pop-up da tela de Blocos de Liquidez, mas com a visão de
+quem já investiu. Ele mostra a etiqueta, a data de vencimento e o score do bloco, e acrescenta:
+
+- **Capital total do bloco**;
+- **Você investiu**: o valor que o investidor aplicou no bloco;
+- **Sua participação no bloco**: o valor investido dividido pelo capital total.
+
+A tabela de empresas ganha duas colunas além de nome, CNPJ, ramo, capital estimado e score de risco:
+**% do bloco** (a fatia da empresa no bloco) e **Seu capital** (o valor investido vezes essa fatia,
+isto é, quanto do dinheiro do investidor está em cada empresa; a coluna soma o valor investido). Nesse
+pop-up não há botão de alocar dinheiro.
 
 **Carteira de exemplo.** Como não existe aporte real, cada conta de investidor recebe uma carteira de
 **demonstração**: cerca de 40% dos blocos, com um valor fictício em cada (múltiplo de R$ 5 mil, de
@@ -151,5 +162,5 @@ Os detalhes técnicos (tabelas, rotas e erros) estão em
   gravação deixa de recusar.
 - **Score real:** o modelo de machine learning (Random Forest, de 0 a 100, a partir do histórico) ainda não existe; hoje os scores são de demonstração (ver aviso acima).
 - **Alocar dinheiro:** como o investidor aporta de verdade ainda não foi definido; hoje o botão só confirma, sem gravar.
-- **Ver mais detalhes em Blocos Investidos:** a lógica do botão será definida pelo grupo; hoje ele aparece desativado.
+- **Cubo:** o desenho prevê um "cubo" nos blocos (uma grade colorida); a lógica dele na tela de Blocos Investidos ainda não está definida, e na tela inicial do investidor está mais clara. Por ora o pop-up de detalhes é o descrito acima.
 - **Filtros em Blocos Investidos:** o desenho prevê um botão de filtros, ainda sem definição.

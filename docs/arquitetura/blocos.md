@@ -105,8 +105,9 @@ Os scores são **fictícios**: foram sorteados (inteiros de 0 a 100, semente fix
 
 ## Blocos de exemplo
 
-Os blocos que aparecem hoje na plataforma são **dados fictícios de demonstração**: 12 blocos
-montados com as empresas do cadastro, com responsável, capital, vencimento, datas de criação e
+Os blocos que aparecem hoje na plataforma são **dados fictícios de demonstração**: 26 blocos
+(12 com uma pedra cada e 14 que repetem pedras, para os painéis de Blocos Investidos terem vários
+blocos por pedra) montados com as empresas do cadastro, com responsável, capital, vencimento, datas de criação e
 distribuição da liquidez sorteados (cada bloco soma exatamente 100%, e nenhuma empresa está em
 dois blocos). Foram gravados com `criado_por_uid = 'seed-demo'`, pelas mesmas regras e pela mesma
 transação da tela. O script que os gerou foi removido. Para apagá-los, no BigQuery:
