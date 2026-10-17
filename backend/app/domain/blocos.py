@@ -149,6 +149,23 @@ class BlocoDetalhado:
     empresas: tuple[EmpresaDoBlocoDetalhada, ...]
 
 
+def fatias_percentuais(capital_total: Decimal, capitais: list[Decimal]) -> list[Decimal]:
+    """
+    A fatia de cada empresa no capital do bloco, em %, da maior para a menor.
+
+    Args:
+        capital_total (Decimal): Capital total do bloco.
+        capitais (list[Decimal]): Capital estimado de cada empresa.
+
+    Returns:
+        list[Decimal]: Percentuais com 2 casas, em ordem decrescente; vazia sem capital.
+    """
+    if capital_total <= 0:
+        return []
+    fatias = (capital * 100 / capital_total for capital in capitais)
+    return sorted((f.quantize(Decimal("0.01")) for f in fatias), reverse=True)
+
+
 def cor_da_etiqueta(etiqueta: str) -> str | None:
     """Cor da pedra, ou None se a etiqueta não está mais na lista."""
     return ETIQUETAS.get(etiqueta)

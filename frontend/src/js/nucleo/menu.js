@@ -20,21 +20,21 @@ function criar(tag, classe, texto) {
   return el
 }
 
-// Monta o menu lateral em <aside id="menu">; devolve quem mostra o usuário depois do login.
-export function montarMenu(perfil) {
-  const barra = document.querySelector('#menu')
-  barra.className = 'menu-lateral'
-  document.body.classList.add('com-menu')
-
+function logo(perfil, largura, altura) {
   const marca = criar('a', 'marca')
   marca.href = destinoDoPerfil(perfil)
-  const logo = criar('img')
-  logo.src = logoUrl
-  logo.alt = 'Plataforma Clara'
-  marca.append(logo)
+  const imagem = criar('img')
+  imagem.src = logoUrl
+  imagem.alt = 'Plataforma Clara'
+  imagem.width = largura
+  imagem.height = altura
+  marca.append(imagem)
+  return marca
+}
 
-  const itens = criar('nav', 'menu-itens')
-  itens.setAttribute('aria-label', 'Menu')
+function itens(perfil, classe, rotuloAria) {
+  const lista = criar('nav', classe)
+  lista.setAttribute('aria-label', rotuloAria)
   for (const item of ITENS[perfil] ?? []) {
     const link = criar('a', '', item.rotulo)
     link.href = item.href
@@ -42,19 +42,39 @@ export function montarMenu(perfil) {
       link.classList.add('ativo')
       link.setAttribute('aria-current', 'page')
     }
-    itens.append(link)
+    lista.append(link)
   }
+  return lista
+}
 
-  const rodape = criar('div', 'menu-rodape')
-  const usuario = criar('span', 'usuario-menu')
-  const botaoSair = criar('button', 'btn btn-secundario', 'Sair')
-  botaoSair.type = 'button'
-  botaoSair.addEventListener('click', async () => {
+function botaoSair(classe = 'menu-sair') {
+  const botao = criar('button', classe, 'Sair')
+  botao.type = 'button'
+  botao.addEventListener('click', async () => {
     await sair()
     window.location.href = HOME
   })
-  rodape.append(usuario, botaoSair)
+  return botao
+}
 
-  barra.replaceChildren(marca, itens, rodape)
+// Monta o menu lateral em <aside id="menu"> e, ao lado dele, a faixa superior usada em janelas
+// estreitas; devolve quem mostra o usuário depois do login.
+export function montarMenu(perfil) {
+  const barra = document.querySelector('#menu')
+  barra.className = 'menu-lateral'
+  document.body.classList.add('com-menu')
+
+  const rodape = criar('div', 'menu-rodape')
+  const usuario = criar('span', 'usuario-menu')
+  rodape.append(usuario, botaoSair())
+  barra.replaceChildren(logo(perfil, 110, 36), itens(perfil, 'menu-itens', 'Menu'), rodape)
+
+  const topo = criar('header', 'menu-topo')
+  const faixa = criar('div', 'menu-topo-barra')
+  faixa.append(logo(perfil, 98, 32), botaoSair())
+  topo.append(faixa)
+  if ((ITENS[perfil] ?? []).length > 1) topo.append(itens(perfil, 'menu-topo-itens', 'Menu'))
+  barra.after(topo)
+
   return { definirUsuario: (email) => (usuario.textContent = email ?? '') }
 }

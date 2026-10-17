@@ -14,14 +14,14 @@
   <body data-perfil="investidor" class="com-menu">
     <aside id="menu"></aside>
 
-    <main class="pagina-blocos pagina-relatorio" id="conteudo" hidden>
+    <main class="pagina-blocos" id="conteudo" hidden>
       <span class="rotulo">Investidor</span>
       <h1 class="titulo-pagina">Relatório</h1>
-      <p>Peça um relatório em PDF sobre os seus investimentos e baixe quando ele estiver pronto.</p>
+      <p class="subtitulo-pagina">Peça um relatório em PDF sobre os seus investimentos e baixe quando ele estiver pronto.</p>
 
       <div class="relatorio-grade">
         <div class="relatorio-lateral">
-          <section class="cartao relatorio-pedido">
+          <section class="relatorio-cartao">
             <h2>Relatório consolidado de investimentos</h2>
             <p class="relatorio-sub">Um PDF gerado por inteligência artificial a partir dos seus investimentos. É apenas informativo: não traz recomendações de investimento.</p>
             <ul class="relatorio-itens">
@@ -32,12 +32,13 @@
             <button class="btn btn-primario" id="gerar" type="button">Gerar relatório</button>
           </section>
 
-          <section class="cartao relatorio-andamento" id="andamento" aria-live="polite" hidden>
+          <section class="relatorio-cartao relatorio-andamento" id="andamento" aria-live="polite" hidden>
             <ol class="relatorio-etapas" aria-label="Etapas do relatório">
               <li data-etapa="solicitado">Solicitado</li>
               <li data-etapa="gerando">Gerando</li>
               <li data-etapa="pronto">Pronto</li>
             </ol>
+            <div class="relatorio-scan" id="relatorio-scan" aria-hidden="true" hidden><i></i></div>
             <p id="andamento-texto" class="relatorio-mensagem"></p>
             <div class="relatorio-acoes">
               <button class="btn btn-secundario" id="tentar-de-novo" type="button" hidden>Tentar de novo</button>
@@ -45,7 +46,7 @@
           </section>
         </div>
 
-        <section class="cartao previa" aria-labelledby="previa-titulo">
+        <section class="relatorio-previa" aria-labelledby="previa-titulo">
           <header class="previa-topo">
             <h2 id="previa-titulo">Prévia do relatório</h2>
             <button class="btn btn-primario" id="baixar" type="button" disabled>Baixar PDF</button>

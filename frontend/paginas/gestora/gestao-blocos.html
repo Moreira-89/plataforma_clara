@@ -11,105 +11,113 @@
     <link rel="stylesheet" href="/src/css/paginas/gestora-novo-bloco.css" />
     <title>Gestão de Blocos — Plataforma Clara</title>
   </head>
-  <body data-perfil="gestora" class="com-menu">
+  <body data-perfil="gestora" data-modo="gestora" class="com-menu">
     <aside id="menu"></aside>
 
     <main class="pagina-blocos" id="conteudo" hidden>
       <span class="rotulo">Gestora</span>
-      <h1 class="titulo-pagina">Gestão de Blocos</h1>
-      <p>Os blocos de liquidez já criados, do mais recente para o mais antigo.</p>
+      <div class="cabecalho-pagina">
+        <div>
+          <h1 class="titulo-pagina">Gestão de Blocos</h1>
+          <p class="subtitulo-pagina">Os blocos de liquidez já criados, do mais recente para o mais antigo.</p>
+        </div>
+        <dl class="indicadores">
+          <div><dt>Blocos</dt><dd id="indicador-blocos">0</dd></div>
+          <div><dt>Capital alocado</dt><dd id="indicador-capital">R$ 0</dd></div>
+        </dl>
+      </div>
 
       <div class="barra-blocos">
         <input id="busca" type="search" placeholder="Buscar por código ou etiqueta" autocomplete="off" aria-label="Buscar bloco" />
-        <label class="ordem">
-          <span class="so-leitor">Ordenar por</span>
-          <select id="ordem" aria-label="Ordenar blocos">
-            <option value="recentes">Mais recentes</option>
-            <option value="score">Maior score</option>
-          </select>
-        </label>
-        <button class="btn btn-secundario" id="ver-tudo" type="button">Ver tudo</button>
-        <button class="btn btn-primario" id="criar-bloco" type="button">Criar novo bloco</button>
+        <select id="ordem" aria-label="Ordenar blocos"></select>
+        <button class="btn btn-secundario" id="limpar" type="button">Ver tudo</button>
+        <button class="btn btn-primario" id="criar-bloco" type="button"><span aria-hidden="true">+</span>Criar novo bloco</button>
       </div>
 
-      <p id="estado" class="mensagem" role="status"></p>
+      <p id="estado" class="mensagem estado-lista" role="status"></p>
       <section id="cartoes" class="grade-blocos" aria-live="polite"></section>
     </main>
 
-    <dialog id="dialogo-bloco" class="detalhe-bloco dialogo-bloco" aria-labelledby="dialogo-bloco-titulo">
-      <div class="detalhe-topo">
-        <h2 id="dialogo-bloco-titulo">Criar novo bloco</h2>
-        <button class="detalhe-fechar" id="dialogo-bloco-fechar" type="button" aria-label="Fechar">×</button>
+    <dialog id="dialogo-bloco" class="ficha ficha-criar" aria-labelledby="dialogo-bloco-titulo">
+      <div class="ficha-topo">
+        <h2 id="dialogo-bloco-titulo" class="titulo-criar">Criar novo bloco</h2>
+        <button class="ficha-fechar" id="dialogo-bloco-fechar" type="button" aria-label="Fechar">×</button>
       </div>
-      <form id="form-bloco" class="layout-bloco" novalidate>
-        <div class="coluna-principal">
-        <section class="cartao coluna-empresas">
-          <h2 class="titulo-bloco">Adicionar empresas no bloco</h2>
-          <div class="busca-empresa">
-            <input id="busca-empresa" type="search" placeholder="Nome fantasia ou CNPJ" autocomplete="off" aria-label="Buscar empresa" />
-            <button class="btn btn-secundario" id="adicionar" type="button" disabled>Adicionar</button>
-          </div>
-          <ul id="selecionadas" class="selecionadas" aria-label="Empresas marcadas" hidden></ul>
-          <p id="busca-estado" class="mensagem" role="status"></p>
-          <ul id="resultados" class="resultados" hidden></ul>
+      <form id="form-bloco" class="criar-grade" novalidate>
+        <div class="criar-principal">
+          <section class="criar-empresas">
+            <h3 class="criar-titulo">Adicionar empresas no bloco</h3>
+            <div class="busca-empresa">
+              <input id="busca-empresa" type="search" placeholder="Nome fantasia ou CNPJ" autocomplete="off" aria-label="Buscar empresa" />
+              <button class="btn btn-secundario" id="adicionar" type="button" disabled>Adicionar</button>
+            </div>
+            <ul id="selecionadas" class="selecionadas" aria-label="Empresas marcadas" hidden></ul>
+            <p id="busca-estado" class="busca-estado" role="status"></p>
+            <ul id="resultados" class="resultados" hidden></ul>
 
-          <div class="tabela-rolagem">
-            <table class="tabela" id="tabela-empresas">
-              <thead>
-                <tr>
-                  <th>Empresa</th><th>CNPJ</th><th>Ramo</th>
-                  <th>Capital estimado para a empresa</th>
-                  <th>Porcentagem de liquidez aplicada</th>
-                  <th><span class="so-leitor">Remover</span></th>
-                </tr>
-              </thead>
-              <tbody id="corpo-tabela"></tbody>
-            </table>
-          </div>
-          <p id="tabela-vazia" class="aviso-vazio">Nenhuma empresa adicionada.</p>
+            <div class="tabela-rolagem tabela-empresas">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th>Empresa</th><th>CNPJ</th><th>Ramo</th>
+                    <th class="direita">Capital estimado para a empresa</th>
+                    <th class="direita">Porcentagem de liquidez aplicada</th>
+                    <th><span class="so-leitor">Remover</span></th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-tabela"></tbody>
+              </table>
+            </div>
+            <p id="tabela-vazia" class="aviso-vazio">Nenhuma empresa adicionada.</p>
 
-          <div class="resumo-alocacao" aria-live="polite">
-            <div><span>Realocado</span><strong class="numero" id="realocado">0%</strong></div>
-            <div><span>Disponível</span><strong class="numero" id="disponivel">100%</strong></div>
-          </div>
-        </section>
+            <div class="barra-alocacao" aria-hidden="true"><i id="barra-alocacao"></i></div>
+            <div class="resumo-alocacao" aria-live="polite">
+              <div><span>Realocado</span><strong id="realocado">0%</strong></div>
+              <div><span>Disponível</span><strong id="disponivel">100%</strong></div>
+              <button class="dividir" id="dividir" type="button" hidden>Dividir igualmente</button>
+            </div>
+          </section>
 
-        <p id="mensagem" class="mensagem" role="status"></p>
-        <button class="btn btn-primario btn-lg btn-bloco" id="salvar" type="submit" disabled>Criar bloco</button>
+          <p id="mensagem" class="criar-erro" role="status"></p>
+          <button class="criar-salvar" id="salvar" type="submit" disabled>Criar bloco</button>
         </div>
 
-        <aside class="coluna-dados">
-          <div class="cartao dados-bloco">
-            <h2 class="titulo-bloco">Dados do bloco</h2>
+        <aside class="criar-aside">
+          <div class="criar-dados">
+            <h3 class="criar-titulo">Dados do bloco</h3>
             <label class="campo">Etiqueta
               <span class="linha-cor">
                 <i class="selo-cor" id="selo-cor" aria-hidden="true"></i>
                 <select name="etiqueta" id="etiqueta" required></select>
               </span>
-              <small id="codigo-previa" class="numero">Código: gerado ao salvar</small>
+              <small class="codigo-previa">Código: gerado ao salvar</small>
             </label>
             <label class="campo">Capital total do bloco
-              <input name="capital_total" id="capital-total" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off" required />
+              <input name="capital_total" id="capital-total" class="numero-campo" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off" required />
             </label>
             <label class="campo">Data de vencimento do bloco
               <input name="data_vencimento" id="data-vencimento" type="date" required />
             </label>
             <label class="campo">Nome do responsável técnico
-              <input name="responsavel_tecnico" maxlength="120" required autocomplete="off" />
+              <input name="responsavel_tecnico" id="responsavel" maxlength="120" required autocomplete="off" />
             </label>
             <label class="campo">Observação
               <textarea name="observacao" id="observacao" maxlength="500" rows="4"></textarea>
-              <small id="contador-observacao">0 / 500</small>
+              <small class="contador" id="contador-observacao">0 / 500</small>
             </label>
+          </div>
+          <div class="criar-previa" id="previa-cubo" hidden>
+            <p>Prévia do bloco visual</p>
+            <div id="previa-cubo-raiz"></div>
           </div>
         </aside>
       </form>
     </dialog>
 
-    <dialog id="detalhe" class="detalhe-bloco" aria-labelledby="detalhe-titulo">
-      <div class="detalhe-topo">
+    <dialog id="detalhe" class="ficha" aria-labelledby="detalhe-titulo">
+      <div class="ficha-topo">
         <h2 id="detalhe-titulo"></h2>
-        <button class="detalhe-fechar" id="detalhe-fechar" type="button" aria-label="Fechar">×</button>
+        <button class="ficha-fechar" id="detalhe-fechar" type="button" aria-label="Fechar">×</button>
       </div>
       <div id="detalhe-corpo"></div>
     </dialog>

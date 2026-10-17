@@ -18,20 +18,22 @@ const ETAPAS = ['solicitado', 'gerando', 'pronto']
 
 function mostrar(etapaAtual, texto, { erro = false, repetir = false } = {}) {
   $('#andamento').hidden = false
-  const lista = document.querySelector('.relatorio-etapas')
-  lista.classList.toggle('falhou', erro)
-  const concluido = etapaAtual === 'pronto' && !erro
-  ETAPAS.forEach((etapa, i) => {
-    const item = lista.querySelector(`[data-etapa="${etapa}"]`)
-    item.classList.toggle('feita', i < ETAPAS.indexOf(etapaAtual) || (concluido && etapa !== 'pronto'))
-    item.classList.toggle('atual', etapa === etapaAtual && !concluido)
-    item.classList.toggle('sucesso', concluido && etapa === 'pronto')
+  const posicao = ETAPAS.indexOf(etapaAtual)
+  const pronto = etapaAtual === 'pronto' && !erro
+  document.querySelectorAll('.relatorio-etapas li').forEach((item, i) => {
+    const sucesso = pronto && item.dataset.etapa === 'pronto'
+    const feita = !sucesso && (i < posicao || pronto)
+    const atual = !sucesso && !feita && i === posicao
+    item.className = sucesso ? 'sucesso' : feita ? 'feita' : atual ? (erro ? 'erro' : 'atual') : ''
+    if (sucesso || atual) item.setAttribute('aria-current', 'step')
+    else item.removeAttribute('aria-current')
   })
+  $('#relatorio-scan').hidden = pronto || erro
   const mensagem = $('#andamento-texto')
   mensagem.textContent = texto
   mensagem.classList.toggle('erro', erro)
   $('#tentar-de-novo').hidden = !repetir
-  $('#gerar').disabled = !(erro || concluido)
+  $('#gerar').disabled = !(erro || pronto)
 }
 
 // Prévia no iframe e botão de download: só ficam ativos com o PDF em mãos.
@@ -116,6 +118,9 @@ function baixar() {
   link.href = pdf.url
   link.download = ARQUIVO
   link.click()
+  const botao = $('#baixar')
+  botao.textContent = 'PDF baixado'
+  setTimeout(() => (botao.textContent = 'Baixar PDF'), 2200)
 }
 
 function ligarControles() {

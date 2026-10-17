@@ -10,123 +10,184 @@
     <link rel="stylesheet" href="/src/css/paginas/home.css" />
     <title>Plataforma Clara — transparência para FIDCs</title>
     <meta name="description" content="A Plataforma Clara abre a caixa-preta dos fundos de direitos creditórios: o investidor vê onde o dinheiro está e qual o risco." />
+    <noscript><style>[data-reveal] { opacity: 1 !important; transform: none !important; } [data-fill] { background-position: 0 0 !important; }</style></noscript>
   </head>
-  <body>
-    <header class="nav nav-escura">
-      <div class="container">
-        <a class="marca" href="/"><img src="/src/img/logo-clara.png" alt="Plataforma Clara" /></a>
-        <nav class="nav-links" aria-label="Seções">
+  <body class="home">
+    <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+    <header class="topo">
+      <div class="topo-in">
+        <a class="topo-marca" href="/" aria-label="Plataforma Clara — início"><img src="/src/img/logo-clara.png" alt="Plataforma Clara" width="110" height="36" /></a>
+        <nav class="topo-nav" aria-label="Seções">
           <a href="#problema">O problema</a>
           <a href="#como-funciona">Como funciona</a>
           <a href="#para-quem">Para quem</a>
         </nav>
-        <div class="nav-acoes" id="nav-acoes">
-          <a class="btn btn-contorno-escuro" href="/paginas/login.html">Entrar</a>
-          <a class="btn btn-primario" href="/paginas/cadastro.html">Criar conta</a>
+        <div class="topo-acoes" id="nav-acoes">
+          <a class="topo-entrar" href="/paginas/login.html">Entrar</a>
+          <a class="topo-criar" href="/paginas/login.html?modo=cadastro">Criar conta</a>
         </div>
       </div>
     </header>
 
-    <main>
-      <section class="hero secao-escura">
-        <div class="container">
-          <div>
-            <span class="rotulo">Transparência para FIDCs</span>
-            <h1 style="margin-top: 16px">Abra a caixa-preta do seu investimento.</h1>
-            <p>
-              A Plataforma Clara traz transparência total para a gestão e o acompanhamento dos fundos
-              de investimento em direitos creditórios. Veja onde o seu dinheiro está e qual é o risco real.
-            </p>
-            <div class="hero-acoes">
-              <a class="btn btn-primario btn-lg" href="/paginas/cadastro.html">Criar conta de investidor</a>
-              <a class="btn btn-contorno-escuro btn-lg" href="/paginas/login.html">Entrar</a>
+    <main id="conteudo">
+      <section class="hero" aria-labelledby="hero-titulo">
+        <div class="hero-in">
+          <div class="hero-topo">
+            <span class="chip-escuro" data-reveal="up">Transparência para FIDCs</span>
+          </div>
+          <h1 id="hero-titulo" class="hero-titulo">
+            <span class="linha"><span data-reveal="line">Abra a caixa-preta</span></span>
+            <span class="linha"><span data-reveal="line" data-delay="110">do seu <span class="destaque">investimento.</span></span></span>
+          </h1>
+          <div class="hero-grade">
+            <div>
+              <p class="hero-texto" data-reveal="up" data-delay="320">A Plataforma Clara traz transparência total para a gestão e o acompanhamento dos fundos de investimento em direitos creditórios. Veja onde o seu dinheiro está e qual é o risco real.</p>
+              <div class="hero-acoes" data-reveal="up" data-delay="420">
+                <a class="btn btn-lg btn-primario btn-seta" href="/paginas/login.html?modo=cadastro">Criar conta de investidor<span aria-hidden="true">→</span></a>
+                <a class="btn btn-lg btn-contorno-escuro" href="/paginas/login.html">Entrar</a>
+              </div>
+            </div>
+
+            <div class="hero-visual" data-reveal="up" data-delay="260">
+              <div class="hero-cubo" aria-hidden="true">
+                <div class="mini-cubo">
+                  <i style="--cor: #0F52BA"></i><i style="--cor: #0F52BA"></i><i style="--cor: #0F52BA; --tom: 0.72"></i>
+                  <i style="--cor: #0F52BA; --tom: 0.72"></i><i style="--cor: #0F52BA; --tom: 1.28"></i><i style="--cor: #0F52BA; --tom: 1.28"></i>
+                  <i style="--cor: #0F52BA" data-p="1"></i><i style="--cor: #0F52BA" data-p="1"></i><i style="--cor: var(--muted)"></i>
+                </div>
+              </div>
+              <aside class="hero-exemplo" aria-label="Exemplo ilustrativo de um bloco">
+                <div class="exemplo-titulo">
+                  <strong>Bloco de Liquidez</strong>
+                  <span class="chip-fundo">Exemplo ilustrativo</span>
+                </div>
+                <div class="exemplo-linha"><div>Empresa A<small>Nota de crédito</small></div><span>A+</span></div>
+                <div class="exemplo-linha"><div>Empresa B<small>Nota de crédito</small></div><span>A-</span></div>
+                <div class="exemplo-linha"><div>Empresa C<small>Nota de crédito</small></div><span>B+</span></div>
+                <p class="exemplo-nota">Dados fictícios, só para ilustrar como a plataforma apresenta cada empresa.</p>
+              </aside>
             </div>
           </div>
+        </div>
+      </section>
 
-          <aside class="cartao cartao-escuro" aria-label="Exemplo ilustrativo de um bloco">
-            <div class="exemplo-titulo">
-              <strong>Bloco de Liquidez</strong>
-              <span class="rotulo">Exemplo ilustrativo</span>
+      <section class="problema" id="problema" aria-labelledby="problema-titulo">
+        <div class="secao-in">
+          <div class="secao-rotulo" data-reveal="up">
+            <span class="secao-numero">01</span>
+            <span class="rotulo">O problema</span>
+          </div>
+          <h2 id="problema-titulo" class="problema-titulo" data-reveal="up" data-delay="80">Acompanhar a saúde de um FIDC é difícil.</h2>
+          <p class="problema-texto"><span data-fill>Um único fundo pode reunir milhares de pagamentos de centenas de empresas e clientes. Saber se estão pagando em dia, se o risco de calote aumentou ou qual é a saúde real do investimento exige pilhas de planilhas, PDFs gigantescos e dados desatualizados. Essa falta de clareza é a caixa-preta: o investidor fica inseguro, a checagem fica lenta e o risco de erro aumenta.</span></p>
+        </div>
+      </section>
+
+      <section class="como" id="como-funciona" aria-labelledby="como-titulo">
+        <div class="secao-in">
+          <div class="como-cabecalho">
+            <div>
+              <div class="secao-rotulo" data-reveal="up">
+                <span class="secao-numero">02</span>
+                <span class="rotulo">Como funciona</span>
+              </div>
+              <h2 id="como-titulo" class="como-titulo" data-reveal="up" data-delay="80">Uma lente de aumento sobre o fundo.</h2>
             </div>
-            <div class="linha-exemplo"><div>Empresa A<small>Nota de crédito</small></div><span class="numero">A+</span></div>
-            <div class="linha-exemplo"><div>Empresa B<small>Nota de crédito</small></div><span class="numero">A-</span></div>
-            <div class="linha-exemplo"><div>Empresa C<small>Nota de crédito</small></div><span class="numero">B+</span></div>
-            <p class="nota-exemplo">Dados fictícios, só para ilustrar como a plataforma apresenta cada empresa.</p>
-          </aside>
-        </div>
-      </section>
+            <p class="como-texto" data-reveal="up" data-delay="160">A plataforma se conecta às fontes de dados e transforma milhares de linhas em um painel simples e visual, como o velocímetro de um carro.</p>
+          </div>
 
-      <section class="secao" id="problema">
-        <div class="container">
-          <span class="rotulo">O problema</span>
-          <h2 class="titulo-secao">Acompanhar a saúde de um FIDC é difícil.</h2>
-          <p class="texto-secao">
-            Um único fundo pode reunir milhares de pagamentos de centenas de empresas e clientes.
-            Saber se estão pagando em dia, se o risco de calote aumentou ou qual é a saúde real do
-            investimento exige pilhas de planilhas, PDFs gigantescos e dados desatualizados.
-            Essa falta de clareza é a caixa-preta: o investidor fica inseguro, a checagem fica lenta
-            e o risco de erro aumenta.
-          </p>
-        </div>
-      </section>
+          <div class="como-grade">
+            <article class="passo" data-reveal="up">
+              <span class="passo-indice">/01</span>
+              <div class="passo-arte passo-arte-blocos" aria-hidden="true">
+                <div class="etiqueta-demo"><i style="--cor: #0F52BA"></i>Safira</div>
+                <div class="barra-demo">
+                  <i style="--cor: #0F52BA; flex: 5"></i><i style="--cor: #0F52BA; --tom: 0.72; flex: 3"></i><i style="--cor: #0F52BA; --tom: 1.28; flex: 2"></i><i style="--cor: var(--muted); flex: 1"></i>
+                </div>
+                <div class="etiqueta-demo etiqueta-demo-segunda"><i style="--cor: #50C878"></i>Esmeralda</div>
+                <div class="barra-demo">
+                  <i style="--cor: #50C878; flex: 2"></i><i style="--cor: #50C878; --tom: 0.72; flex: 2"></i><i style="--cor: #50C878; --tom: 1.28; flex: 4"></i>
+                </div>
+              </div>
+              <div><h3>Blocos de Liquidez</h3><p>Veja o dinheiro agregado por bloco, com o volume alocado e as empresas por trás de cada um.</p></div>
+            </article>
 
-      <section class="secao secao-suave" id="como-funciona">
-        <div class="container">
-          <span class="rotulo">Como funciona</span>
-          <h2 class="titulo-secao">Uma lente de aumento sobre o fundo.</h2>
-          <p class="texto-secao">
-            A plataforma se conecta às fontes de dados e transforma milhares de linhas em um painel
-            simples e visual, como o velocímetro de um carro.
-          </p>
-          <div class="grade-3">
-            <article class="cartao">
-              <h3>Blocos de Liquidez</h3>
-              <p>Veja o dinheiro agregado por bloco, com o volume alocado e as empresas por trás de cada um.</p>
+            <article class="passo" data-reveal="up" data-delay="90">
+              <span class="passo-indice">/02</span>
+              <div class="passo-arte passo-arte-notas" aria-hidden="true">
+                <div class="notas-demo">
+                  <span class="nota nota-1">A+</span>
+                  <span class="nota nota-2">A</span>
+                  <span class="nota nota-3">A-</span>
+                  <span class="nota nota-4">B+</span>
+                  <span class="nota nota-5">B</span>
+                  <span class="nota nota-6">C-</span>
+                </div>
+              </div>
+              <div><h3>Score de risco</h3><p>Cada empresa tem uma nota de risco, numa escala de A+ a C-, fácil de comparar.</p></div>
             </article>
-            <article class="cartao">
-              <h3>Score de risco</h3>
-              <p>Cada empresa tem uma nota de risco, numa escala de A+ a C-, fácil de comparar.</p>
-            </article>
-            <article class="cartao">
-              <h3>Relatório em PDF</h3>
-              <p>Um relatório em linguagem natural, gerado por IA a partir dos dados reais da sua carteira.</p>
+
+            <article class="passo passo-escuro" data-reveal="up" data-delay="180">
+              <span class="passo-indice">/03</span>
+              <div class="passo-arte passo-arte-pdf" aria-hidden="true">
+                <div class="pdf-demo">
+                  <span class="pdf-chip">PDF</span>
+                  <span class="pdf-item"><i></i>Situação atual da carteira</span>
+                  <span class="pdf-item"><i></i>Movimentações de rating</span>
+                  <span class="pdf-item"><i></i>Risco de crédito agregado</span>
+                </div>
+              </div>
+              <div><h3>Relatório em PDF</h3><p>Um relatório em linguagem natural, gerado por IA a partir dos dados reais da sua carteira.</p></div>
             </article>
           </div>
         </div>
       </section>
 
-      <section class="secao" id="para-quem">
-        <div class="container">
-          <span class="rotulo">Para quem</span>
-          <h2 class="titulo-secao">Quem ganha com a transparência.</h2>
-          <div class="grade-3">
-            <article class="cartao">
-              <h3>Investidores</h3>
+      <section class="quem" id="para-quem" aria-labelledby="quem-titulo">
+        <div class="secao-in">
+          <div class="secao-rotulo" data-reveal="up">
+            <span class="secao-numero">03</span>
+            <span class="rotulo">Para quem</span>
+          </div>
+          <h2 id="quem-titulo" class="quem-titulo" data-reveal="up" data-delay="80">Quem ganha com a transparência.</h2>
+          <ul class="quem-lista">
+            <li data-reveal="up">
+              <h3><span>A</span>Investidores</h3>
               <p>Acompanhe o rendimento, confira se os pagamentos estão em dia e entenda o risco da aplicação sem ser especialista em finanças.</p>
-            </article>
-            <article class="cartao">
-              <h3>Gestora</h3>
+            </li>
+            <li data-reveal="up" data-delay="60">
+              <h3><span>B</span>Gestora</h3>
               <p>Reduza erros manuais e demonstre resultados de forma automática, transparente e confiável aos seus investidores.</p>
-            </article>
-            <article class="cartao">
-              <h3>Empresas cedentes</h3>
+            </li>
+            <li data-reveal="up" data-delay="120">
+              <h3><span>C</span>Empresas cedentes</h3>
               <p>Construa um histórico positivo, seja reconhecida como boa pagadora e tenha operações cada vez mais simples e ágeis.</p>
-            </article>
-          </div>
+            </li>
+          </ul>
         </div>
       </section>
 
-      <section class="secao secao-escura faixa-cta">
-        <div class="container">
-          <h2>Veja o que a gestora já vê.</h2>
-          <a class="btn btn-primario btn-lg" href="/paginas/cadastro.html">Criar conta de investidor</a>
+      <section class="cta" aria-labelledby="cta-titulo">
+        <div class="secao-in">
+          <h2 id="cta-titulo" class="cta-titulo">
+            <span class="linha"><span data-reveal="line">Veja o que a</span></span>
+            <span class="linha"><span data-reveal="line" data-delay="110">gestora já vê.</span></span>
+          </h2>
+          <div class="cta-acao" data-reveal="up" data-delay="240">
+            <a class="btn btn-lg btn-primario btn-seta" href="/paginas/login.html?modo=cadastro">Criar conta de investidor<span aria-hidden="true">→</span></a>
+          </div>
         </div>
       </section>
     </main>
 
     <footer class="rodape">
-      <div class="container">
-        <span>Plataforma Clara</span>
+      <div class="rodape-in">
+        <span class="rodape-nome">Plataforma Clara</span>
+        <nav class="rodape-nav" aria-label="Rodapé">
+          <a href="#problema">O problema</a>
+          <a href="#como-funciona">Como funciona</a>
+          <a href="#para-quem">Para quem</a>
+        </nav>
         <span>Projeto acadêmico FIAP</span>
       </div>
     </footer>

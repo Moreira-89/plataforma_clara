@@ -1,7 +1,56 @@
-/* Login e cadastro. */
-/* --- login e cadastro --- */
-.auth { min-height: calc(100vh - 64px); display: grid; place-items: center; padding: var(--space-xxl) var(--space-lg); background: var(--surface-soft); }
-.auth-cartao { width: 100%; max-width: 440px; }
-.auth-cartao h1 { font-size: 32px; line-height: 1.13; letter-spacing: -0.4px; margin-bottom: var(--space-xs); }
-.auth-cartao > p { margin-bottom: var(--space-lg); }
-.auth-rodape { margin-top: var(--space-lg); text-align: center; font-size: 14px; }
+/* Entrar e Criar conta: tela dividida, painel escuro de um lado e o formulário do outro. */
+.entrada-tela { min-height: 100svh; display: flex; flex-wrap: wrap-reverse; background: var(--canvas); }
+
+.entrada-lado {
+  flex: 1 1 480px; position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-xxl);
+  min-height: min(100svh, 880px); padding: var(--space-lg) clamp(24px, 5vw, 64px) clamp(32px, 6vw, 72px);
+  background: var(--surface-dark); color: var(--on-dark-soft); overflow: hidden;
+}
+.entrada-topo { display: flex; align-items: center; justify-content: space-between; height: 40px; }
+.entrada-marca { display: inline-flex; }
+.entrada-marca img { display: block; height: 36px; width: auto; }
+.entrada-chip {
+  display: inline-block; padding: 4px 12px; border-radius: var(--radius-pill); background: var(--surface-dark-elevated); color: var(--on-dark-soft);
+  font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; opacity: 0;
+}
+.entrada-titulo { margin-top: var(--space-lg); color: var(--on-dark); font-size: clamp(44px, 6.4vw, 96px); line-height: 0.94; letter-spacing: -0.045em; }
+.entrada-lado .linha { display: block; overflow: hidden; padding-bottom: 0.16em; margin-bottom: -0.16em; }
+.entrada-lado [data-reveal="line"] { display: block; transform: translateY(105%); }
+.entrada-lado [data-reveal="up"] { opacity: 0; }
+.entrada-lado .destaque { color: var(--primary); }
+.entrada-cubo { margin-top: var(--space-xxl); display: grid; grid-template-columns: repeat(9, minmax(0, 28px)); gap: 6px; }
+.entrada-cubo i { aspect-ratio: 1; border-radius: var(--space-xs); background-color: var(--cor); filter: brightness(var(--tom, 1)); }
+
+.entrada-form { flex: 1 1 480px; display: grid; place-items: center; padding: clamp(48px, 8vw, 96px) var(--space-lg); background: var(--canvas); }
+.entrada-caixa { width: 100%; max-width: 440px; }
+
+.abas { display: inline-flex; gap: 4px; padding: 4px; border-radius: var(--radius-pill); background: var(--surface-strong); }
+.aba {
+  height: 36px; padding: 0 18px; border: 0; border-radius: var(--radius-pill); font: 600 14px var(--font-sans); cursor: pointer;
+  transition: background 0.2s, color 0.2s; background: transparent; color: var(--body);
+}
+.aba[aria-selected="true"] { background: var(--canvas); color: var(--ink); }
+
+#painel-login, #painel-cadastro { margin-top: 40px; }
+.entrada-h1 { color: var(--ink); font-size: clamp(36px, 4vw, 52px); line-height: 1; letter-spacing: -0.035em; }
+.entrada-h1-balanceado { text-wrap: balance; }
+.entrada-sub { margin-top: var(--space-sm); text-wrap: pretty; }
+.entrada-campos { display: grid; gap: var(--space-base); margin-top: var(--space-xl); }
+.campo-senha { position: relative; display: block; }
+.campo-senha input { width: 100%; padding: 13px 72px 13px 15px; }
+.mostrar-senha {
+  position: absolute; right: 6px; top: 6px; height: 36px; padding: 0 var(--space-sm); border: 0; border-radius: var(--radius-pill);
+  background: var(--surface-strong); color: var(--ink); font: 600 12px var(--font-sans); cursor: pointer;
+}
+.forca { display: flex; align-items: center; gap: 10px; }
+.forca-barra { flex: 1; height: 4px; border-radius: var(--radius-pill); background: var(--surface-strong); overflow: hidden; }
+.forca-barra i {
+  display: block; height: 100%; width: 100%; border-radius: var(--radius-pill); background: var(--ink);
+  transform-origin: left; transform: scaleX(0); transition: transform 0.3s var(--ease), background 0.3s;
+}
+.forca-barra i.forte { background: var(--semantic-up); }
+.entrada-erro { min-height: 24px; font-size: 14px; color: var(--semantic-down); }
+.entrada-campos .btn-seta:active { transform: scale(0.98); }
+.entrada-campos .btn:disabled { opacity: 0.7; cursor: progress; }
+.entrada-troca { margin-top: var(--space-lg); text-align: center; font-size: 14px; }
+.entrada-troca a { font-weight: 600; }

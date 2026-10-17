@@ -1,18 +1,14 @@
 export const $ = (seletor) => document.querySelector(seletor)
 
-export function mostrarMensagem(texto, erro = false) {
-  const el = $('#mensagem')
-  el.textContent = texto
-  el.classList.toggle('erro', erro)
-}
-
-// Desabilita o botão de envio enquanto a chamada está em andamento.
-export async function enviando(formulario, acao) {
-  const botao = formulario.querySelector('button[type="submit"]')
-  botao.disabled = true
-  try {
-    await acao()
-  } finally {
-    botao.disabled = false
-  }
+// Aviso curto no rodapé da tela; some sozinho (a animação dura 3 s).
+export function mostrarToast(texto) {
+  document.querySelector('.toast')?.remove()
+  const aviso = document.createElement('p')
+  aviso.className = 'toast'
+  aviso.setAttribute('role', 'status')
+  const ponto = document.createElement('span')
+  ponto.textContent = '●'
+  aviso.append(ponto, ` ${texto}`)
+  document.body.append(aviso)
+  aviso.addEventListener('animationend', () => aviso.remove())
 }

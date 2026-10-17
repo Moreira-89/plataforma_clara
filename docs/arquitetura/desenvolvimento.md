@@ -109,14 +109,14 @@ proxy do Vite encaminha ao backend. Em produção ela recebe a URL pública do b
 ```
 index.html                home
 paginas/                  uma pasta por área, um HTML por tela
-  login.html  cadastro.html
+  login.html                     (Entrar e Criar conta numa tela dividida; cadastro.html só redireciona)
   gestora/gestao-blocos.html     (inclui o pop-up de criação de bloco)
   investidor/blocos-de-liquidez.html
-src/css/                  tokens, base e componentes (principal.css junta os três)
+src/css/                  tokens, base, movimento, componentes e cubo (principal.css junta tudo)
   paginas/                um CSS por tela ou grupo de telas
 src/js/nucleo/            api, firebase, rotas, ui e menu, usados por todas as telas
 src/js/paginas/           um script por tela, espelhando paginas/ (blocos/lista.js serve
-                          às duas telas de blocos, gestora e investidor; gestora/novo-bloco.js é o
+                          às três listas de blocos: Gestão, Blocos de Liquidez e Blocos Investidos; gestora/novo-bloco.js é o
                           formulário do pop-up)
 ```
 

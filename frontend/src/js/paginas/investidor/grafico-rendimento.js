@@ -1,23 +1,23 @@
 /*
- * Gráfico do rendimento mensal dos últimos 12 meses, em SVG puro (sem biblioteca).
+ * Gráfico do rendimento mensal dos últimos 12 meses: barras (R$ por mês) e linha (% acumulado).
  *
  * COMO FUNCIONA:
- *   1. Barras mostram o rendimento de cada mês em R$ (eixo da esquerda).
- *   2. Uma linha mostra o rendimento acumulado em % (eixo da direita).
- *   3. Passar o mouse sobre um mês destaca a barra e mostra um balão com os três valores.
+ *   1. As barras mostram o rendimento de cada mês em R$ (eixo da esquerda); a linha, o acumulado em % (direita).
+ *   2. O SVG desenha barras, linha e pontos; os rótulos dos eixos e dos meses são HTML por cima, em porcentagem.
+ *   3. Passar o mouse sobre um mês destaca a barra e o ponto, apaga as outras barras e mostra um balão.
+ *   4. A entrada anima as barras (crescem), a linha (se desenha) e some com `prefers-reduced-motion`.
  */
-import { criar, moeda } from '../blocos/cartao.js'
+import { criar, moeda, moedaCompacta } from '../blocos/cartao.js'
 
 const NS = 'http://www.w3.org/2000/svg'
-const LARGURA = 760
-const ALTURA = 280
-const MARGEM = { esquerda: 76, direita: 52, topo: 16, base: 34 }
+const L = 760
+const A = 280
+const M = { e: 76, d: 52, t: 16, b: 34 }
 const DIVISOES = 4
 
-const compacto = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 })
-const percentual = (valor, casas = 2) => `${Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas })}%`
+const pctFixo = (v, casas = 2) => `${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas })}%`
 
-function elemento(tag, atributos = {}, classe = '') {
+function svg(tag, atributos = {}, classe = '') {
   const el = document.createElementNS(NS, tag)
   for (const [nome, valor] of Object.entries(atributos)) el.setAttribute(nome, valor)
   if (classe) el.setAttribute('class', classe)
@@ -35,84 +35,89 @@ const dataDoMes = (iso) => {
   const [ano, mes] = iso.split('-').map(Number)
   return new Date(ano, mes - 1, 1)
 }
-const rotuloCurto = (data) => `${data.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}/${String(data.getFullYear()).slice(2)}`
-const rotuloLongo = (data) => data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+const mesCurto = (d) => `${d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}/${String(d.getFullYear()).slice(2)}`
 
 // `meses`: [{mes, rendimento, taxa_percentual, acumulado_percentual}] do mais antigo ao mais novo.
-export function montarGraficoRendimento(raiz, dica, meses) {
+export function montarGraficoRendimento(raiz, meses) {
   const pontos = meses.map((m) => ({
     data: dataDoMes(m.mes),
     rendimento: Number(m.rendimento),
     taxa: Number(m.taxa_percentual),
     acumulado: Number(m.acumulado_percentual),
   }))
-  const largura = LARGURA - MARGEM.esquerda - MARGEM.direita
-  const altura = ALTURA - MARGEM.topo - MARGEM.base
+  const largura = L - M.e - M.d
+  const altura = A - M.t - M.b
   const maxValor = maximoRedondo(Math.max(...pontos.map((p) => p.rendimento)))
   const maxAcumulado = maximoRedondo(Math.max(...pontos.map((p) => p.acumulado)))
   const fatia = largura / pontos.length
-  const x = (i) => MARGEM.esquerda + fatia * i + fatia / 2
-  const yValor = (v) => MARGEM.topo + altura - (v / maxValor) * altura
-  const yAcumulado = (v) => MARGEM.topo + altura - (v / maxAcumulado) * altura
+  const x = (i) => M.e + fatia * i + fatia / 2
+  const yValor = (v) => M.t + altura - (v / maxValor) * altura
+  const yAcumulado = (v) => M.t + altura - (v / maxAcumulado) * altura
+  const larguraBarra = fatia * 0.52
 
-  const svg = elemento('svg', { viewBox: `0 0 ${LARGURA} ${ALTURA}`, role: 'img', 'aria-label': 'Rendimento mensal e acumulado nos últimos 12 meses' }, 'grafico-svg')
+  const grafico = svg('svg', { viewBox: `0 0 ${L} ${A}`, role: 'img', 'aria-label': 'Rendimento mensal e acumulado nos últimos 12 meses' }, 'grafico-svg')
+  const rotulos = criar('div', 'grafico-rotulos')
+  rotulos.setAttribute('aria-hidden', 'true')
+  const dica = criar('div', 'grafico-dica')
+  dica.setAttribute('role', 'status')
+  dica.hidden = true
 
-  // Grade e eixos: R$ à esquerda, % à direita.
-  const grade = elemento('g', {}, 'grafico-grade')
-  const eixo = elemento('g', {}, 'grafico-eixo')
-  for (let d = 0; d <= DIVISOES; d++) {
-    const y = MARGEM.topo + altura - (altura / DIVISOES) * d
-    grade.append(elemento('line', { x1: MARGEM.esquerda, x2: LARGURA - MARGEM.direita, y1: y, y2: y }))
-    const esquerda = elemento('text', { x: MARGEM.esquerda - 8, y: y + 4, 'text-anchor': 'end' })
-    esquerda.textContent = compacto.format((maxValor / DIVISOES) * d)
-    const direita = elemento('text', { x: LARGURA - MARGEM.direita + 8, y: y + 4, 'text-anchor': 'start' })
-    direita.textContent = percentual((maxAcumulado / DIVISOES) * d, 0)
-    eixo.append(esquerda, direita)
+  const rotulo = (classe, texto, estilo) => {
+    const span = criar('span', classe, texto)
+    Object.assign(span.style, estilo)
+    rotulos.append(span)
   }
-  pontos.forEach((p, i) => {
-    const rotulo = elemento('text', { x: x(i), y: ALTURA - 12, 'text-anchor': 'middle' })
-    rotulo.textContent = rotuloCurto(p.data)
-    eixo.append(rotulo)
-  })
-  svg.append(grade, eixo)
+  for (let k = 0; k <= DIVISOES; k++) {
+    const y = M.t + altura - (altura / DIVISOES) * k
+    grafico.append(svg('line', { x1: M.e, x2: L - M.d, y1: y, y2: y }, 'grafico-grade'))
+    const topo = `${(y / A) * 100}%`
+    rotulo('esquerda', moedaCompacta.format((maxValor / DIVISOES) * k), { right: `calc(100% - ${(M.e / L) * 100}%)`, top: topo })
+    rotulo('direita', pctFixo((maxAcumulado / DIVISOES) * k, 0), { left: `${((L - M.d) / L) * 100}%`, top: topo })
+  }
 
-  // Barras (rendimento) e linha (acumulado).
-  const largBarra = fatia * 0.52
   const barras = pontos.map((p, i) => {
     const topo = yValor(p.rendimento)
-    return elemento('rect', { x: x(i) - largBarra / 2, y: topo, width: largBarra, height: MARGEM.topo + altura - topo, rx: 4 }, 'grafico-barra')
+    const barra = svg('rect', { x: x(i) - larguraBarra / 2, y: topo, width: larguraBarra, height: M.t + altura - topo, rx: 4, opacity: 0.85 }, 'grafico-barra')
+    barra.style.setProperty('--atraso', `${i * 45}ms`)
+    return barra
   })
-  svg.append(...barras)
-  svg.append(elemento('path', { d: pontos.map((p, i) => `${i ? 'L' : 'M'}${x(i)},${yAcumulado(p.acumulado)}`).join(' ') }, 'grafico-linha'))
-  pontos.forEach((p, i) => svg.append(elemento('circle', { cx: x(i), cy: yAcumulado(p.acumulado), r: 3.5 }, 'grafico-ponto')))
+  grafico.append(...barras)
+  const linha = svg('path', { d: pontos.map((p, i) => `${i ? 'L' : 'M'}${x(i)},${yAcumulado(p.acumulado)}`).join(' '), pathLength: 1 }, 'grafico-linha')
+  grafico.append(linha)
+  const marcas = pontos.map((p, i) => svg('circle', { cx: x(i), cy: yAcumulado(p.acumulado), r: 3.5 }, 'grafico-ponto'))
+  grafico.append(...marcas)
+  pontos.forEach((p, i) => rotulo('mes', mesCurto(p.data), { left: `${(x(i) / L) * 100}%` }))
 
-  // Uma faixa transparente por mês recebe o mouse.
-  let ativa = null
-  pontos.forEach((p, i) => {
-    const alvo = elemento('rect', { x: MARGEM.esquerda + fatia * i, y: MARGEM.topo, width: fatia, height: altura }, 'grafico-alvo')
-    alvo.addEventListener('pointermove', (evento) => {
-      if (ativa !== i) {
-        barras[ativa]?.classList.remove('ativa')
-        barras[i].classList.add('ativa')
-        ativa = i
-        dica.replaceChildren(
-          criar('strong', '', rotuloLongo(p.data)),
-          criar('span', '', `Rendimento: ${moeda.format(p.rendimento)} (${percentual(p.taxa)})`),
-          criar('span', '', `Acumulado: ${percentual(p.acumulado)}`),
-        )
-      }
-      const caixa = raiz.getBoundingClientRect()
-      dica.hidden = false
-      dica.style.left = `${evento.clientX - caixa.left}px`
-      dica.style.top = `${evento.clientY - caixa.top}px`
-    })
-    alvo.addEventListener('pointerleave', () => {
-      barras[ativa]?.classList.remove('ativa')
-      ativa = null
+  // Destaca o mês sob o mouse: barra cheia, outras apagadas, ponto maior e balão com os valores.
+  function destacar(i) {
+    barras.forEach((barra, k) => barra.setAttribute('opacity', i === null ? 0.85 : i === k ? 1 : 0.35))
+    marcas.forEach((marca, k) => marca.setAttribute('r', i === k ? 5.5 : 3.5))
+    if (i === null) {
       dica.hidden = true
-    })
-    svg.append(alvo)
+      return
+    }
+    const p = pontos[i]
+    const valor = (texto) => Object.assign(criar('b'), { textContent: texto })
+    const linhaDeTexto = (rotuloTexto, texto) => {
+      const span = criar('span', '', `${rotuloTexto}: `)
+      span.append(valor(texto))
+      return span
+    }
+    dica.replaceChildren(
+      criar('strong', '', p.data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })),
+      linhaDeTexto('Rendimento', `${moeda.format(p.rendimento)} (${pctFixo(p.taxa)})`),
+      linhaDeTexto('Acumulado', pctFixo(p.acumulado)),
+    )
+    dica.style.left = `${(x(i) / L) * 100}%`
+    dica.style.top = `${(Math.min(yValor(p.rendimento), yAcumulado(p.acumulado)) / A) * 100}%`
+    dica.hidden = false
+  }
+  pontos.forEach((p, i) => {
+    const alvo = svg('rect', { x: M.e + fatia * i, y: M.t, width: fatia, height: 230 }, 'grafico-alvo')
+    alvo.addEventListener('pointerenter', () => destacar(i))
+    alvo.addEventListener('pointerleave', () => destacar(null))
+    grafico.append(alvo)
   })
 
-  raiz.replaceChildren(svg)
+  raiz.replaceChildren(grafico, rotulos, dica)
 }

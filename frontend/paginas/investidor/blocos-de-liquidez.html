@@ -10,34 +10,29 @@
     <link rel="stylesheet" href="/src/css/paginas/blocos.css" />
     <title>Blocos de Liquidez — Plataforma Clara</title>
   </head>
-  <body data-perfil="investidor" class="com-menu">
+  <body data-perfil="investidor" data-modo="liquidez" class="com-menu">
     <aside id="menu"></aside>
 
     <main class="pagina-blocos" id="conteudo" hidden>
       <span class="rotulo">Investidor</span>
       <h1 class="titulo-pagina">Blocos de Liquidez</h1>
-      <p>Escolha um bloco para ver as empresas, o vencimento e o risco de cada uma.</p>
+      <p class="subtitulo-pagina">Escolha um bloco para ver as empresas, o vencimento e o risco de cada uma.</p>
 
       <div class="barra-blocos">
         <input id="busca" type="search" placeholder="Buscar por código ou etiqueta" autocomplete="off" aria-label="Buscar bloco" />
-        <label class="ordem">
-          <span class="so-leitor">Ordenar por</span>
-          <select id="ordem" aria-label="Ordenar blocos">
-            <option value="recentes">Mais recentes</option>
-            <option value="score">Maior score</option>
-          </select>
-        </label>
-        <button class="btn btn-secundario" id="ver-tudo" type="button">Ver tudo</button>
+        <select id="ordem" aria-label="Ordenar blocos"></select>
+        <button class="btn btn-secundario" id="limpar" type="button">Ver tudo</button>
       </div>
 
-      <p id="estado" class="mensagem" role="status"></p>
+      <p id="estado" class="mensagem estado-lista" role="status"></p>
+      <p id="resumo" class="resumo-lista" role="status"></p>
       <section id="cartoes" class="grade-blocos" aria-live="polite"></section>
     </main>
 
-    <dialog id="detalhe" class="detalhe-bloco" aria-labelledby="detalhe-titulo">
-      <div class="detalhe-topo">
+    <dialog id="detalhe" class="ficha" aria-labelledby="detalhe-titulo">
+      <div class="ficha-topo">
         <h2 id="detalhe-titulo"></h2>
-        <button class="detalhe-fechar" id="detalhe-fechar" type="button" aria-label="Fechar">×</button>
+        <button class="ficha-fechar" id="detalhe-fechar" type="button" aria-label="Fechar">×</button>
       </div>
       <div id="detalhe-corpo"></div>
     </dialog>

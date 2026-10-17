@@ -1,0 +1,21 @@
+/* Animações compartilhadas. Só transform e opacity (compostos na GPU), nada de layout por quadro. */
+@keyframes cl-in { from { opacity: 0; transform: translateY(16px); } }
+@keyframes cl-grow { from { transform: scaleY(0); } }
+@keyframes cl-grow-x { from { transform: scaleX(0); } }
+@keyframes cl-draw { from { stroke-dashoffset: 1; } }
+@keyframes cl-fade { from { opacity: 0; } }
+@keyframes cl-modal { from { opacity: 0; transform: translateY(32px) scale(0.985); } }
+@keyframes cl-dot { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+@keyframes cl-scan { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@keyframes cl-toast {
+  0% { opacity: 0; transform: translate(-50%, 16px); }
+  12%, 85% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, 8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  [data-reveal] { transform: none !important; opacity: 1 !important; }
+  [data-fill] { background-position: 0 0 !important; }
+  *, *::before, *::after { animation: none !important; transition-duration: 0s !important; }
+}

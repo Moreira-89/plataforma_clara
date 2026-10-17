@@ -9,31 +9,82 @@
     <link rel="stylesheet" href="/src/css/principal.css" />
     <link rel="stylesheet" href="/src/css/paginas/autenticacao.css" />
     <title>Entrar — Plataforma Clara</title>
+    <noscript><style>[data-reveal] { opacity: 1 !important; transform: none !important; }</style></noscript>
   </head>
-  <body>
-    <header class="nav nav-escura">
-      <div class="container">
-        <a class="marca" href="/"><img src="/src/img/logo-clara.png" alt="Plataforma Clara" /></a>
-        <div class="nav-acoes"><a class="btn btn-secundario" href="/paginas/cadastro.html">Criar conta</a></div>
-      </div>
-    </header>
-    <main class="auth">
-      <section class="cartao auth-cartao">
-        <h1>Entrar</h1>
-        <p>Acesse com o e-mail e a senha da sua conta.</p>
-        <form id="form-login" class="formulario" method="post" novalidate>
-          <label class="campo">E-mail
-            <input name="email" type="email" required autocomplete="username" />
-          </label>
-          <label class="campo">Senha
-            <input name="senha" type="password" required autocomplete="current-password" />
-          </label>
-          <p id="mensagem" class="mensagem" role="status"></p>
-          <button class="btn btn-primario btn-bloco" type="submit">Entrar</button>
-        </form>
-        <p class="auth-rodape">Ainda não tem conta? <a class="btn-texto" href="/paginas/cadastro.html">Cadastre-se como investidor</a></p>
+  <body class="entrada">
+    <div class="entrada-tela">
+      <section class="entrada-lado" aria-hidden="true">
+        <div class="entrada-topo">
+          <a class="entrada-marca" href="/" tabindex="-1"><img src="/src/img/logo-clara.png" alt="" width="110" height="36" /></a>
+        </div>
+        <div>
+          <span class="entrada-chip" data-reveal="up">Transparência para FIDCs</span>
+          <p class="entrada-titulo">
+            <span class="linha"><span data-reveal="line">Veja o que a</span></span>
+            <span class="linha"><span data-reveal="line" data-delay="110">gestora <span class="destaque">já vê.</span></span></span>
+          </p>
+          <div class="entrada-cubo" data-reveal="up" data-delay="300">
+            <i style="--cor: #0F52BA"></i><i style="--cor: #0F52BA; --tom: 0.72"></i><i style="--cor: #0F52BA; --tom: 1.28"></i>
+            <i style="--cor: #50C878"></i><i style="--cor: #50C878; --tom: 0.72"></i><i style="--cor: #E0115F"></i>
+            <i style="--cor: #6A5ACD"></i><i style="--cor: #00E5EE"></i><i style="--cor: var(--muted)"></i>
+          </div>
+        </div>
       </section>
-    </main>
+
+      <main class="entrada-form">
+        <div class="entrada-caixa">
+          <div class="abas" role="tablist" aria-label="Acesso">
+            <button class="aba" role="tab" type="button" id="aba-login" data-modo="login" aria-selected="true">Entrar</button>
+            <button class="aba" role="tab" type="button" id="aba-cadastro" data-modo="cadastro" aria-selected="false">Criar conta</button>
+          </div>
+
+          <section id="painel-login" aria-labelledby="t-login">
+            <h1 id="t-login" class="entrada-h1">Entrar</h1>
+            <p class="entrada-sub">Acesse com o e-mail e a senha da sua conta.</p>
+            <form id="form-login" class="entrada-campos" method="post" novalidate>
+              <label class="campo">E-mail
+                <input name="email" type="email" required autocomplete="username" />
+              </label>
+              <label class="campo">Senha
+                <span class="campo-senha">
+                  <input name="senha" id="senha-login" type="password" required autocomplete="current-password" />
+                  <button class="mostrar-senha" id="mostrar-senha" type="button" aria-label="Mostrar senha">Mostrar</button>
+                </span>
+              </label>
+              <p id="erro-login" class="entrada-erro" role="status"></p>
+              <button class="btn btn-primario btn-bloco btn-lg btn-seta" id="enviar-login" type="submit"><span id="rotulo-login">Entrar</span><span aria-hidden="true">→</span></button>
+            </form>
+            <p class="entrada-troca">Ainda não tem conta? <a href="#" data-ir="cadastro">Cadastre-se como investidor</a></p>
+          </section>
+
+          <section id="painel-cadastro" aria-labelledby="t-cad" hidden>
+            <h1 id="t-cad" class="entrada-h1 entrada-h1-balanceado">Criar conta de investidor</h1>
+            <p class="entrada-sub">Use o CPF ou CNPJ com que você investe: é ele que liga a conta aos seus aportes.</p>
+            <form id="form-cadastro" class="entrada-campos" method="post" novalidate>
+              <label class="campo">Nome
+                <input name="nome" required autocomplete="name" />
+              </label>
+              <label class="campo">E-mail
+                <input name="email" type="email" required autocomplete="username" />
+              </label>
+              <label class="campo">CPF ou CNPJ
+                <input name="documento" id="documento" class="numero-campo" required inputmode="numeric" autocomplete="off" />
+              </label>
+              <label class="campo">Senha
+                <input name="senha" id="senha-nova" type="password" required minlength="8" autocomplete="new-password" />
+                <span class="forca">
+                  <span class="forca-barra" aria-hidden="true"><i id="forca-preenchimento"></i></span>
+                  <small>Mínimo de 8 caracteres.</small>
+                </span>
+              </label>
+              <p id="erro-cadastro" class="entrada-erro" role="status"></p>
+              <button class="btn btn-primario btn-bloco btn-lg btn-seta" id="enviar-cadastro" type="submit"><span id="rotulo-cadastro">Criar conta</span><span aria-hidden="true">→</span></button>
+            </form>
+            <p class="entrada-troca">Já tem conta? <a href="#" data-ir="login">Entrar</a></p>
+          </section>
+        </div>
+      </main>
+    </div>
     <script type="module" src="/src/js/paginas/login.js"></script>
   </body>
 </html>
