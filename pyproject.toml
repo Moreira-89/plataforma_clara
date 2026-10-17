@@ -1,4 +1,4 @@
-# Config do ruff para o repositório inteiro. O pytest fica em backend/pytest.ini.
+# Config do ruff para o repositório inteiro.
 
 [tool.ruff]
 line-length = 100

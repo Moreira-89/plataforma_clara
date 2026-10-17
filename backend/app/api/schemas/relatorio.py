@@ -23,3 +23,4 @@ class RelatorioStatus(BaseModel):
 
     id: str
     status: str = Field(description="Ex.: 'processando', 'pronto' ou 'falhou'")
+    mensagem: str | None = Field(default=None, description="Motivo, quando o relatório falhou")

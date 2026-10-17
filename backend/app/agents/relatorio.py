@@ -2,11 +2,11 @@
 Serviço de geração de relatório consolidado de investimentos via IA (ChatGroq).
 
 Fluxo principal:
-    1. Busca o nome do investidor no PostgreSQL.
-    2. Busca os aportes do investidor no BigQuery (tb_aporte).
-    3. Compacta os dados para caber no limite de tokens do provedor Groq.
-    4. Envia o prompt institucional ao LLM via Groq (modelo em `settings.llm_model_name`).
-    5. Converte o Markdown gerado em PDF e retorna os bytes para download.
+    1. `aportes_da_carteira` transforma a carteira do investidor (blocos investidos, valor e empresas,
+       a mesma fonte do cubo e do ranking da visão geral) nos registros que o prompt espera.
+    2. Compacta os dados para caber no limite de tokens do provedor Groq.
+    3. Envia o prompt institucional ao LLM via Groq (modelo em `settings.llm_model_name`).
+    4. Converte o Markdown gerado em PDF e retorna os bytes para download.
 """
 
 import json
@@ -16,11 +16,12 @@ import re
 import shutil
 import tempfile
 from collections import defaultdict
+from collections.abc import Iterable, Mapping
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
 import PyPDF2
-from google.cloud import bigquery
 from groq import APIStatusError
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
@@ -28,7 +29,8 @@ from markdown_pdf import MarkdownPdf, Section
 
 from app.config.settings import settings
 from app.domain import identidade
-from app.storage.bigquery import criar_cliente_bigquery
+from app.domain.blocos import BlocoDetalhado
+from app.domain.risco import classificar_nota
 
 # -----------------------------------------------------------------------------
 # INICIALIZAÇÃO
@@ -36,10 +38,8 @@ from app.storage.bigquery import criar_cliente_bigquery
 
 logger = logging.getLogger(__name__)
 
-_PROJETO_ID = settings.project_id
-_TABELA_APORTES_BQ = f"{_PROJETO_ID}.{settings.bigquery_dataset}.tb_aporte"
-_ROOT_DIR = Path(__file__).resolve().parents[2]
-_PDF_REFERENCIA_PATH = _ROOT_DIR / "Relatório de Insights Financeiros FIDC - Google Gemini.pdf"
+_ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+_PDF_REFERENCIA_PATH = _ASSETS_DIR / "Relatório de Insights Financeiros FIDC - Google Gemini.pdf"
 _MAX_REF_CHARS = 5000
 _MAX_AMOSTRA_APORTES = 60
 _MAX_GRUPOS_EMPRESA = 100
@@ -158,11 +158,20 @@ Siga as instruções acima, cruze as informações e inicie a geração do relat
 """
 
 _USER_TEMPLATE = """
-    DADOS EXTRAÍDOS DO BIGQUERY (tb_aporte higienizada):
+    DADOS DA CARTEIRA DO INVESTIDOR (um registro por bloco e empresa; o valor é o capital do
+    investidor na empresa e a data é a de criação do bloco):
     {dados_bq}
     
-    DADOS ESPECÍFICOS DO CLIENTE (Investimentos e Score ML):
+    DADOS ESPECÍFICOS DO CLIENTE (Investimentos e Score de risco):
     {dados_invest}
+
+    O score de risco vai de 0 a 100 (quanto maior, menor o risco). A nota interna da plataforma
+    segue exatamente esta tabela, e são as únicas notas que existem nos dados:
+    A+ (80 a 100), A (70 a 79), A- (60 a 69), B+ (50 a 59), B (40 a 49) e C- (abaixo de 40).
+    Use essas notas, com esses cortes, ao agrupar o capital por faixa de risco; não crie notas
+    intermediárias. Não há histórico de ratings: declare a ausência de movimentações.
+    Os valores estão em reais: cite-os por extenso (ex.: R$ 396.075,00) e só abrevie para "mi"
+    acima de R$ 1.000.000.
     
     Gere o relatório estruturado.
     """
@@ -193,58 +202,45 @@ def _nome_para_exibicao(documento: str, nome_investidor: str | None) -> str:
     return f"Investidor {documento}" if documento else "Investidor"
 
 
-# Função _criar_cliente_bigquery foi movida para bigquery_utils.py
-# Esta é uma função de compatibilidade que delega para a nova implementação
-def _criar_cliente_bigquery() -> bigquery.Client:
-    """Cria cliente BigQuery com suporte a credenciais JSON string ou arquivo."""
-    return criar_cliente_bigquery(project_id=_PROJETO_ID)
-
-
-def _buscar_dados_bigquery_investidor(documento_investidor: str) -> list[dict[str, Any]]:
-    documento = _normalizar_documento(documento_investidor)
-    if not documento:
-        return []
-
-    query = f"""
-        SELECT
-            id_aporte_uuid,
-            bloco_liquidez_setorial,
-            empresa_sacada_nome,
-            valor_aporte_compra,
-            data_referencia_competencia,
-            status_prazo_vencimento,
-            score_risco_interno
-        FROM `{_TABELA_APORTES_BQ}`
-        WHERE REGEXP_REPLACE(documento_investidor_cpf_cnpj, r'[^0-9]', '') = @documento_investidor
-        ORDER BY data_referencia_competencia DESC
-        LIMIT 2000
+def aportes_da_carteira(
+    carteira: Iterable[tuple[Decimal, BlocoDetalhado]], scores: Mapping[str, float]
+) -> list[dict[str, Any]]:
     """
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[bigquery.ScalarQueryParameter("documento_investidor", "STRING", documento)]
-    )
+    Transforma a carteira do investidor nos registros que o prompt espera (um por bloco e empresa).
 
-    client = _criar_cliente_bigquery()
-    dataframe = client.query(query, job_config=job_config).to_dataframe()
-    if dataframe.empty:
-        return []
+    O capital do investidor numa empresa é o valor investido no bloco vezes a fatia da empresa nele.
 
-    dados: list[dict[str, Any]] = []
-    for row in dataframe.to_dict(orient="records"):
-        dados.append(
-            {
-                "id_aporte_uuid": str(row.get("id_aporte_uuid") or ""),
-                "bloco_liquidez_setorial": str(row.get("bloco_liquidez_setorial") or "N/A"),
-                "empresa_sacada_nome": str(row.get("empresa_sacada_nome") or "N/A"),
-                "valor_aporte_compra": float(row.get("valor_aporte_compra") or 0.0),
-                "data_referencia_competencia": str(row.get("data_referencia_competencia") or ""),
-                "status_prazo_vencimento": str(row.get("status_prazo_vencimento") or ""),
-                "score_risco_interno": float(row.get("score_risco_interno") or 0.0),
-            }
-        )
-    return dados
+    Args:
+        carteira (Iterable[tuple[Decimal, BlocoDetalhado]]): Pares (valor investido, bloco detalhado).
+        scores (Mapping[str, float]): Score de risco (0 a 100) de cada empresa.
+
+    Returns:
+        list[dict[str, Any]]: Registros com bloco, empresa, valor, datas, score e nota.
+    """
+    aportes: list[dict[str, Any]] = []
+    for valor, detalhado in carteira:
+        bloco = detalhado.bloco
+        for empresa in detalhado.empresas:
+            score = scores.get(empresa.id_empresa)
+            capital = (valor * empresa.percentual_liquidez / 100).quantize(Decimal("0.01"))
+            aportes.append(
+                {
+                    "id_aporte_uuid": f"{bloco.id_bloco}:{empresa.id_empresa}",
+                    "bloco_liquidez_setorial": f"{bloco.etiqueta} ({bloco.codigo_identificacao})",
+                    "empresa_sacada_nome": empresa.nome_fantasia or empresa.cnpj,
+                    "valor_aporte_compra": float(capital),
+                    "data_referencia_competencia": bloco.data_criacao.isoformat(),
+                    "status_prazo_vencimento": f"vence em {bloco.data_vencimento.isoformat()}",
+                    "score_risco_interno": score,
+                    "nota_risco": None if score is None else classificar_nota(score),
+                }
+            )
+    return aportes
 
 
-def _montar_dados_investimentos(nome_investidor: str, dados_bq: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _montar_dados_investimentos(
+    nome_investidor: str, dados_bq: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     dados: list[dict[str, Any]] = []
     for row in dados_bq:
         dados.append(
@@ -369,7 +365,9 @@ def _compactar_dados_para_prompt(
 def _ler_pdf_referencia(max_chars: int = _MAX_REF_CHARS) -> str:
     texto_pdf_extraido = ""
     if not _PDF_REFERENCIA_PATH.exists():
-        logger.info("PDF de referência não encontrado em %s. Seguindo sem few-shot.", _PDF_REFERENCIA_PATH)
+        logger.info(
+            "PDF de referência não encontrado em %s. Seguindo sem few-shot.", _PDF_REFERENCIA_PATH
+        )
         return ""
     try:
         with open(_PDF_REFERENCIA_PATH, "rb") as arquivo_pdf:
@@ -383,6 +381,7 @@ def _ler_pdf_referencia(max_chars: int = _MAX_REF_CHARS) -> str:
         logger.warning("Não foi possível ler o PDF de referência: %s", exc)
         return ""
     return texto_pdf_extraido
+
 
 _PREFIXO_PROVEDOR = "groq:"
 _MAX_TOKENS_RESPOSTA = 8192
@@ -412,6 +411,7 @@ def _criar_llm() -> ChatGroq:
         reasoning_effort=_ESFORCO_RACIOCINIO,
     )
 
+
 def _gerar_markdown_chatgroq(
     *,
     nome_cliente: str,
@@ -421,10 +421,16 @@ def _gerar_markdown_chatgroq(
 ) -> str:
     llm = _criar_llm()
 
-    prompt = ChatPromptTemplate.from_messages([("system", _SYSTEM_TEMPLATE), ("user", _USER_TEMPLATE)])
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", _SYSTEM_TEMPLATE), ("user", _USER_TEMPLATE)]
+    )
 
     tentativas = [
-        {"limite_amostra": _MAX_AMOSTRA_APORTES, "limite_empresas": _MAX_GRUPOS_EMPRESA, "max_ref": 2500},
+        {
+            "limite_amostra": _MAX_AMOSTRA_APORTES,
+            "limite_empresas": _MAX_GRUPOS_EMPRESA,
+            "max_ref": 2500,
+        },
         {"limite_amostra": 30, "limite_empresas": 50, "max_ref": 800},
         {"limite_amostra": 15, "limite_empresas": 25, "max_ref": 0},
         {"limite_amostra": 8, "limite_empresas": 12, "max_ref": 0},
@@ -517,10 +523,12 @@ def _gerar_pdf_e_ler_bytes(nome_investidor: str, markdown: str) -> tuple[bytes, 
     diretorio_temporario = tempfile.mkdtemp(prefix="relatorio_clara_")
     caminho_arquivo = os.path.join(diretorio_temporario, nome_arquivo)
 
-    caminho_logo = _ROOT_DIR / "assets" / "logo_para_usar_fundo_claro.png"
+    caminho_logo = _ASSETS_DIR / "logo_para_usar_fundo_claro.png"
     # Adicionando a logo no topo do relatório
     markdown = _garantir_titulo_principal(markdown, nome_investidor)
-    markdown_com_logo = f'<img src="file://{caminho_logo.absolute()}" class="logo-relatorio" />\n\n' + markdown
+    markdown_com_logo = (
+        f'<img src="file://{caminho_logo.absolute()}" class="logo-relatorio" />\n\n' + markdown
+    )
 
     css_estilo = """
     .logo-relatorio {
@@ -595,66 +603,52 @@ def _gerar_pdf_e_ler_bytes(nome_investidor: str, markdown: str) -> tuple[bytes, 
 
 
 def gerar_relatorio_consolidado_investidor(
-    documento_investidor: str, nome_investidor: str | None = None
+    nome_investidor: str | None, aportes: list[dict[str, Any]]
 ) -> tuple[bytes, str]:
     """
     Orquestra todo o fluxo de geração do relatório consolidado em PDF.
 
     COMO FUNCIONA:
-        1. Normalização do Documento — Remove caracteres não numéricos do identificador.
-        2. Nome de Exibição — Vem do chamador (token do Firebase); sem ele, um rótulo.
-        3. Busca no BigQuery — Obtém até 2.000 aportes do investidor da tb_aporte.
-        4. Montagem do Payload — Estrutura os dados de investimentos para o prompt.
-        5. Geração do Markdown — Chama o ChatGroq com prompt institucional e retry
+        1. Nome de Exibição — Vem do chamador (token do Firebase); sem ele, um rótulo.
+        2. Montagem do Payload — Estrutura os dados de investimentos para o prompt, a partir dos
+           registros de `aportes_da_carteira` (a carteira do investidor).
+        3. Geração do Markdown — Chama o ChatGroq com prompt institucional e retry
            progressivo para lidar com limites de token (status 413).
-        6. Conversão para PDF — Converte o Markdown em PDF via markdown_pdf,
+        4. Conversão para PDF — Converte o Markdown em PDF via markdown_pdf,
            incluindo logo e CSS de paginação. O arquivo temporário é removido após leitura.
 
     Args:
-        documento_investidor (str): CPF ou CNPJ do investidor logado (qualquer formato).
         nome_investidor (str | None): Nome para exibir no relatório, vindo de quem
                                       autenticou o usuário.
+        aportes (list[dict[str, Any]]): Registros da carteira, de `aportes_da_carteira`.
 
     Returns:
         tuple[bytes, str]: Tupla com (bytes do PDF, nome do arquivo para download).
 
     Raises:
-        ValueError: Se o documento for inválido ou se não houver aportes no BigQuery.
+        ValueError: Se não houver investimentos na carteira.
         RuntimeError: Se o ChatGroq retornar resposta vazia após todas as tentativas.
         APIStatusError: Se o Groq retornar erro diferente de 413 (ex: autenticação).
     """
-    # --- 1. NORMALIZAÇÃO DO DOCUMENTO ---
-    documento = _normalizar_documento(documento_investidor)
-    if not documento:
-        raise ValueError("Não foi possível identificar o investidor logado.")
+    if not aportes:
+        raise ValueError("Nenhum investimento encontrado para esse investidor.")
 
-    # --- 2. NOME DE EXIBIÇÃO ---
-    nome_investidor = _nome_para_exibicao(documento, nome_investidor)
-
-    # --- 3. BUSCA NO BIGQUERY ---
-    dados_bq = _buscar_dados_bigquery_investidor(documento)
-    if not dados_bq:
-        raise ValueError("Nenhum investimento encontrado para esse investidor no BigQuery.")
-
-    # --- 4. MONTAGEM DO PAYLOAD ---
-    dados_invest = _montar_dados_investimentos(nome_investidor, dados_bq)
+    nome_investidor = _nome_para_exibicao("", nome_investidor)
+    dados_invest = _montar_dados_investimentos(nome_investidor, aportes)
     descricao_cliente = (
         "Investidor da Plataforma Clara com análise consolidada de todos os blocos "
         "de liquidez em que possui alocação."
     )
 
-    # --- 5. GERAÇÃO DO MARKDOWN ---
     logger.info(
         "Gerando relatório IA com prompt institucional para %s (%d registros).",
         nome_investidor,
-        len(dados_bq),
+        len(aportes),
     )
     markdown = _gerar_markdown_chatgroq(
         nome_cliente=nome_investidor,
         descricao_cliente=descricao_cliente,
-        dados_bq=dados_bq,
+        dados_bq=aportes,
         dados_invest=dados_invest,
     )
-
-    # --- 6. CONVERSÃO PARA PDF ---
     return _gerar_pdf_e_ler_bytes(nome_investidor, markdown)

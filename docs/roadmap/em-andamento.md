@@ -34,16 +34,15 @@ falta só quem as alimente.
 Funcionam: `GET /health`, `/auth/*` e os blocos de liquidez (`GET /blocos/etiquetas`,
 `POST /blocos`, `GET /blocos`, `GET /blocos/{id}` e `GET /empresas`; ver
 [Blocos de Liquidez](../arquitetura/blocos.md)), já com o cadastro real de empresas
-(`dados_fidc.tb_empresas_fidc`). As demais rotas já existem no contrato e respondem 501
-até terem implementação. Planejadas:
+(`dados_fidc.tb_empresas_fidc`), a carteira de demonstração do investidor
+(`/investimentos`) e os relatórios (`/relatorios`, ver [Relatório](../produto/relatorio.md)).
+O dashboard já existe no contrato e responde 501 até ter implementação. Planejadas:
 
 - `GET /dashboard/gestora`, `GET /dashboard/investidor`
-- `POST /relatorios` + `GET /relatorios/{id}`
 - OpenAPI documentado
 
 O que já está pronto para eles chamarem:
 
-- `agents.relatorio.gerar_relatorio_consolidado_investidor` — PDF por IA
 - `domain.metricas` — consolidação de KPIs e montagem das visões (sem quem
   as alimente, ver item 2)
 

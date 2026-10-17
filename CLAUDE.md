@@ -18,8 +18,6 @@ pip install -r requirements.txt
 cp .env.example .env          # preencher antes de subir
 uvicorn main:app --reload     # http://localhost:8000/docs
 
-pytest                        # suíte
-pytest -m "not integracao"    # o que a CI roda
 ruff check ..                 # lint (config no pyproject.toml da raiz)
 
 # Frontend
@@ -34,9 +32,7 @@ docker compose up docs      # só a documentação
 
 Use Python 3.12. O `requirements.txt` fixa `pandas~=2.3.3`, que não tem wheel para 3.14 — a instalação falha ao compilar dependências transitivas.
 
-A suíte é de **caracterização**: documenta o comportamento atual (incluindo bugs conhecidos, marcados nas docstrings), não o desejado. Um teste que quebra numa refatoração é uma pergunta ("essa mudança foi intencional?"), não necessariamente um erro.
-
-Os testes não tocam em BigQuery, Groq nem Firebase: a suíte cobre só as funções puras (normalização, agregação, formatação), nunca as que fazem I/O de rede. `backend/tests/conftest.py` troca o I/O por fakes (verificador de token, cadastro, busca de empresas e leitura e gravação de blocos), ligados ao app por `dependency_overrides`.
+**O projeto não tem testes automatizados**, por decisão do dono (o projeto é acadêmico e testes unitários não importam agora). A pasta `backend/tests/`, o `pytest.ini` e as dependências do pytest foram removidos. Não recriar testes sem pedido; a CI só roda o lint (`ruff check ..`).
 
 ## Arquitetura
 
@@ -93,7 +89,6 @@ api/ ──▶ agents/ · storage/ ──▶ domain/
 backend/
   main.py                  # cria o app e monta o lifespan. Só montagem.
   Dockerfile
-  pytest.ini
   requirements.txt
   .env.example
   app/
@@ -101,13 +96,13 @@ backend/
     api/lifespan.py        #   ciclo de vida da aplicação
     api/endpoints/         #   saude, auth, dashboard, blocos, empresas, investimentos, relatorios
     api/dependencias.py    #   usuário do token e controle de acesso por perfil
+    api/carteira.py        #   carteira do investidor (blocos investidos, valor e empresas)
     api/schemas/           #   contratos Pydantic de entrada e saída
     config/                #   settings.py (env) e logging.py
-    domain/                #   risco, metricas, formatacao, identidade, blocos, investimentos, erros
+    domain/                #   risco, metricas, formatacao, identidade, blocos, investimentos, relatorios, erros
     jobs/                  #   criar_gestora.py e criar_tabelas_blocos.py (CLIs)
     storage/               #   bigquery, empresas, blocos, scores, firebase (token + Firestore), usuarios, credenciais
   dados/                   # scores_empresas.csv (scores de demonstração, lidos por storage/scores.py)
-  tests/
 frontend/
   Dockerfile               # build Node → nginx
   vite.config.js           # proxy /api em dev; lista as páginas do build
@@ -127,7 +122,7 @@ mkdocs.yml
 docker-compose.yml         # backend + frontend + redis-stack + docs
 pyproject.toml             # config do ruff, repositório inteiro
 pyrightconfig.json         # extraPaths para o editor resolver `from app...`
-.vscode/settings.json      # interpretador e pytest
+.vscode/settings.json      # interpretador
 ```
 
 ## Pontos de Atenção
@@ -182,7 +177,7 @@ Não invente que existe. Nesta ordem:
 
 1. **Fonte dos dados de aportes.** O upload de CSV foi removido de propósito (não é assim que a plataforma vai operar). Ainda não existe nenhum mecanismo que traga esses dados para a plataforma — nem CSV, nem consulta a serviço externo, nada. É a decisão mais urgente em aberto.
 2. **Investimento real.** O botão "Alocar dinheiro" só mostra uma confirmação e não grava nada; os "Blocos Investidos" vêm de uma carteira de demonstração. Como o investidor aporta de verdade não foi definido.
-3. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `/blocos` (etiquetas, criar, listar e detalhar), `GET /empresas` e `GET /investimentos`, `/investimentos/resumo` e `/investimentos/empresas` (carteira de demonstração); a busca de empresas lê `dados_fidc.tb_empresas_fidc`. `/dashboard` e `/relatorios` exigem o perfil certo, mas depois da checagem respondem 501 até terem fonte de dados.
+3. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `/blocos` (etiquetas, criar, listar e detalhar), `GET /empresas` e `GET /investimentos`, `/investimentos/resumo` e `/investimentos/empresas` (carteira de demonstração) e `/relatorios` (pedir, consultar o estado e baixar o PDF); a busca de empresas lê `dados_fidc.tb_empresas_fidc`. O relatório por IA usa a carteira de demonstração do investidor (a mesma fonte do cubo e do ranking), e os PDFs ficam só em memória do processo. `/dashboard` exige o perfil certo, mas depois da checagem responde 501 até ter fonte de dados.
 4. **Redis** — declarado no compose, sem cliente na aplicação.
 5. **Score de risco real.** Hoje os scores são de demonstração (CSV sorteado). O modelo de machine learning que o grupo imagina não existe, nem o histórico de aportes que ele usaria.
 6. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.

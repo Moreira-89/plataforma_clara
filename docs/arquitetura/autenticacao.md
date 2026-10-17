@@ -109,5 +109,3 @@ python -m app.jobs.criar_gestora --nome "Núclea" --email gestora@exemplo.com --
 | `obter_usuario_atual`, `exigir_perfil` | `api/dependencias.py` |
 | Rotas | `api/endpoints/auth.py` |
 
-Nos testes, o verificador de token e o cadastro são trocados por fakes com
-`app.dependency_overrides` (ver `tests/conftest.py`); nada toca o Firebase.

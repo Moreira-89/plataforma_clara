@@ -81,7 +81,7 @@ async function carregarPdf() {
 // Devolve true quando o acompanhamento terminou (pronto ou falhou).
 function aplicarEstado(corpo) {
   if (corpo.status === 'pronto') carregarPdf()
-  else if (corpo.status === 'falhou') falhar('A geração do relatório falhou. Tente de novo.')
+  else if (corpo.status === 'falhou') falhar(corpo.mensagem ?? 'A geração do relatório falhou. Tente de novo.')
   else {
     mostrar('gerando', 'Estamos gerando o seu relatório. Isso pode levar alguns instantes.')
     return false

@@ -5,8 +5,9 @@ COMO FUNCIONA:
     1. `obter_usuario_atual` extrai o Bearer, verifica o token e monta o `UsuarioAtual`.
     2. `exigir_perfil(...)` fabrica uma dependência que recusa perfis fora da lista.
     3. `obter_verificador_token`, `obter_cadastrador`, `obter_buscador_de_empresas` e
-       `obter_criador_de_bloco`, `obter_listador_de_blocos`, `obter_buscador_de_bloco` e
-       `obter_leitor_de_scores` entregam as funções de I/O; nos testes são trocadas com
+       `obter_criador_de_bloco`, `obter_listador_de_blocos`, `obter_buscador_de_bloco`,
+       `obter_leitor_de_scores`, `obter_gerador_de_relatorio` e `obter_repositorio_de_relatorios`
+       entregam as funções de I/O e o repositório; nos testes são trocadas com
        `dependency_overrides`.
 
 Args:
@@ -32,7 +33,8 @@ from app.api.schemas.auth import UsuarioAtual
 from app.domain.blocos import BlocoDetalhado, BlocoListado, BlocoValidado, EmpresaCatalogo
 from app.domain.erros import AcessoNegadoError, TokenInvalidoError
 from app.domain.perfis import DadosCadastro, Perfil, perfil_de_claims
-from app.storage import blocos, empresas, firebase, scores, usuarios
+from app.storage import blocos, empresas, firebase, relatorios, scores, usuarios
+from app.storage.relatorios import RepositorioDeRelatorios
 
 Verificador = Callable[[str], dict[str, Any]]
 Cadastrador = Callable[[DadosCadastro, str, Perfil], str]
@@ -41,6 +43,7 @@ CriadorDeBloco = Callable[[BlocoValidado, str], None]
 ListadorDeBlocos = Callable[[], list[BlocoListado]]
 BuscadorDeBloco = Callable[[str], BlocoDetalhado]
 LeitorDeScores = Callable[[], Mapping[str, float]]
+GeradorDeRelatorio = Callable[[str | None, list[dict[str, Any]]], tuple[bytes, str]]
 
 # auto_error=False para o 401 sair pelo nosso handler, com o mesmo formato dos demais.
 _esquema_bearer = HTTPBearer(auto_error=False)
@@ -107,6 +110,7 @@ async def obter_usuario_atual(
         uid=claims["uid"],
         perfil=perfil_de_claims(claims),
         email=claims.get("email"),
+        nome=claims.get("name"),
     )
 
 
@@ -129,3 +133,15 @@ def exigir_perfil(*perfis: Perfil) -> Callable[..., Any]:
         return usuario
 
     return dependencia
+
+
+def obter_gerador_de_relatorio() -> GeradorDeRelatorio:
+    """Entrega a função que gera o relatório em PDF (importada só quando usada)."""
+    from app.agents.relatorio import gerar_relatorio_consolidado_investidor
+
+    return gerar_relatorio_consolidado_investidor
+
+
+def obter_repositorio_de_relatorios() -> RepositorioDeRelatorios:
+    """Entrega o repositório dos relatórios pedidos."""
+    return relatorios.repositorio

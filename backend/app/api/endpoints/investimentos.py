@@ -28,6 +28,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
+from app.api.carteira import carregar_carteira
 from app.api.dependencias import (
     BuscadorDeBloco,
     LeitorDeScores,
@@ -98,16 +99,10 @@ async def ranquear_empresas_da_carteira(
     ler_scores: Annotated[LeitorDeScores, Depends(obter_leitor_de_scores)],
 ) -> list[EmpresaDaCarteira]:
     """As empresas da carteira, da que mais recebe do dinheiro do investidor para a que menos."""
-    blocos, scores = await asyncio.gather(asyncio.to_thread(listar), asyncio.to_thread(ler_scores))
-    investidos = [
-        (valor, bloco.id_bloco)
-        for bloco in blocos
-        if (valor := valor_investido(investidor.uid, bloco.id_bloco)) is not None
-    ]
-    detalhados = await asyncio.gather(
-        *(asyncio.to_thread(buscar, id_bloco) for _, id_bloco in investidos)
+    carteira, scores = await asyncio.gather(
+        carregar_carteira(investidor.uid, listar, buscar), asyncio.to_thread(ler_scores)
     )
-    ranking = ranquear_empresas(zip((v for v, _ in investidos), detalhados, strict=True))
+    ranking = ranquear_empresas(carteira)
     return [
         EmpresaDaCarteira(
             **vars(empresa),
