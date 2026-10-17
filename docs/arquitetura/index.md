@@ -81,6 +81,8 @@ recurso tem o seu arquivo em `api/endpoints/` com um `APIRouter` próprio.
 | `POST /blocos` | gestora | funciona |
 | `GET /empresas?busca=` | gestora | funciona |
 | `GET /investimentos` | investidor | funciona (carteira de demonstração) |
+| `GET /investimentos/resumo` | investidor | funciona (total investido e soma por etiqueta) |
+| `GET /investimentos/empresas` | investidor | funciona (ranking das empresas da carteira) |
 | `GET /blocos`, `GET /blocos/{bloco_id}` | qualquer perfil | funciona |
 | `POST /relatorios`, `GET /relatorios/{id}` | investidor | 501, dependem da fonte dos aportes |
 

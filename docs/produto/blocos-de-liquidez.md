@@ -74,6 +74,30 @@ todas as páginas.
 
 ## Telas do investidor
 
+**Visão geral.** É a primeira tela do investidor depois do login. Tem duas faixas no topo (o **total
+investido**, e a quantidade de etiquetas e de blocos investidos) e três blocos:
+
+- **Ranking de empresas:** as 10 empresas que mais recebem do dinheiro do investidor, com posição,
+  nome (ou CNPJ, se o cadastro estiver fora do ar), ramo, etiqueta, valor, percentual do total e uma
+  barra proporcional à primeira. O valor de cada empresa é o investido no bloco vezes a fatia dela nele.
+- **Cubo 3D** das empresas, descrito abaixo.
+- **Assistente Clara:** a interface de um chatbot (mensagens, campo de texto e botão Enviar). **Ainda
+  não há LLM por trás**: a saudação e a resposta ("ainda não estou conectado a um modelo...") são
+  textos fixos, a conversa só existe na página e nada é enviado ao backend.
+
+Todos os números vêm da carteira; nenhum é estimado.
+
+**O cubo.** É um cubo mágico em CSS 3D (sem WebGL nem biblioteca de gráficos), que gira com o mouse. As
+6 faces têm 3x3 adesivos, 54 no total, e eles representam **100% do dinheiro do investidor**. Cada
+**empresa** ocupa uma região de adesivos proporcional à fatia dela nesse dinheiro (a mesma que o
+ranking mostra). A repartição usa o método do maior resto e dá ao menos 1 adesivo a cada empresa
+mostrada; cada adesivo vale cerca de 1,85%, então o cubo é aproximado e o valor exato fica no balão e
+no ranking. Todas as empresas aparecem, cada uma com a sua região; só se passarem de 54 as menores se juntam em "Outras empresas". A cor é a da
+etiqueta (pedra) do bloco da empresa, com tons diferentes quando duas empresas têm a mesma etiqueta;
+"Outras empresas", se existir, fica em cinza. Passar o mouse destaca todos os adesivos da empresa e mostra um balão
+com nome, valor investido e percentual; clicar leva a **Blocos Investidos** filtrado pela etiqueta da
+empresa (em "Outras empresas" não há clique).
+
 **Alocar dinheiro.** No pop-up de detalhes de um bloco, o investidor clica em **Alocar dinheiro**; a
 tela pergunta "Confirmar o investimento no bloco ...?", com **Cancelar** e **Confirmar investimento**,
 e depois mostra "Investimento confirmado.". Ainda não há aporte de verdade por trás: a confirmação não
@@ -83,7 +107,11 @@ grava nada.
 (a Safira tem um painel com todos os blocos Safira dele, a Rubi outro, e assim por diante). Os
 cartões são os mesmos da tela de Blocos de Liquidez, com a linha **Investido: R$ ...**. Dentro de cada
 painel os blocos vão do mais recente ao mais antigo, e os painéis seguem a ordem do bloco mais novo
-de cada pedra. O menu lateral do investidor tem os dois itens: Blocos de Liquidez e Blocos Investidos.
+de cada pedra. O menu lateral do investidor tem três itens: Visão geral, Blocos de Liquidez e Blocos Investidos.
+
+**Filtro por etiqueta.** Vindo do cubo da Visão geral, a tela abre com `?etiqueta=Safira`
+e mostra só os blocos dessa pedra, com o aviso "Filtrando por: Safira" e o botão **Limpar filtro**,
+que volta a mostrar todos os investimentos.
 
 O botão **Ver mais detalhes** abre o mesmo pop-up da tela de Blocos de Liquidez, mas com a visão de
 quem já investiu. Ele mostra a etiqueta, a data de vencimento e o score do bloco, e acrescenta:
@@ -162,5 +190,6 @@ Os detalhes técnicos (tabelas, rotas e erros) estão em
   gravação deixa de recusar.
 - **Score real:** o modelo de machine learning (Random Forest, de 0 a 100, a partir do histórico) ainda não existe; hoje os scores são de demonstração (ver aviso acima).
 - **Alocar dinheiro:** como o investidor aporta de verdade ainda não foi definido; hoje o botão só confirma, sem gravar.
-- **Cubo:** o desenho prevê um "cubo" nos blocos (uma grade colorida); a lógica dele na tela de Blocos Investidos ainda não está definida, e na tela inicial do investidor está mais clara. Por ora o pop-up de detalhes é o descrito acima.
+- **Chatbot:** falta decidir a LLM, o endpoint e o que o assistente pode consultar. O ponto de ligação no frontend é a função `responder` em `src/js/paginas/investidor/chat.js`.
+- **Outras visualizações da Visão geral:** além do cubo, dos totais e do ranking, o grupo ainda não definiu gráficos.
 - **Filtros em Blocos Investidos:** o desenho prevê um botão de filtros, ainda sem definição.

@@ -115,7 +115,7 @@ frontend/
   paginas/                 # uma pasta por área, um HTML por tela
     login.html, cadastro.html
     gestora/gestao-blocos.html   # inclui o pop-up de criação de bloco
-    investidor/blocos-de-liquidez.html, blocos-investidos.html
+    investidor/visao-geral.html, blocos-de-liquidez.html, blocos-investidos.html
   src/css/                 # tokens, base, componentes (principal.css junta os três)
     paginas/               #   um CSS por tela ou grupo de telas
   src/js/nucleo/           # api, firebase, rotas, ui, menu — usados por todas as telas
@@ -182,7 +182,7 @@ Não invente que existe. Nesta ordem:
 
 1. **Fonte dos dados de aportes.** O upload de CSV foi removido de propósito (não é assim que a plataforma vai operar). Ainda não existe nenhum mecanismo que traga esses dados para a plataforma — nem CSV, nem consulta a serviço externo, nada. É a decisão mais urgente em aberto.
 2. **Investimento real.** O botão "Alocar dinheiro" só mostra uma confirmação e não grava nada; os "Blocos Investidos" vêm de uma carteira de demonstração. Como o investidor aporta de verdade não foi definido.
-3. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `/blocos` (etiquetas, criar, listar e detalhar), `GET /empresas` e `GET /investimentos` (carteira de demonstração); a busca de empresas lê `dados_fidc.tb_empresas_fidc`. `/dashboard` e `/relatorios` exigem o perfil certo, mas depois da checagem respondem 501 até terem fonte de dados.
+3. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `/blocos` (etiquetas, criar, listar e detalhar), `GET /empresas` e `GET /investimentos`, `/investimentos/resumo` e `/investimentos/empresas` (carteira de demonstração); a busca de empresas lê `dados_fidc.tb_empresas_fidc`. `/dashboard` e `/relatorios` exigem o perfil certo, mas depois da checagem respondem 501 até terem fonte de dados.
 4. **Redis** — declarado no compose, sem cliente na aplicação.
 5. **Score de risco real.** Hoje os scores são de demonstração (CSV sorteado). O modelo de machine learning que o grupo imagina não existe, nem o histórico de aportes que ele usaria.
 6. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.

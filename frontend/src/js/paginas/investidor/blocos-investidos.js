@@ -7,6 +7,9 @@ import { criar, montarCartao, seloEtiqueta } from '../blocos/cartao.js'
 import { abrirDetalhe, ligarDialogoDeDetalhe } from '../blocos/detalhe.js'
 
 const menu = montarMenu('investidor')
+let blocos = []
+// Filtro vindo da visão geral (?etiqueta=Safira); "Limpar filtro" volta a mostrar tudo.
+let filtro = new URLSearchParams(window.location.search).get('etiqueta')
 
 // Agrupa por pedra. A API já devolve do bloco mais recente ao mais antigo, então a ordem dos
 // grupos (pelo bloco mais novo de cada um) e a dos cartões dentro de cada grupo seguem essa regra.
@@ -19,15 +22,20 @@ function agruparPorEtiqueta(blocos) {
   return grupos
 }
 
-function desenhar(blocos) {
+function desenhar() {
   const raiz = $('#grupos')
   raiz.replaceChildren()
-  if (!blocos.length) {
-    raiz.append(criar('p', 'vazio', 'Você ainda não investiu em nenhum bloco.'))
+  $('#filtro').hidden = !filtro
+  if (filtro) $('#filtro-texto').textContent = `Filtrando por: ${filtro}`
+
+  const visiveis = filtro ? blocos.filter((b) => b.etiqueta === filtro) : blocos
+  if (!visiveis.length) {
+    const vazio = filtro ? `Você não tem investimentos na etiqueta ${filtro}.` : 'Você ainda não investiu em nenhum bloco.'
+    raiz.append(criar('p', 'vazio', vazio))
     return
   }
 
-  for (const [etiqueta, grupo] of agruparPorEtiqueta(blocos)) {
+  for (const [etiqueta, grupo] of agruparPorEtiqueta(visiveis)) {
     const secao = criar('section', 'grupo-etiqueta')
     secao.style.setProperty('--cor-etiqueta', grupo.cor ?? 'var(--surface-strong)')
 
@@ -67,7 +75,14 @@ async function carregar() {
     return
   }
   $('#estado').textContent = ''
-  desenhar(resposta.corpo)
+  blocos = resposta.corpo
+  desenhar()
+}
+
+function limparFiltro() {
+  filtro = null
+  window.history.replaceState(null, '', window.location.pathname)
+  desenhar()
 }
 
 aoMudarSessao(async (usuario) => {
@@ -87,6 +102,7 @@ aoMudarSessao(async (usuario) => {
   menu.definirUsuario(usuario.email)
   $('#conteudo').hidden = false
   ligarDialogoDeDetalhe()
+  $('#filtro-limpar').addEventListener('click', limparFiltro)
   if (perfil.status !== 200) {
     avisar(`Não foi possível verificar o seu perfil: ${textoDoErro(perfil)}`)
     return

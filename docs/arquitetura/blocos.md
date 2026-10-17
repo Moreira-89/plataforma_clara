@@ -86,6 +86,19 @@ um hash SHA-256 de (uid do investidor, id do bloco), então o resultado é está
 blocos e difere de uma conta para outra. Cerca de 40% dos blocos entram, com valor múltiplo de R$ 5 mil
 entre R$ 5 mil e R$ 500 mil. Trocar isso por investimentos reais é mudar a origem dessa lista.
 
+`GET /investimentos/resumo` (só investidor) soma a mesma carteira por etiqueta e devolve o
+`total_investido` e, para cada pedra, `etiqueta`, `cor`, `total_investido`, `quantidade_blocos` e
+`participacao` (fração de 0 a 1), da maior para a menor. A soma é regra de negócio e mora em
+`domain/investimentos.py` (`resumir_por_etiqueta`); o endpoint só junta a cor da pedra.
+
+`GET /investimentos/empresas` (só investidor) devolve o ranking das empresas da carteira, da que mais
+recebe do dinheiro do investidor para a que menos. Para cada bloco investido o endpoint busca o
+detalhe (uma consulta por bloco, em paralelo) e `domain/investimentos.py` (`ranquear_empresas`)
+distribui o valor investido pela fatia de cada empresa no bloco (valor × percentual de liquidez); se a
+empresa aparece em mais de um bloco, os valores se somam. Cada item traz nome, CNPJ, ramo, etiqueta e
+cor, `capital_investido`, `participacao` (fração do total investido), score e nota. Sem o cadastro de
+empresas o nome vem vazio e a tela mostra o CNPJ.
+
 ## Score de risco (dados de demonstração)
 
 Os scores são **fictícios**: foram sorteados (inteiros de 0 a 100, semente fixa) para cada uma das

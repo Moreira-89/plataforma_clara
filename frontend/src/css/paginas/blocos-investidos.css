@@ -6,3 +6,12 @@
 .grupo-topo { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-lg); }
 .grupo-topo h2 { font-size: 24px; line-height: 1.2; letter-spacing: -0.3px; }
 .grupo-quantidade { font-size: 13px; color: var(--muted); }
+
+/* Filtro por etiqueta, aplicado pela visão geral (?etiqueta=...). */
+.filtro-etiqueta {
+  display: flex; align-items: center; gap: var(--space-base); margin-bottom: var(--space-lg);
+  padding: var(--space-sm) var(--space-base); border: 1px solid var(--hairline); border-radius: var(--radius-pill);
+  width: fit-content; font-size: 14px; color: var(--ink);
+}
+.filtro-etiqueta[hidden] { display: none; }
+.filtro-etiqueta .btn { height: 32px; padding: 0 16px; font-size: 13px; }

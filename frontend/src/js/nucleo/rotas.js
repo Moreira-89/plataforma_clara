@@ -4,6 +4,7 @@ import { sair } from './firebase.js'
 export const LOGIN = '/paginas/login.html'
 export const HOME = '/'
 export const GESTAO_BLOCOS = '/paginas/gestora/gestao-blocos.html'
+export const VISAO_GERAL = '/paginas/investidor/visao-geral.html'
 export const BLOCOS_INVESTIDOR = '/paginas/investidor/blocos-de-liquidez.html'
 export const BLOCOS_INVESTIDOS = '/paginas/investidor/blocos-investidos.html'
 
@@ -15,7 +16,7 @@ export async function encerrarSeInvalida(resposta) {
 }
 
 // Tela de entrada de cada perfil.
-export const destinoDoPerfil = (perfil) => (perfil === 'gestora' ? GESTAO_BLOCOS : BLOCOS_INVESTIDOR)
+export const destinoDoPerfil = (perfil) => (perfil === 'gestora' ? GESTAO_BLOCOS : VISAO_GERAL)
 
 export async function destinoPorPerfil() {
   const resposta = await chamar('GET', '/auth/me')

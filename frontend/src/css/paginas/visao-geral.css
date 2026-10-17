@@ -1,0 +1,94 @@
+/* Visão geral do investidor: faixas de totais, ranking de empresas, cubo 3D e chat. */
+.visao {
+  display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--space-lg); margin-top: var(--space-xl);
+  grid-template-areas: "total resumo" "rank cubo" "rank chat";
+}
+.faixa, .painel { border: 1px solid var(--hairline); border-radius: var(--radius-xl); background: var(--canvas); }
+.faixa-total { grid-area: total; }
+.faixa-contagem { grid-area: resumo; }
+.painel-ranking { grid-area: rank; }
+.cubo-area { grid-area: cubo; }
+.painel-chat { grid-area: chat; }
+.faixa { display: flex; justify-content: space-between; align-items: center; gap: var(--space-base); padding: var(--space-base) var(--space-lg); font-size: 14px; color: var(--muted); }
+.faixa strong { color: var(--ink); }
+.faixa-total { background: var(--surface-dark); color: var(--on-dark-soft); border-color: transparent; }
+.faixa-total strong { color: var(--on-dark); font-size: 32px; line-height: 1.1; letter-spacing: -0.6px; }
+.faixa-contagem { justify-content: space-around; }
+.faixa-contagem strong { margin-left: var(--space-xs); font-size: 24px; }
+
+.painel { padding: var(--space-xl); }
+.painel h2 { font-size: 24px; line-height: 1.2; letter-spacing: -0.3px; }
+.painel-sub { margin-top: var(--space-xs); font-size: 14px; color: var(--muted); }
+
+/* Ranking: posição, empresa (com ramo e etiqueta), valor e barra de participação. */
+.ranking { display: grid; gap: var(--space-xs); list-style: none; padding: 0; margin: var(--space-base) 0 0; counter-reset: posicao; }
+.linha-ranking {
+  display: grid; grid-template-columns: 32px 1fr auto; gap: 6px var(--space-sm); align-items: center;
+  padding: var(--space-sm) var(--space-base); border-radius: var(--radius-md); counter-increment: posicao;
+}
+.linha-ranking:hover { background: var(--surface-soft); }
+.linha-ranking::before {
+  content: counter(posicao); display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-full);
+  background: var(--surface-strong); color: var(--ink); font: 500 13px var(--font-mono);
+}
+.linha-ranking:nth-child(-n+3)::before { background: var(--primary); color: var(--on-primary); }
+.linha-ranking .empresa { display: grid; min-width: 0; }
+.linha-ranking .empresa strong { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.linha-ranking .empresa small { display: flex; align-items: center; gap: var(--space-xs); font-size: 13px; color: var(--muted); }
+.linha-ranking .selo { width: 10px; height: 10px; border-radius: var(--radius-full); background: var(--cor); box-shadow: inset 0 0 0 1px var(--hairline); flex: none; }
+.linha-ranking .valores { text-align: right; color: var(--ink); font-size: 14px; }
+.linha-ranking .valores small { display: block; font-size: 13px; color: var(--muted); }
+.linha-ranking .barra-fina { grid-column: 2 / -1; }
+.barra-fina { height: 6px; border-radius: var(--radius-pill); background: var(--surface-strong); overflow: hidden; }
+.barra-fina i { display: block; height: 100%; width: var(--largura, 0); border-radius: var(--radius-pill); background: var(--primary); }
+
+/* Cubo sobre um cartão suave, com o balão do valor acima do mouse. */
+.cubo-area { position: relative; min-height: 380px; border: 1px solid var(--hairline); border-radius: var(--radius-xl); background: var(--surface-soft); overflow: hidden; }
+#cubo { width: 100%; height: 380px; }
+.cubo-ajuda { position: absolute; left: 0; right: 0; bottom: var(--space-base); text-align: center; font-size: 13px; color: var(--muted); pointer-events: none; }
+.dica-cubo {
+  position: absolute; z-index: 1; display: flex; gap: var(--space-xs); align-items: baseline; padding: 6px var(--space-sm);
+  border: 1px solid var(--cor-dica, var(--hairline)); border-radius: var(--radius-pill); background: var(--surface-dark);
+  color: var(--on-dark-soft); font-size: 13px; pointer-events: none; white-space: nowrap; transform: translate(-50%, calc(-100% - 14px));
+}
+.dica-cubo[hidden] { display: none; }
+.dica-cubo strong { color: var(--on-dark); font-size: 14px; }
+
+/* Chat: mensagens com rolagem e campo de envio. */
+.painel-chat { display: flex; flex-direction: column; gap: var(--space-base); padding: var(--space-lg); }
+.painel-chat h2 { font-size: 20px; }
+.chat-mensagens { display: flex; flex: 1 1 0; flex-direction: column; gap: var(--space-xs); min-height: 220px; max-height: 480px; overflow-y: auto; padding: var(--space-xs) 2px; }
+.chat-balao { max-width: 85%; padding: var(--space-xs) var(--space-base); border-radius: var(--radius-md); font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+.chat-balao.assistente { align-self: flex-start; background: var(--surface-strong); color: var(--ink); }
+.chat-balao.usuario { align-self: flex-end; background: var(--primary); color: var(--on-primary); }
+.chat-form { display: flex; gap: var(--space-xs); }
+.chat-form input {
+  flex: 1; min-width: 0; height: 44px; padding: 0 var(--space-base); border: 1px solid var(--hairline); border-radius: var(--radius-pill);
+  background: var(--surface-strong); font: 400 14px var(--font-sans); color: var(--ink);
+}
+.chat-form input:focus { outline: none; border-color: var(--primary); background: var(--canvas); }
+.chat-form .btn { height: 44px; }
+
+/* Cubo em CSS 3D: seis faces 3x3 de adesivos; `--lado` é a aresta e `--cor`/`--tom` vêm do JS. */
+.cubo-cena {
+  --lado: 250px;
+  display: grid; place-items: center; width: 100%; height: 100%;
+  perspective: 1400px; cursor: grab; touch-action: none; user-select: none;
+}
+.cubo-cena:active { cursor: grabbing; }
+.cubo { position: relative; width: var(--lado); height: var(--lado); transform-style: preserve-3d; }
+.cubo-face {
+  position: absolute; inset: 0; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  gap: var(--space-xs); padding: var(--space-xs); background: var(--surface-dark); backface-visibility: hidden;
+}
+.cubo-frente { transform: translateZ(calc(var(--lado) / 2)); }
+.cubo-tras { transform: rotateY(180deg) translateZ(calc(var(--lado) / 2)); }
+.cubo-direita { transform: rotateY(90deg) translateZ(calc(var(--lado) / 2)); }
+.cubo-esquerda { transform: rotateY(-90deg) translateZ(calc(var(--lado) / 2)); }
+.cubo-topo { transform: rotateX(90deg) translateZ(calc(var(--lado) / 2)); }
+.cubo-base { transform: rotateX(-90deg) translateZ(calc(var(--lado) / 2)); }
+.cubo-adesivo {
+  border-radius: var(--radius-md); background: var(--cor); cursor: pointer;
+  filter: brightness(var(--tom, 1)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.cubo-adesivo.destaque { filter: brightness(calc(var(--tom, 1) + 0.25)); box-shadow: 0 0 0 3px var(--canvas), inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
