@@ -29,7 +29,7 @@
 .cubo-topo { transform: rotateX(90deg) translateZ(calc(var(--lado) / 2)); }
 .cubo-base { transform: rotateX(-90deg) translateZ(calc(var(--lado) / 2)); }
 .cubo-adesivo {
-  border-radius: var(--radius-md); background: var(--cor);
+  border-radius: var(--radius-md); background-color: var(--cor);
   filter: brightness(var(--tom, 1)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 .cubo-adesivo.destaque { filter: brightness(calc(var(--tom, 1) + 0.25)); box-shadow: 0 0 0 3px var(--canvas), inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
@@ -41,3 +41,15 @@
 @media (prefers-reduced-motion: reduce) {
   .cubo-cena, .cubo-adesivo { animation: none; }
 }
+
+/* Texturas sobre a cor (traços claros e escuros, para aparecerem em qualquer cor). `data-padrao` 0 é liso. */
+[data-padrao="1"] { background-image: repeating-linear-gradient(45deg, var(--textura-clara) 0 4px, var(--textura-escura) 4px 8px); }
+[data-padrao="2"] { background-image: radial-gradient(var(--textura-clara) 2.5px, transparent 3px), radial-gradient(var(--textura-escura) 2.5px, transparent 3px); background-size: 12px 12px; background-position: 0 0, 6px 6px; }
+[data-padrao="3"] { background-image: linear-gradient(var(--textura-clara) 2px, transparent 2px), linear-gradient(90deg, var(--textura-escura) 2px, transparent 2px); background-size: 12px 12px; }
+[data-padrao="4"] { background-image: repeating-linear-gradient(0deg, var(--textura-escura) 0 3px, var(--textura-clara) 3px 6px); }
+[data-padrao="5"] { background-image: repeating-linear-gradient(45deg, var(--textura-clara) 0 2px, transparent 2px 9px), repeating-linear-gradient(-45deg, var(--textura-escura) 0 2px, transparent 2px 9px); }
+[data-padrao="6"] { background-image: repeating-linear-gradient(90deg, var(--textura-clara) 0 4px, var(--textura-escura) 4px 8px); }
+[data-padrao="7"] { background-image: conic-gradient(var(--textura-escura) 25%, var(--textura-clara) 0 50%, var(--textura-escura) 0 75%, var(--textura-clara) 0); background-size: 14px 14px; }
+
+/* Amostra da cor e textura de uma empresa (legenda na tabela da ficha). */
+.amostra-cubo { display: inline-block; width: 18px; height: 18px; border-radius: 5px; background-color: var(--cor); filter: brightness(var(--tom, 1)); box-shadow: inset 0 0 0 1px var(--hairline); vertical-align: middle; flex: none; }

@@ -17,7 +17,6 @@ const corDe = (etiqueta) => etiqueta.cor ?? 'var(--surface-strong)'
 
 function desenharIndicadores(total, etiquetas) {
   $('#total').textContent = moeda.format(Number(total))
-  $('#qtd-etiquetas').textContent = etiquetas.length
   $('#qtd-blocos').textContent = etiquetas.reduce((soma, e) => soma + e.quantidade_blocos, 0)
 }
 

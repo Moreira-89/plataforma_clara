@@ -15,8 +15,7 @@
 .faixa strong { color: var(--ink); }
 .faixa-total { background: var(--surface-dark); color: var(--on-dark-soft); border-color: transparent; }
 .faixa-total strong { color: var(--on-dark); font-size: 32px; line-height: 1.1; letter-spacing: -0.6px; }
-.faixa-contagem { justify-content: space-around; }
-.faixa-contagem strong { margin-left: var(--space-xs); font-size: 24px; }
+.faixa-contagem strong { font-size: 24px; }
 
 .painel { padding: var(--space-xl); }
 .painel h2 { font-size: 24px; line-height: 1.2; letter-spacing: -0.3px; }
