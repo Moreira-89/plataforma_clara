@@ -5,6 +5,7 @@ COMO FUNCIONA:
     1. `ResumoEtiqueta` é uma pedra em que o investidor aplicou: total, blocos e participação.
     2. `ResumoInvestimentos` traz o total geral e as pedras, da maior para a menor.
     3. `EmpresaDaCarteira` é uma empresa do ranking, com o capital do investidor nela.
+    4. `RendimentoInvestimentos` traz o rendimento mensal dos últimos 12 meses.
 
 Args:
     Nenhum.
@@ -16,9 +17,10 @@ Raises:
     Nenhum.
 """
 
+from datetime import date
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ResumoEtiqueta(BaseModel):
@@ -51,3 +53,21 @@ class EmpresaDaCarteira(BaseModel):
     participacao: float
     score: float | None
     nota_risco: str | None
+
+
+class RendimentoMes(BaseModel):
+    """O rendimento da carteira num mês fechado."""
+
+    mes: date = Field(description="Primeiro dia do mês")
+    taxa_percentual: Decimal
+    rendimento: Decimal
+    acumulado_percentual: Decimal
+
+
+class RendimentoInvestimentos(BaseModel):
+    """Rendimento dos últimos 12 meses fechados, do mais antigo para o mais novo."""
+
+    total_investido: Decimal
+    rendimento_total: Decimal
+    acumulado_percentual: Decimal
+    meses: list[RendimentoMes]

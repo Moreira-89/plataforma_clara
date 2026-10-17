@@ -83,6 +83,7 @@ recurso tem o seu arquivo em `api/endpoints/` com um `APIRouter` próprio.
 | `GET /investimentos` | investidor | funciona (carteira de demonstração) |
 | `GET /investimentos/resumo` | investidor | funciona (total investido e soma por etiqueta) |
 | `GET /investimentos/empresas` | investidor | funciona (ranking das empresas da carteira) |
+| `GET /investimentos/rendimento` | investidor | funciona (rendimento mensal dos últimos 12 meses; demonstração) |
 | `GET /blocos`, `GET /blocos/{bloco_id}` | qualquer perfil | funciona |
 | `POST /relatorios`, `GET /relatorios/{id}`, `GET /relatorios/{id}/pdf` | investidor | funciona (relatório por IA a partir da carteira de demonstração; ver [Relatório](../produto/relatorio.md)) |
 

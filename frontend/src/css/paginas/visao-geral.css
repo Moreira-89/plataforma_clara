@@ -1,11 +1,12 @@
-/* Visão geral do investidor: faixas de totais, ranking de empresas, cubo 3D e chat. */
+/* Visão geral do investidor: faixas de totais, gráfico de rendimento, ranking de empresas, cubo 3D e chat. */
 .visao {
   display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--space-lg); margin-top: var(--space-xl);
-  grid-template-areas: "total resumo" "rank cubo" "rank chat";
+  grid-template-areas: "total resumo" "grafico grafico" "rank cubo" "rank chat";
 }
 .faixa, .painel { border: 1px solid var(--hairline); border-radius: var(--radius-xl); background: var(--canvas); }
 .faixa-total { grid-area: total; }
 .faixa-contagem { grid-area: resumo; }
+.painel-grafico { grid-area: grafico; }
 .painel-ranking { grid-area: rank; }
 .painel-chat { grid-area: chat; }
 .cubo-area { grid-area: cubo; }
@@ -20,6 +21,27 @@
 .painel { padding: var(--space-xl); }
 .painel h2 { font-size: 24px; line-height: 1.2; letter-spacing: -0.3px; }
 .painel-sub { margin-top: var(--space-xs); font-size: 14px; color: var(--muted); }
+
+/* Gráfico de rendimento: barras (R$ por mês) e linha (% acumulado), em SVG. */
+.grafico-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-lg); }
+.grafico-resumo { display: flex; gap: var(--space-xl); margin: 0; }
+.grafico-resumo div { text-align: right; }
+.grafico-resumo dt { font-size: 13px; color: var(--muted); }
+.grafico-resumo dd { margin: 0; font-size: 24px; line-height: 1.2; letter-spacing: -0.3px; color: var(--ink); }
+.grafico-area { position: relative; margin-top: var(--space-base); }
+.grafico-svg { display: block; width: 100%; height: auto; }
+.grafico-grade line { stroke: var(--hairline); stroke-width: 1; }
+.grafico-eixo text { fill: var(--muted); font: 400 11px var(--font-sans); }
+.grafico-barra { fill: var(--primary); opacity: 0.8; transition: opacity 0.15s; }
+.grafico-barra.ativa { opacity: 1; }
+.grafico-linha { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.grafico-ponto { fill: var(--canvas); stroke: var(--ink); stroke-width: 2; }
+.grafico-alvo { fill: transparent; }
+.dica-grafico { flex-direction: column; align-items: flex-start; gap: 2px; border-radius: var(--radius-md); }
+.grafico-legenda { display: flex; justify-content: center; gap: var(--space-lg); margin: var(--space-sm) 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--muted); }
+.grafico-legenda li { display: flex; align-items: center; gap: var(--space-xs); }
+.legenda-barra { width: 12px; height: 12px; border-radius: 3px; background: var(--primary); }
+.legenda-linha { width: 16px; height: 0; border-top: 2px solid var(--ink); }
 
 /* Ranking: posição, empresa (com ramo e etiqueta), valor e barra de participação. */
 .ranking { display: grid; gap: var(--space-xs); list-style: none; padding: 0; margin: var(--space-base) 0 0; counter-reset: posicao; }

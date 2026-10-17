@@ -6,6 +6,7 @@ import { $ } from '../../nucleo/ui.js'
 import { cnpjFormatado, criar, moeda } from '../blocos/cartao.js'
 import { montarCubo } from '../blocos/cubo.js'
 import { montarChat } from './chat.js'
+import { montarGraficoRendimento } from './grafico-rendimento.js'
 
 const menu = montarMenu('investidor')
 const percentual = new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 1 })
@@ -86,6 +87,21 @@ function avisar(texto) {
   estado.classList.add('erro')
 }
 
+async function carregarRendimento() {
+  const resposta = await chamar('GET', '/investimentos/rendimento')
+  if (resposta.status !== 200) {
+    const estado = $('#grafico-estado')
+    estado.textContent = `Não foi possível carregar o rendimento: ${textoDoErro(resposta)}`
+    estado.classList.add('erro')
+    return
+  }
+  const { rendimento_total: total, acumulado_percentual: acumulado, meses } = resposta.corpo
+  if (!meses.length) return
+  $('#rendimento-total').textContent = moeda.format(Number(total))
+  $('#rendimento-acumulado').textContent = `${Number(acumulado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}%`
+  montarGraficoRendimento($('#grafico'), $('#dica-grafico'), meses)
+}
+
 async function carregarRanking() {
   $('#ranking-estado').textContent = 'Carregando ranking...'
   const resposta = await chamar('GET', '/investimentos/empresas')
@@ -115,7 +131,7 @@ async function carregar() {
   const dados = etiquetas.map((e) => ({ ...e, total: Number(e.total_investido) }))
   $('#visao').hidden = false
   desenharIndicadores(total, dados)
-  await carregarRanking()
+  await Promise.all([carregarRendimento(), carregarRanking()])
 }
 
 aoMudarSessao(async (usuario) => {

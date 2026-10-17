@@ -99,6 +99,14 @@ empresa aparece em mais de um bloco, os valores se somam. Cada item traz nome, C
 cor, `capital_investido`, `participacao` (fração do total investido), score e nota. Sem o cadastro de
 empresas o nome vem vazio e a tela mostra o CNPJ.
 
+`GET /investimentos/rendimento` (só investidor) devolve o rendimento mensal dos 12 meses **fechados** antes
+de hoje (horário de Brasília), do mais antigo para o mais novo: `total_investido`, `rendimento_total`,
+`acumulado_percentual` e, para cada mês, `mes` (primeiro dia), `taxa_percentual`, `rendimento` (em R$) e
+`acumulado_percentual` (composto). Como não existe histórico de aportes, o dado é de demonstração:
+`domain/investimentos.py` (`rendimento_dos_ultimos_meses`) sorteia a taxa de cada mês a partir do hash de
+(investidor, mês), entre 0,60% e 1,60%, então a série não muda entre chamadas nem quando chega o mês
+seguinte; o rendimento em R$ é o total investido vezes a taxa. Sem nada investido, `meses` vem vazio.
+
 ## Score de risco (dados de demonstração)
 
 Os scores são **fictícios**: foram sorteados (inteiros de 0 a 100, semente fixa) para cada uma das

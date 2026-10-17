@@ -30,6 +30,28 @@
           <span>Blocos investidos <strong id="qtd-blocos" class="numero"></strong></span>
         </section>
 
+        <section class="painel painel-grafico" aria-labelledby="grafico-titulo">
+          <header class="grafico-topo">
+            <div>
+              <h2 id="grafico-titulo">Rendimento nos últimos 12 meses</h2>
+              <p class="painel-sub">Rendimento mensal da carteira e acumulado no período.</p>
+            </div>
+            <dl class="grafico-resumo">
+              <div><dt>Rendimento no período</dt><dd id="rendimento-total" class="numero"></dd></div>
+              <div><dt>Acumulado</dt><dd id="rendimento-acumulado" class="numero"></dd></div>
+            </dl>
+          </header>
+          <p id="grafico-estado" class="mensagem" role="status"></p>
+          <div class="grafico-area">
+            <div id="grafico"></div>
+            <div id="dica-grafico" class="dica-cubo dica-grafico" hidden></div>
+          </div>
+          <ul class="grafico-legenda" aria-hidden="true">
+            <li><i class="legenda-barra"></i>Rendimento mensal (R$)</li>
+            <li><i class="legenda-linha"></i>Acumulado (%)</li>
+          </ul>
+        </section>
+
         <section class="painel painel-ranking">
           <h2>Ranking de empresas</h2>
           <p class="painel-sub">As empresas que mais recebem do seu dinheiro, somando os blocos em que você investiu.</p>

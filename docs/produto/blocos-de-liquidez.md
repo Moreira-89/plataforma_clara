@@ -92,8 +92,12 @@ todas as páginas.
 ## Telas do investidor
 
 **Visão geral.** É a primeira tela do investidor depois do login. Tem duas faixas no topo (o **total
-investido**, e a quantidade de etiquetas e de blocos investidos) e três blocos:
+investido**, e a quantidade de etiquetas e de blocos investidos) e quatro blocos:
 
+- **Rendimento nos últimos 12 meses:** um gráfico em largura total com **barras** do rendimento de cada
+  mês (R$, eixo da esquerda) e uma **linha** do rendimento acumulado (%, eixo da direita); passar o mouse
+  sobre um mês mostra o rendimento em R$ e em %, e o acumulado. No topo do painel ficam o rendimento
+  total do período e o acumulado. Os meses são os 12 fechados antes de hoje.
 - **Ranking de empresas:** as 10 empresas que mais recebem do dinheiro do investidor, com posição,
   nome (ou CNPJ, se o cadastro estiver fora do ar), ramo, etiqueta, valor, percentual do total e uma
   barra proporcional à primeira. O valor de cada empresa é o investido no bloco vezes a fatia dela nele.
@@ -102,7 +106,7 @@ investido**, e a quantidade de etiquetas e de blocos investidos) e três blocos:
   não há LLM por trás**: a saudação e a resposta ("ainda não estou conectado a um modelo...") são
   textos fixos, a conversa só existe na página e nada é enviado ao backend.
 
-Todos os números vêm da carteira; nenhum é estimado.
+Todos os números vêm da carteira (o rendimento é calculado sobre o total investido).
 
 **O cubo da Visão geral.** É o mesmo componente do bloco visual da ficha (CSS 3D, 54 adesivos que
 representam **100% do dinheiro do investidor**), mas lê a carteira inteira: cada **empresa** ocupa uma
@@ -149,6 +153,12 @@ A tabela de empresas ganha duas colunas além de nome, CNPJ, ramo, capital estim
 **% do bloco** (a fatia da empresa no bloco) e **Seu capital** (o valor investido vezes essa fatia,
 isto é, quanto do dinheiro do investidor está em cada empresa; a coluna soma o valor investido). Nesse
 pop-up não há botão de alocar dinheiro.
+
+**Rendimento de exemplo.** Como não há histórico de aportes nem de rendimento reais, a série dos 12
+meses também é de **demonstração**: a taxa de cada mês fica entre 0,60% e 1,60%, sorteada de forma estável
+por conta e por mês (a mesma conta vê sempre os mesmos números), e o rendimento em R$ é o total
+investido vezes a taxa. Como a carteira, ela só é declarada como fictícia aqui, no README e na
+apresentação; as telas não trazem esse aviso.
 
 **Carteira de exemplo.** Como não existe aporte real, cada conta de investidor recebe uma carteira de
 **demonstração**: cerca de 40% dos blocos, com um valor fictício em cada (múltiplo de R$ 5 mil, de

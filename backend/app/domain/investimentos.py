@@ -15,6 +15,10 @@ COMO FUNCIONA:
        menor), para a visão geral do investidor.
     6. `ranquear_empresas` distribui o valor investido em cada bloco entre as empresas dele, pela
        fatia de cada uma, e ordena as empresas da carteira da que mais recebe para a que menos recebe.
+    7. `rendimento_dos_ultimos_meses` monta o rendimento mensal dos 12 meses fechados antes de hoje:
+       a taxa de cada mês sai do hash de (investidor, mês), entre 0,60% e 1,60%, então não muda
+       entre chamadas nem quando o mês seguinte chega; o rendimento em R$ é o total investido vezes
+       a taxa, e o acumulado compõe as taxas.
 
 Args:
     Nenhum.
@@ -23,6 +27,7 @@ Returns:
     Decimal | None: via `valor_investido()`.
     ResumoDaEtiqueta: via `resumir_por_etiqueta()`.
     EmpresaDaCarteira: via `ranquear_empresas()`.
+    RendimentoMensal: via `rendimento_dos_ultimos_meses()`.
 
 Raises:
     Nenhum.
@@ -32,6 +37,7 @@ import hashlib
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
@@ -39,6 +45,11 @@ from app.domain.blocos import BlocoDetalhado
 
 # Fração dos blocos em que cada investidor "já investiu".
 PROPORCAO_INVESTIDA: Final[float] = 0.4
+
+# Taxa de rendimento mensal, em %: de 0,60% a 1,60%.
+TAXA_MINIMA: Final[Decimal] = Decimal("0.60")
+TAXA_AMPLITUDE: Final[Decimal] = Decimal("1.00")
+MESES_DO_RENDIMENTO: Final[int] = 12
 
 PASSO_DO_VALOR: Final[int] = 5_000
 _PASSOS_DO_VALOR: Final[int] = 100  # de R$ 5 mil a R$ 500 mil
@@ -148,3 +159,60 @@ def ranquear_empresas(
         )
         for i in ordem
     ]
+
+
+@dataclass(frozen=True)
+class RendimentoMensal:
+    """O rendimento da carteira num mês fechado."""
+
+    mes: date  # primeiro dia do mês
+    taxa_percentual: Decimal
+    rendimento: Decimal
+    acumulado_percentual: Decimal  # composto desde o primeiro mês da série
+
+
+def _mes_anterior(mes: date) -> date:
+    return date(mes.year - 1, 12, 1) if mes.month == 1 else date(mes.year, mes.month - 1, 1)
+
+
+def rendimento_dos_ultimos_meses(
+    uid: str, total_investido: Decimal, hoje: date, meses: int = MESES_DO_RENDIMENTO
+) -> list[RendimentoMensal]:
+    """
+    Rendimento mensal dos `meses` meses fechados antes de `hoje`, do mais antigo para o mais novo.
+
+    A taxa de cada mês depende só de (uid, mês); o rendimento em R$ é o total investido vezes a taxa.
+
+    Args:
+        uid (str): Uid do investidor no Firebase.
+        total_investido (Decimal): Total da carteira, em R$.
+        hoje (date): Dia de referência; o mês dele ainda está aberto e não entra.
+        meses (int): Quantos meses fechados mostrar.
+
+    Returns:
+        list[RendimentoMensal]: A série; vazia se o investidor não tem nada investido.
+    """
+    if total_investido <= 0:
+        return []
+    meses_da_serie = []
+    mes = _mes_anterior(date(hoje.year, hoje.month, 1))
+    for _ in range(meses):
+        meses_da_serie.append(mes)
+        mes = _mes_anterior(mes)
+    meses_da_serie.reverse()
+
+    serie: list[RendimentoMensal] = []
+    fator = Decimal(1)
+    for mes in meses_da_serie:
+        sorteio = Decimal(str(_fracao("rendimento", uid, mes.strftime("%Y-%m"))))
+        taxa = (TAXA_MINIMA + sorteio * TAXA_AMPLITUDE).quantize(Decimal("0.01"), ROUND_HALF_UP)
+        fator *= 1 + taxa / 100
+        serie.append(
+            RendimentoMensal(
+                mes=mes,
+                taxa_percentual=taxa,
+                rendimento=(total_investido * taxa / 100).quantize(Decimal("0.01"), ROUND_HALF_UP),
+                acumulado_percentual=((fator - 1) * 100).quantize(Decimal("0.01"), ROUND_HALF_UP),
+            )
+        )
+    return serie

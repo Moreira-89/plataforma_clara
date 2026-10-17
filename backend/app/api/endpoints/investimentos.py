@@ -9,7 +9,8 @@ COMO FUNCIONA:
     2. Cada item traz os mesmos campos da lista de blocos (cor, score e nota) e o valor investido.
     3. `GET /investimentos/resumo` soma a carteira por etiqueta e devolve o total investido.
     4. `GET /investimentos/empresas` ranqueia as empresas da carteira pelo capital do investidor.
-    5. Só o investidor acessa; a lista segue a ordem dos blocos, do mais recente ao mais antigo.
+    5. `GET /investimentos/rendimento` devolve o rendimento mensal dos últimos 12 meses fechados.
+    6. Só o investidor acessa; a lista segue a ordem dos blocos, do mais recente ao mais antigo.
 
 Args:
     Nenhum.
@@ -23,6 +24,7 @@ Raises:
 """
 
 import asyncio
+from datetime import datetime
 from decimal import Decimal
 from typing import Annotated
 
@@ -41,9 +43,20 @@ from app.api.dependencias import (
 from app.api.mapeamento_blocos import listagem_do_bloco, risco
 from app.api.schemas.auth import UsuarioAtual
 from app.api.schemas.blocos import BlocoInvestido
-from app.api.schemas.investimentos import EmpresaDaCarteira, ResumoEtiqueta, ResumoInvestimentos
-from app.domain.blocos import cor_da_etiqueta
-from app.domain.investimentos import ranquear_empresas, resumir_por_etiqueta, valor_investido
+from app.api.schemas.investimentos import (
+    EmpresaDaCarteira,
+    RendimentoInvestimentos,
+    RendimentoMes,
+    ResumoEtiqueta,
+    ResumoInvestimentos,
+)
+from app.domain.blocos import FUSO_BRASIL, cor_da_etiqueta
+from app.domain.investimentos import (
+    ranquear_empresas,
+    rendimento_dos_ultimos_meses,
+    resumir_por_etiqueta,
+    valor_investido,
+)
 from app.domain.perfis import Perfil
 
 router = APIRouter(prefix="/investimentos", tags=["investimentos"])
@@ -111,3 +124,23 @@ async def ranquear_empresas_da_carteira(
         )
         for empresa in ranking
     ]
+
+
+@router.get("/rendimento", response_model=RendimentoInvestimentos)
+async def rendimento_da_carteira(
+    investidor: Annotated[UsuarioAtual, Depends(exigir_perfil(Perfil.INVESTIDOR))],
+    listar: Annotated[ListadorDeBlocos, Depends(obter_listador_de_blocos)],
+) -> RendimentoInvestimentos:
+    """O rendimento mensal da carteira nos últimos 12 meses fechados, do mais antigo ao mais novo."""
+    blocos = await asyncio.to_thread(listar)
+    total = sum(
+        (v for b in blocos if (v := valor_investido(investidor.uid, b.id_bloco)) is not None),
+        Decimal(0),
+    )
+    serie = rendimento_dos_ultimos_meses(investidor.uid, total, datetime.now(FUSO_BRASIL).date())
+    return RendimentoInvestimentos(
+        total_investido=total,
+        rendimento_total=sum((m.rendimento for m in serie), Decimal(0)),
+        acumulado_percentual=serie[-1].acumulado_percentual if serie else Decimal(0),
+        meses=[RendimentoMes(**vars(m)) for m in serie],
+    )
