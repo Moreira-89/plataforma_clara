@@ -278,3 +278,73 @@ def test_investimentos_com_tabela_fora_do_ar_respondem_503(client, leitura_de_bl
     leitura_de_blocos.erro = DadosIndisponiveisError("fora do ar")
 
     assert client.get("/investimentos", headers=cabecalho("investidor")).status_code == 503
+
+
+def test_resumo_exige_login_e_perfil_de_investidor(client):
+    assert client.get("/investimentos/resumo").status_code == 401
+    assert client.get("/investimentos/resumo", headers=cabecalho("gestora")).status_code == 403
+
+
+def test_resumo_soma_a_carteira_por_etiqueta(client, leitura_de_blocos):
+    from dataclasses import replace
+
+    from conftest import BLOCO_A
+
+    leitura_de_blocos.blocos = [
+        replace(BLOCO_A, id_bloco=f"b{i}", etiqueta="Safira" if i % 2 else "Rubi")
+        for i in range(60)
+    ]
+    carteira = client.get("/investimentos", headers=cabecalho("investidor")).json()
+
+    resposta = client.get("/investimentos/resumo", headers=cabecalho("investidor"))
+
+    assert resposta.status_code == 200
+    resumo = resposta.json()
+    assert [e["etiqueta"] for e in resumo["etiquetas"]] and len(resumo["etiquetas"]) == 2
+    assert {e["etiqueta"]: e["cor"] for e in resumo["etiquetas"]} == {
+        "Safira": "#0F52BA",
+        "Rubi": "#E0115F",
+    }
+    assert sum(e["quantidade_blocos"] for e in resumo["etiquetas"]) == len(carteira)
+    assert float(resumo["total_investido"]) == sum(float(b["valor_investido"]) for b in carteira)
+    assert abs(sum(e["participacao"] for e in resumo["etiquetas"]) - 1) < 1e-9
+
+
+def test_resumo_sem_blocos_vem_vazio(client, leitura_de_blocos):
+    leitura_de_blocos.blocos = []
+
+    resumo = client.get("/investimentos/resumo", headers=cabecalho("investidor")).json()
+
+    assert resumo == {"total_investido": "0", "etiquetas": []}
+
+
+def test_ranking_de_empresas_exige_login_e_perfil_de_investidor(client):
+    assert client.get("/investimentos/empresas").status_code == 401
+    assert client.get("/investimentos/empresas", headers=cabecalho("gestora")).status_code == 403
+
+
+def test_ranking_de_empresas_soma_o_dinheiro_do_investidor_por_empresa(client, leitura_de_blocos):
+    from dataclasses import replace
+
+    muitos_blocos(leitura_de_blocos)
+    base = leitura_de_blocos.buscar("b1")
+    leitura_de_blocos.buscar = lambda id_bloco: replace(
+        base, bloco=replace(base.bloco, id_bloco=id_bloco)
+    )
+    carteira = client.get("/investimentos", headers=cabecalho("investidor")).json()
+
+    ranking = client.get("/investimentos/empresas", headers=cabecalho("investidor")).json()
+
+    assert [e["id_empresa"] for e in ranking[:1]] == ["e2"]
+    assert ranking[0]["nome_fantasia"] == "Brinquedos Beta"
+    assert ranking[0]["cor"] == "#0F52BA"
+    assert ranking[0]["nota_risco"] == "A-"
+    total = sum(float(b["valor_investido"]) for b in carteira)
+    assert abs(sum(float(e["capital_investido"]) for e in ranking) - total) < 0.05 * len(carteira)
+    assert abs(sum(e["participacao"] for e in ranking) - 1) < 1e-9
+
+
+def test_ranking_de_empresas_sem_blocos_vem_vazio(client, leitura_de_blocos):
+    leitura_de_blocos.blocos = []
+
+    assert client.get("/investimentos/empresas", headers=cabecalho("investidor")).json() == []
