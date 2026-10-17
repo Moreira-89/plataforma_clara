@@ -92,7 +92,7 @@ backend/
   requirements.txt
   .env.example
   app/
-    agents/                #   IA: relatorio.py e os assets do PDF
+    agents/                #   IA: relatorio.py, prompt.py (todos os prompts) e os assets do PDF
     api/lifespan.py        #   ciclo de vida da aplicação
     api/endpoints/         #   saude, auth, dashboard, blocos, empresas, investimentos, relatorios
     api/dependencias.py    #   usuário do token e controle de acesso por perfil

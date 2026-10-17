@@ -54,7 +54,7 @@ api/ ──▶ agents/ · storage/ ──▶ domain/
 | --- | --- |
 | `domain/` | Regras de negócio puras e contratos Pydantic. **Não importa framework nenhum.** |
 | `api/` | Endpoints, schemas de entrada/saída e dependências do FastAPI. Só orquestra. |
-| `agents/` | Tudo de IA: prompt, chamada ao LLM, montagem do relatório. |
+| `agents/` | Tudo de IA: chamada ao LLM e montagem do relatório (`relatorio.py`); os prompts ficam todos em `prompt.py`. |
 | `storage/` | Clientes de persistência e credenciais. |
 | `config/` | `settings.py` é o **único** lugar que lê variável de ambiente. |
 | `jobs/` | Tarefas de fundo e agendadas. |

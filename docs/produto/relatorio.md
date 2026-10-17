@@ -47,6 +47,15 @@ A geração (`agents.relatorio.gerar_relatorio_consolidado_investidor`) roda for
 recusar o prompt por tamanho (erro 413), o agente reduz a amostra e tenta de novo, até 5 vezes. Uma
 geração leva de alguns segundos a cerca de meio minuto.
 
+## Onde ajustar os prompts
+
+Todo o texto enviado ao modelo está em `backend/app/agents/prompt.py`: o system prompt
+(`SYSTEM_TEMPLATE`), a mensagem do usuário com os dados da carteira e a tabela de notas
+(`USER_TEMPLATE`) e a descrição do cliente (`DESCRICAO_CLIENTE`). Para mudar o tom, a estrutura do
+relatório ou as regras de análise, é só editar esse arquivo; `agents/relatorio.py` só monta e envia as
+mensagens. Os templates usam variáveis do Langchain entre chaves (`{dados_bq}`, `{dados_invest}`,
+`{texto_do_pdf_referencia}`), que não devem ser renomeadas; uma chave literal precisa ser dobrada.
+
 ## Limites conhecidos
 
 - **PDFs só em memória.** Ficam no processo do backend (até 50 pedidos) e somem quando ele reinicia ou
