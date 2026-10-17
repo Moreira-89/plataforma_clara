@@ -4,6 +4,7 @@ import { montarMenu } from '../../nucleo/menu.js'
 import { LOGIN, destinoDoPerfil, encerrarSeInvalida } from '../../nucleo/rotas.js'
 import { $ } from '../../nucleo/ui.js'
 import { criar, montarCartao, seloEtiqueta } from '../blocos/cartao.js'
+import { abrirDetalhe, ligarDialogoDeDetalhe } from '../blocos/detalhe.js'
 
 const menu = montarMenu('investidor')
 
@@ -39,9 +40,13 @@ function desenhar(blocos) {
     )
 
     const grade = criar('div', 'grade-blocos')
-    // "Ver mais detalhes" terá uma lógica própria aqui; por enquanto o botão só aparece.
     for (const bloco of grupo.blocos) {
-      grade.append(montarCartao(bloco, { valorInvestido: bloco.valor_investido, detalhesDesativado: true }))
+      grade.append(
+        montarCartao(bloco, {
+          valorInvestido: bloco.valor_investido,
+          aoDetalhes: () => abrirDetalhe(bloco, { perfil: 'investidor', valorInvestido: bloco.valor_investido }),
+        }),
+      )
     }
     secao.append(topo, grade)
     raiz.append(secao)
@@ -81,6 +86,7 @@ aoMudarSessao(async (usuario) => {
   }
   menu.definirUsuario(usuario.email)
   $('#conteudo').hidden = false
+  ligarDialogoDeDetalhe()
   if (perfil.status !== 200) {
     avisar(`Não foi possível verificar o seu perfil: ${textoDoErro(perfil)}`)
     return

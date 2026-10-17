@@ -22,6 +22,13 @@
       <p id="estado" class="mensagem" role="status"></p>
       <div id="grupos" aria-live="polite"></div>
     </main>
+    <dialog id="detalhe" class="detalhe-bloco" aria-labelledby="detalhe-titulo">
+      <div class="detalhe-topo">
+        <h2 id="detalhe-titulo"></h2>
+        <button class="detalhe-fechar" id="detalhe-fechar" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div id="detalhe-corpo"></div>
+    </dialog>
     <script type="module" src="/src/js/paginas/investidor/blocos-investidos.js"></script>
   </body>
 </html>

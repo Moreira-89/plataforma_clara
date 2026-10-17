@@ -3,17 +3,8 @@ import { aoMudarSessao } from '../../nucleo/firebase.js'
 import { montarMenu } from '../../nucleo/menu.js'
 import { LOGIN, destinoDoPerfil, encerrarSeInvalida } from '../../nucleo/rotas.js'
 import { $ } from '../../nucleo/ui.js'
-import {
-  SEM_SCORE,
-  cnpjFormatado,
-  codigoCurto,
-  criar,
-  dataBr,
-  moeda,
-  montarCartao,
-  rotuloScore,
-  seloEtiqueta,
-} from './cartao.js'
+import { criar, montarCartao } from './cartao.js'
+import { abrirDetalhe, ligarDialogoDeDetalhe } from './detalhe.js'
 
 // A mesma tela serve a gestora e o investidor; o perfil vem do <body data-perfil>.
 const PERFIL_DA_PAGINA = document.body.dataset.perfil
@@ -41,107 +32,7 @@ function desenharCartoes() {
     return
   }
 
-  for (const bloco of visiveis) lista.append(montarCartao(bloco, { aoDetalhes: () => abrirDetalhe(bloco) }))
-}
-
-function linha(rotulo, valor) {
-  const caixa = criar('div')
-  caixa.append(criar('span', '', rotulo), criar('strong', '', valor))
-  return caixa
-}
-
-function tabelaEmpresas(empresas) {
-  const rolagem = criar('div', 'tabela-detalhe')
-  const tabela = criar('table', 'tabela')
-  const cabecalho = criar('tr')
-  for (const titulo of ['Empresa', 'CNPJ', 'Ramo', 'Capital estimado', 'Score de risco']) {
-    cabecalho.append(criar('th', '', titulo))
-  }
-  const topo = criar('thead')
-  topo.append(cabecalho)
-  tabela.append(topo)
-  const corpo = criar('tbody')
-  for (const e of empresas) {
-    const tr = criar('tr')
-    tr.append(
-      criar('td', '', e.nome_fantasia ?? `Empresa ${e.id_empresa}`),
-      criar('td', '', cnpjFormatado(e.cnpj)),
-      criar('td', '', e.ramo_atividade ?? '—'),
-      criar('td', 'numero', moeda.format(Number(e.capital_estimado))),
-    )
-    tr.append(criar('td', 'numero', rotuloScore(e.nota_risco, e.score)))
-    corpo.append(tr)
-  }
-  tabela.append(corpo)
-  rolagem.append(tabela)
-  return rolagem
-}
-
-// "Alocar dinheiro" ainda não grava nada: só pede e mostra a confirmação do investimento.
-function mostrarAlocar(rodape, bloco) {
-  const alocar = criar('button', 'btn btn-primario', 'Alocar dinheiro')
-  alocar.type = 'button'
-  alocar.addEventListener('click', () => pedirConfirmacao(rodape, bloco))
-  rodape.replaceChildren(alocar)
-}
-
-function pedirConfirmacao(rodape, bloco) {
-  const pergunta = criar('p', 'confirmacao-texto', `Confirmar o investimento no bloco ${bloco.etiqueta} (${codigoCurto(bloco.id_bloco)})?`)
-  const cancelar = criar('button', 'btn btn-secundario', 'Cancelar')
-  cancelar.type = 'button'
-  cancelar.addEventListener('click', () => mostrarAlocar(rodape, bloco))
-  const confirmar = criar('button', 'btn btn-primario', 'Confirmar investimento')
-  confirmar.type = 'button'
-  confirmar.addEventListener('click', () => {
-    const fechar = criar('button', 'btn btn-secundario', 'Fechar')
-    fechar.type = 'button'
-    fechar.addEventListener('click', () => $('#detalhe').close())
-    rodape.replaceChildren(criar('p', 'confirmacao-texto sucesso-texto', 'Investimento confirmado.'), fechar)
-  })
-  rodape.replaceChildren(pergunta, cancelar, confirmar)
-}
-
-async function abrirDetalhe(resumo) {
-  const dialogo = $('#detalhe')
-  const titulo = $('#detalhe-titulo')
-  const corpo = $('#detalhe-corpo')
-  titulo.replaceChildren(seloEtiqueta(resumo.cor), criar('span', '', `${resumo.etiqueta} · ${codigoCurto(resumo.id_bloco)}`))
-  corpo.replaceChildren(criar('p', 'mensagem', 'Carregando...'))
-  dialogo.showModal()
-
-  const resposta = await chamar('GET', `/blocos/${resumo.id_bloco}`)
-  if (await encerrarSeInvalida(resposta)) {
-    window.location.href = LOGIN
-    return
-  }
-  if (resposta.status !== 200) {
-    corpo.replaceChildren(criar('p', 'mensagem erro', `Não foi possível carregar o bloco: ${textoDoErro(resposta)}`))
-    return
-  }
-
-  const bloco = resposta.corpo
-  const resumoDetalhe = criar('div', 'resumo-detalhe')
-  resumoDetalhe.append(
-    linha('Etiqueta', bloco.etiqueta),
-    linha('Data de vencimento', dataBr(bloco.data_vencimento)),
-    linha('Score de risco do bloco', rotuloScore(bloco.nota_risco, bloco.score)),
-  )
-  const partes = [resumoDetalhe]
-
-  // Responsável e observação são notas de gestão: só a gestora vê.
-  if (PERFIL_DA_PAGINA === 'gestora') {
-    resumoDetalhe.append(linha('Responsável técnico', bloco.responsavel_tecnico), linha('Criado em', dataBr(bloco.data_criacao)))
-    if (bloco.observacao) partes.push(criar('p', 'observacao-detalhe', `Observação: ${bloco.observacao}`))
-  }
-
-  partes.push(tabelaEmpresas(bloco.empresas))
-
-  if (PERFIL_DA_PAGINA === 'investidor') {
-    const rodape = criar('div', 'rodape-detalhe')
-    mostrarAlocar(rodape, bloco)
-    partes.push(rodape)
-  }
-  corpo.replaceChildren(...partes)
+  for (const bloco of visiveis) lista.append(montarCartao(bloco, { aoDetalhes: () => abrirDetalhe(bloco, { perfil: PERFIL_DA_PAGINA }) }))
 }
 
 async function carregar(aviso = '') {
@@ -166,12 +57,7 @@ function ligarControles() {
     $('#ordem').value = 'recentes'
     desenharCartoes()
   })
-  const dialogo = $('#detalhe')
-  $('#detalhe-fechar').addEventListener('click', () => dialogo.close())
-  // Clique no fundo escuro (fora do conteúdo) também fecha.
-  dialogo.addEventListener('click', (evento) => {
-    if (evento.target === dialogo) dialogo.close()
-  })
+  ligarDialogoDeDetalhe()
   if (PERFIL_DA_PAGINA === 'gestora') ligarCriacao()
 }
 
