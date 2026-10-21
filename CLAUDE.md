@@ -109,7 +109,7 @@ frontend/
   index.html               # home
   paginas/                 # uma pasta por área, um HTML por tela
     login.html               # Entrar e Criar conta, numa tela dividida (cadastro.html só redireciona para login.html?modo=cadastro)
-    gestora/visao-geral.html, gestao-blocos.html   # visão geral (4 gráficos); a gestão inclui o pop-up de criação de bloco
+    gestora/visao-geral.html, gestao-blocos.html   # visão geral (gráficos de mercado, blocos, setores e alertas); a gestão inclui o pop-up de criação de bloco
     investidor/visao-geral.html, blocos-de-liquidez.html, blocos-investidos.html, relatorio.html
   src/css/                 # tokens, base, movimento (animações), componentes e cubo (principal.css junta tudo)
     paginas/               #   um CSS por tela ou grupo de telas

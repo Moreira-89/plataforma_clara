@@ -3,7 +3,7 @@ Router dos dashboards.
 
 COMO FUNCIONA:
     1. `GET /dashboard/gestora` devolve a visão geral: mercado de FIDCs (CVM), rating, setores e blocos.
-    2. Os dados vêm das views do BigQuery (`storage/painel.py`), lidas em `asyncio.to_thread`.
+    2. Os dados vêm das views e tabelas do BigQuery (`storage/painel.py`), lidas em `asyncio.to_thread`.
     3. `GET /dashboard/investidor` segue respondendo 501 por falta da fonte dos aportes.
     4. Cada rota exige o seu perfil.
 
@@ -29,16 +29,20 @@ from app.api.dependencias import LeitorDoPainel, exigir_perfil, obter_leitor_do_
 from app.api.erros import nao_implementado
 from app.api.schemas.dashboard import (
     BlocoDoPainel,
+    CapitalPorNota,
     DashboardGestora,
     DashboardInvestidor,
+    EmpresaComAlerta,
+    ExposicaoSetor,
+    FaixaDeScore,
     FaixaRating,
-    PontoInadimplencia,
+    PontoMercado,
     ResumoBlocos,
     ResumoMercado,
     SetorBenchmark,
 )
 from app.domain.blocos import cor_da_etiqueta
-from app.domain.painel import score_medio_ponderado
+from app.domain.painel import capital_por_nota, score_medio_ponderado
 from app.domain.perfis import Perfil
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -56,7 +60,7 @@ async def dashboard_gestora(
     painel = await asyncio.to_thread(ler)
     return DashboardGestora(
         mercado=ResumoMercado(**asdict(painel.mercado)) if painel.mercado else None,
-        inadimplencia=[PontoInadimplencia(**asdict(p)) for p in painel.inadimplencia],
+        serie_mercado=[PontoMercado(**asdict(p)) for p in painel.serie_mercado],
         rating=[FaixaRating(**asdict(f)) for f in painel.rating],
         setores=[SetorBenchmark(**asdict(s)) for s in painel.setores],
         resumo_blocos=ResumoBlocos(
@@ -67,6 +71,10 @@ async def dashboard_gestora(
         blocos=[
             BlocoDoPainel(**asdict(b), cor=cor_da_etiqueta(b.etiqueta)) for b in painel.blocos
         ],
+        capital_por_nota=[CapitalPorNota(**asdict(c)) for c in capital_por_nota(painel.blocos)],
+        exposicao=[ExposicaoSetor(**asdict(e)) for e in painel.exposicao],
+        distribuicao_scores=[FaixaDeScore(**asdict(f)) for f in painel.distribuicao_scores],
+        alertas=[EmpresaComAlerta(**asdict(a)) for a in painel.alertas],
     )
 
 
