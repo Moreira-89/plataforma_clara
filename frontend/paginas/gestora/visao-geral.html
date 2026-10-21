@@ -41,8 +41,14 @@
         <div class="grade-graficos">
           <section class="painel" aria-labelledby="g-inad-titulo">
             <h2 id="g-inad-titulo">Inadimplência do mercado</h2>
-            <p class="painel-sub" id="g-inad-sub">Inadimplência dos FIDCs informada à CVM, mês a mês.</p>
+            <p class="painel-sub">Inadimplência dos FIDCs informada à CVM, mês a mês.</p>
             <div id="g-inad" class="grafico-area"></div>
+          </section>
+
+          <section class="painel" aria-labelledby="g-pl-titulo">
+            <h2 id="g-pl-titulo">Patrimônio líquido do mercado</h2>
+            <p class="painel-sub">PL somado dos FIDCs, mês a mês. Passe o mouse para ver quantos fundos estavam ativos.</p>
+            <div id="g-pl" class="grafico-area"></div>
           </section>
 
           <section class="painel" aria-labelledby="g-rating-titulo">
@@ -51,10 +57,55 @@
             <ol id="g-rating" class="barras"></ol>
           </section>
 
+          <section class="painel" aria-labelledby="g-dist-titulo">
+            <header class="painel-topo">
+              <div>
+                <h2 id="g-dist-titulo">Distribuição dos scores</h2>
+                <p class="painel-sub">As empresas do cadastro por faixa de score. O topo cinza são as que têm perfil compartilhado com outra do setor.</p>
+              </div>
+              <ul class="grafico-legenda" aria-hidden="true">
+                <li><i class="legenda-barra"></i>Perfil próprio</li>
+                <li><i class="legenda-barra legenda-compartilhado"></i>Perfil compartilhado</li>
+              </ul>
+            </header>
+            <div id="g-dist" class="histograma"></div>
+          </section>
+
           <section class="painel painel-largo" aria-labelledby="g-blocos-titulo">
             <h2 id="g-blocos-titulo">Score dos seus blocos</h2>
             <p class="painel-sub">Do bloco com melhor score ao pior. A barra mostra o score de 0 a 100; a cor é a da etiqueta.</p>
             <ol id="g-blocos" class="barras barras-rolagem"></ol>
+          </section>
+
+          <section class="painel painel-largo" aria-labelledby="g-comp-titulo">
+            <header class="painel-topo">
+              <div>
+                <h2 id="g-comp-titulo">De onde vem o score de cada bloco</h2>
+                <p class="painel-sub">Os 4 componentes somam o score (média ponderada pelo capital das empresas). Passe o mouse para ver os pontos.</p>
+              </div>
+              <ul class="grafico-legenda" id="g-comp-legenda" aria-hidden="true"></ul>
+            </header>
+            <ol id="g-comp" class="barras barras-rolagem"></ol>
+          </section>
+
+          <section class="painel" aria-labelledby="g-nota-titulo">
+            <h2 id="g-nota-titulo">Capital por nota do bloco</h2>
+            <p class="painel-sub">Quanto do capital alocado está em blocos de cada nota.</p>
+            <ol id="g-nota" class="barras"></ol>
+          </section>
+
+          <section class="painel" aria-labelledby="g-expo-titulo">
+            <header class="painel-topo">
+              <div>
+                <h2 id="g-expo-titulo">Seus blocos contra o mercado</h2>
+                <p class="painel-sub">Capital dos blocos por setor contra o peso do setor na economia real dos FIDCs.</p>
+              </div>
+              <ul class="grafico-legenda" aria-hidden="true">
+                <li><i class="legenda-barra"></i>Seus blocos</li>
+                <li><i class="legenda-barra legenda-mercado"></i>Mercado</li>
+              </ul>
+            </header>
+            <ol id="g-expo" class="barras barras-duplas"></ol>
           </section>
 
           <section class="painel painel-largo" aria-labelledby="g-setores-titulo">
@@ -69,6 +120,19 @@
               </ul>
             </header>
             <ol id="g-setores" class="barras barras-duplas"></ol>
+          </section>
+
+          <section class="painel painel-largo" aria-labelledby="g-alertas-titulo">
+            <h2 id="g-alertas-titulo">Empresas dos blocos com alerta</h2>
+            <p class="painel-sub" id="g-alertas-sub"></p>
+            <div class="tabela-rolagem tabela-alertas">
+              <table class="tabela">
+                <thead>
+                  <tr><th>Empresa</th><th>Bloco</th><th class="direita">Score</th><th>Alerta</th></tr>
+                </thead>
+                <tbody id="g-alertas"></tbody>
+              </table>
+            </div>
           </section>
         </div>
 

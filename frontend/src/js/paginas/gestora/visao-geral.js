@@ -1,5 +1,5 @@
 /*
- * Visão geral da gestora: totais no topo e quatro gráficos (inadimplência, rating, blocos e setores).
+ * Visão geral da gestora: totais no topo e os gráficos do mercado, dos blocos, dos setores e dos alertas.
  *
  * COMO FUNCIONA:
  *   1. Confere a sessão e o perfil; quem não é gestora volta para a sua tela.
@@ -11,8 +11,20 @@ import { aoMudarSessao } from '../../nucleo/firebase.js'
 import { montarMenu } from '../../nucleo/menu.js'
 import { LOGIN, destinoDoPerfil, encerrarSeInvalida } from '../../nucleo/rotas.js'
 import { $ } from '../../nucleo/ui.js'
-import { moeda, moedaCompacta } from '../blocos/cartao.js'
-import { graficoBlocos, graficoInadimplencia, graficoRating, graficoSetores } from './graficos.js'
+import { criar, moeda, moedaCompacta } from '../blocos/cartao.js'
+import {
+  COMPONENTES,
+  graficoBlocos,
+  graficoCapitalPorNota,
+  graficoComposicao,
+  graficoDistribuicao,
+  graficoExposicao,
+  graficoInadimplencia,
+  graficoPatrimonio,
+  graficoRating,
+  graficoSetores,
+  tabelaAlertas,
+} from './graficos.js'
 
 const menu = montarMenu('gestora')
 
@@ -34,12 +46,37 @@ function desenharTotais({ resumo_blocos: blocos, mercado }) {
   $('#fonte').textContent = mercado ? `Mercado de FIDCs: CVM, Informe Mensal FIDC, competência de ${mesAno(mercado.referencia)}.` : ''
 }
 
+// Legenda dos 4 componentes do score, com a mesma cor dos segmentos.
+function desenharLegendaDaComposicao() {
+  $('#g-comp-legenda').replaceChildren(
+    ...COMPONENTES.map((c) => {
+      const item = criar('li')
+      const marca = criar('i', 'legenda-barra')
+      marca.style.background = c.cor
+      item.append(marca, c.rotulo)
+      return item
+    }),
+  )
+}
+
 function desenhar(dados) {
   desenharTotais(dados)
-  if (dados.inadimplencia.length) graficoInadimplencia($('#g-inad'), dados.inadimplencia)
+  if (dados.serie_mercado.length) {
+    graficoInadimplencia($('#g-inad'), dados.serie_mercado)
+    graficoPatrimonio($('#g-pl'), dados.serie_mercado)
+  }
   graficoRating($('#g-rating'), dados.rating)
+  graficoDistribuicao($('#g-dist'), dados.distribuicao_scores)
   graficoBlocos($('#g-blocos'), dados.blocos)
+  desenharLegendaDaComposicao()
+  graficoComposicao($('#g-comp'), dados.blocos)
+  graficoCapitalPorNota($('#g-nota'), dados.capital_por_nota)
+  graficoExposicao($('#g-expo'), dados.exposicao)
   graficoSetores($('#g-setores'), dados.setores)
+  $('#g-alertas-sub').textContent = dados.alertas.length
+    ? `${dados.alertas.length} empresas dos seus blocos têm alerta no score, da menor nota para a maior.`
+    : 'Nenhuma empresa dos seus blocos tem alerta no score.'
+  tabelaAlertas($('#g-alertas'), dados.alertas)
 }
 
 async function carregar() {
