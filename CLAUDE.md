@@ -99,9 +99,9 @@ backend/
     api/carteira.py        #   carteira do investidor (blocos investidos, valor e empresas)
     api/schemas/           #   contratos Pydantic de entrada e saída
     config/                #   settings.py (env) e logging.py
-    domain/                #   risco, metricas, formatacao, identidade, blocos, investimentos, relatorios, erros
+    domain/                #   risco, metricas, painel, formatacao, identidade, blocos, investimentos, relatorios, erros
     jobs/                  #   criar_gestora.py e criar_tabelas_blocos.py (CLIs)
-    storage/               #   bigquery, empresas, blocos, scores, firebase (token + Firestore), usuarios, credenciais
+    storage/               #   bigquery, empresas, blocos, painel, scores, firebase (token + Firestore), usuarios, credenciais
   dados/                   # scores_empresas.csv (scores de demonstração, lidos por storage/scores.py)
 frontend/
   Dockerfile               # build Node → nginx
@@ -109,7 +109,7 @@ frontend/
   index.html               # home
   paginas/                 # uma pasta por área, um HTML por tela
     login.html               # Entrar e Criar conta, numa tela dividida (cadastro.html só redireciona para login.html?modo=cadastro)
-    gestora/gestao-blocos.html   # inclui o pop-up de criação de bloco
+    gestora/visao-geral.html, gestao-blocos.html   # visão geral (4 gráficos); a gestão inclui o pop-up de criação de bloco
     investidor/visao-geral.html, blocos-de-liquidez.html, blocos-investidos.html, relatorio.html
   src/css/                 # tokens, base, movimento (animações), componentes e cubo (principal.css junta tudo)
     paginas/               #   um CSS por tela ou grupo de telas
@@ -177,7 +177,7 @@ Não invente que existe. Nesta ordem:
 
 1. **Fonte dos dados de aportes.** O upload de CSV foi removido de propósito (não é assim que a plataforma vai operar). Ainda não existe nenhum mecanismo que traga esses dados para a plataforma — nem CSV, nem consulta a serviço externo, nada. É a decisão mais urgente em aberto.
 2. **Investimento real.** O botão "Alocar dinheiro" só mostra uma confirmação e não grava nada; os "Blocos Investidos" vêm de uma carteira de demonstração. Como o investidor aporta de verdade não foi definido.
-3. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `/blocos` (etiquetas, criar, listar e detalhar), `GET /empresas` e `GET /investimentos`, `/investimentos/resumo`, `/investimentos/empresas` e `/investimentos/rendimento` (carteira e rendimento de demonstração) e `/relatorios` (pedir, consultar o estado e baixar o PDF); a busca de empresas lê `dados_fidc.tb_empresas_fidc`. O relatório por IA usa a carteira de demonstração do investidor (a mesma fonte do cubo e do ranking da visão geral), e os PDFs ficam só em memória do processo. `/dashboard` exige o perfil certo, mas depois da checagem responde 501 até ter fonte de dados.
+3. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `/blocos` (etiquetas, criar, listar e detalhar), `GET /empresas` e `GET /investimentos`, `/investimentos/resumo`, `/investimentos/empresas` e `/investimentos/rendimento` (carteira e rendimento de demonstração) e `/relatorios` (pedir, consultar o estado e baixar o PDF); a busca de empresas lê `dados_fidc.tb_empresas_fidc`. O relatório por IA usa a carteira de demonstração do investidor (a mesma fonte do cubo e do ranking da visão geral), e os PDFs ficam só em memória do processo. `GET /dashboard/gestora` devolve a visão geral da gestora (views da CVM e `vw_blocos_score`, no BigQuery); `/dashboard/investidor` exige o perfil certo, mas responde 501 até ter fonte de dados.
 4. **Redis** — declarado no compose, sem cliente na aplicação.
 5. **Score de risco real.** Hoje os scores são de demonstração (CSV sorteado). O modelo de machine learning que o grupo imagina não existe, nem o histórico de aportes que ele usaria.
 6. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.

@@ -6,7 +6,7 @@ COMO FUNCIONA:
     2. `exigir_perfil(...)` fabrica uma dependência que recusa perfis fora da lista.
     3. `obter_verificador_token`, `obter_cadastrador`, `obter_buscador_de_empresas` e
        `obter_criador_de_bloco`, `obter_listador_de_blocos`, `obter_buscador_de_bloco`,
-       `obter_leitor_de_scores`, `obter_gerador_de_relatorio` e `obter_repositorio_de_relatorios`
+       `obter_leitor_de_scores`, `obter_leitor_do_painel`, `obter_gerador_de_relatorio` e `obter_repositorio_de_relatorios`
        entregam as funções de I/O e o repositório; nos testes são trocadas com
        `dependency_overrides`.
 
@@ -32,8 +32,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.api.schemas.auth import UsuarioAtual
 from app.domain.blocos import BlocoDetalhado, BlocoListado, BlocoValidado, EmpresaCatalogo
 from app.domain.erros import AcessoNegadoError, TokenInvalidoError
+from app.domain.painel import PainelDaGestora
 from app.domain.perfis import DadosCadastro, Perfil, perfil_de_claims
-from app.storage import blocos, empresas, firebase, relatorios, scores, usuarios
+from app.storage import blocos, empresas, firebase, painel, relatorios, scores, usuarios
 from app.storage.relatorios import RepositorioDeRelatorios
 
 Verificador = Callable[[str], dict[str, Any]]
@@ -43,6 +44,7 @@ CriadorDeBloco = Callable[[BlocoValidado, str], None]
 ListadorDeBlocos = Callable[[], list[BlocoListado]]
 BuscadorDeBloco = Callable[[str], BlocoDetalhado]
 LeitorDeScores = Callable[[], Mapping[str, float]]
+LeitorDoPainel = Callable[[], PainelDaGestora]
 GeradorDeRelatorio = Callable[[str | None, list[dict[str, Any]]], tuple[bytes, str]]
 
 # auto_error=False para o 401 sair pelo nosso handler, com o mesmo formato dos demais.
@@ -82,6 +84,11 @@ def obter_buscador_de_bloco() -> BuscadorDeBloco:
 def obter_leitor_de_scores() -> LeitorDeScores:
     """Entrega a função que lê os scores de risco das empresas."""
     return scores.carregar_scores
+
+
+def obter_leitor_do_painel() -> LeitorDoPainel:
+    """Entrega a função que lê os dados do painel da gestora."""
+    return painel.carregar_painel
 
 
 async def obter_usuario_atual(

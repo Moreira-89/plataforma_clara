@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/css/principal.css" />
+    <link rel="stylesheet" href="/src/css/paginas/blocos.css" />
+    <link rel="stylesheet" href="/src/css/paginas/visao-geral.css" />
+    <link rel="stylesheet" href="/src/css/paginas/gestora-visao-geral.css" />
+    <title>Visão geral — Plataforma Clara</title>
+  </head>
+  <body data-perfil="gestora" class="com-menu">
+    <aside id="menu"></aside>
+
+    <main class="pagina-blocos" id="conteudo" hidden>
+      <span class="rotulo">Gestora</span>
+      <h1 class="titulo-pagina">Visão geral</h1>
+      <p class="subtitulo-pagina">Como estão os seus blocos e o mercado de FIDCs em que eles se apoiam.</p>
+
+      <p id="estado" class="mensagem estado-lista" role="status"></p>
+
+      <div id="visao" hidden>
+        <section class="totais" aria-label="Totais">
+          <div class="totais-topo">
+            <div>
+              <span>Capital alocado em blocos</span>
+              <strong id="capital" class="totais-valor"></strong>
+            </div>
+            <dl class="totais-dl">
+              <div><dt>Blocos</dt><dd id="qtd-blocos"></dd></div>
+              <div><dt>Score médio dos blocos</dt><dd id="score-medio"></dd></div>
+              <div><dt>Inadimplência do mercado</dt><dd id="inadimplencia"></dd></div>
+              <div><dt>PL do mercado</dt><dd id="pl-mercado"></dd></div>
+            </dl>
+          </div>
+        </section>
+
+        <div class="grade-graficos">
+          <section class="painel" aria-labelledby="g-inad-titulo">
+            <h2 id="g-inad-titulo">Inadimplência do mercado</h2>
+            <p class="painel-sub" id="g-inad-sub">Inadimplência dos FIDCs informada à CVM, mês a mês.</p>
+            <div id="g-inad" class="grafico-area"></div>
+          </section>
+
+          <section class="painel" aria-labelledby="g-rating-titulo">
+            <h2 id="g-rating-titulo">Carteira por nota de risco</h2>
+            <p class="painel-sub">Parcela da carteira de crédito dos FIDCs em cada nota SCR, do melhor (AA) ao pior (H).</p>
+            <ol id="g-rating" class="barras"></ol>
+          </section>
+
+          <section class="painel painel-largo" aria-labelledby="g-blocos-titulo">
+            <h2 id="g-blocos-titulo">Score dos seus blocos</h2>
+            <p class="painel-sub">Do bloco com melhor score ao pior. A barra mostra o score de 0 a 100; a cor é a da etiqueta.</p>
+            <ol id="g-blocos" class="barras barras-rolagem"></ol>
+          </section>
+
+          <section class="painel painel-largo" aria-labelledby="g-setores-titulo">
+            <header class="painel-topo">
+              <div>
+                <h2 id="g-setores-titulo">Setores: peso no mercado e inadimplência</h2>
+                <p class="painel-sub">Quanto cada setor pesa na carteira dos FIDCs e a inadimplência dos fundos concentrados nele.</p>
+              </div>
+              <ul class="grafico-legenda" aria-hidden="true">
+                <li><i class="legenda-barra"></i>Peso na carteira (%)</li>
+                <li><i class="legenda-barra legenda-risco"></i>Inadimplência (%)</li>
+              </ul>
+            </header>
+            <ol id="g-setores" class="barras barras-duplas"></ol>
+          </section>
+        </div>
+
+        <p class="fonte" id="fonte"></p>
+      </div>
+    </main>
+    <script type="module" src="/src/js/paginas/gestora/visao-geral.js"></script>
+  </body>
+</html>
