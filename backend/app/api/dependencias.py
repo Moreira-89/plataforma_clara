@@ -44,6 +44,7 @@ CriadorDeBloco = Callable[[BlocoValidado, str], None]
 ListadorDeBlocos = Callable[[], list[BlocoListado]]
 BuscadorDeBloco = Callable[[str], BlocoDetalhado]
 LeitorDeScores = Callable[[], Mapping[str, float]]
+LeitorDeHistorico = Callable[[], dict[str, Any]]
 LeitorDoPainel = Callable[[], PainelDaGestora]
 GeradorDeRelatorio = Callable[[str | None, list[dict[str, Any]]], tuple[bytes, str]]
 
@@ -84,6 +85,11 @@ def obter_buscador_de_bloco() -> BuscadorDeBloco:
 def obter_leitor_de_scores() -> LeitorDeScores:
     """Entrega a função que lê os scores de risco das empresas."""
     return scores.carregar_scores
+
+
+def obter_leitor_de_historico() -> LeitorDeHistorico:
+    """Entrega a função que lê os dois meses mais recentes do histórico do score."""
+    return scores.carregar_historico_recente
 
 
 def obter_leitor_do_painel() -> LeitorDoPainel:

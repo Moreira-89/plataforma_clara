@@ -126,9 +126,13 @@ fundos têm inadimplência muito acima do mercado. O resultado está na tabela
   de `classificar_nota`: 22 notas, AAA a D, em faixas iguais de cerca de 4,55 pontos. A mesma régua
   está em `dados_fidc.tb_escala_notas` (o painel da gestora lê dali a nota dos blocos) e no prompt
   do relatório.
-- **Empacotamento:** o arquivo vai para a imagem do backend pelo `COPY . .` do Dockerfile.
-- **Para atualizar:** rodar de novo os SQLs do score no BigQuery, exportar o CSV e reiniciar o
-  backend. Para ler direto da tabela, basta mudar o `storage/scores.py`; o resto continua igual.
+- **Histórico:** `backend/dados/scores_empresas_historico.csv` traz o score e os pontos de cada
+  critério por empresa e mês. Vem do SQL 15, tabela `dados_fidc.tb_score_empresas_historico`, com a
+  mesma regra, recalculada mês a mês. Só o relatório em PDF usa esse arquivo, para os upgrades e
+  downgrades; as telas continuam com o score atual.
+- **Empacotamento:** os arquivos vão para a imagem do backend pelo `COPY . .` do Dockerfile.
+- **Para atualizar (todo mês):** rodar de novo os SQLs do score no BigQuery (o 12 e depois o 15),
+  exportar os dois CSVs, trocar em `backend/dados/` e reiniciar o backend. Para ler direto da tabela, basta mudar o `storage/scores.py`; o resto continua igual.
 
 ## Blocos de exemplo
 

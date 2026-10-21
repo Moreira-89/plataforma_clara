@@ -56,6 +56,11 @@ _FAIXAS: Final[tuple[_Faixa, ...]] = (
 # Aplicada quando o score não alcança nenhum piso acima.
 _FAIXA_PADRAO: Final[_Faixa] = _Faixa(0.0, 22, "D", "Inativo")
 
+# Faixas analíticas (Status de Risco do relatório), da melhor para a pior.
+STATUS_EM_ORDEM: Final[tuple[str, ...]] = tuple(
+    dict.fromkeys(f.status for f in (*_FAIXAS, _FAIXA_PADRAO))
+)
+
 # Posição de cada nota na escala, para ordenar listas de notas (1 = melhor).
 _NIVEL_POR_NOTA: Final[dict[str, int]] = {f.nota: f.nivel for f in (*_FAIXAS, _FAIXA_PADRAO)}
 
@@ -102,6 +107,20 @@ def classificar_nota_com_nivel(score: float) -> str:
     """
     faixa = _faixa_de(score)
     return f"{faixa.nota} ({faixa.status})"
+
+
+def classificar_status(score: float) -> str:
+    """
+    Traduz o score na faixa analítica do relatório — ex: 'Adequado'.
+
+    Args:
+        score (float): Score de risco interno, de 0 a 100.
+
+    Returns:
+        str: Excelente, Muito Superior, Superior, Adequado, Alerta, Especulativo, Crítico,
+            Severo ou Inativo.
+    """
+    return _faixa_de(score).status
 
 
 def ordem_da_nota(nota: str) -> int:
