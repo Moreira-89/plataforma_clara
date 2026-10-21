@@ -186,7 +186,7 @@ export function graficoBlocos(lista, blocos) {
           detalhe: `${moeda.format(b.capital_total)} · ${b.qtd_empresas} empresas`,
           largura: b.score / 100,
           cor: b.cor ?? 'var(--primary)',
-          valor: `${b.nota} · ${Math.round(b.score)}`,
+          valor: `${b.nota} · ${num(b.score)}`,
           indice: i,
           classe: 'barra-bloco',
         }),

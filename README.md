@@ -19,10 +19,13 @@ dados reais da própria carteira.
 
 O nome é literal: transparência sem intermediário escondendo a informação.
 
-> **Dados de demonstração.** As empresas (geradas com a biblioteca Faker), os blocos de exemplo, os
-> scores de risco (sorteados de 0 a 100, sem modelo por trás), a carteira de cada investidor e o
-> rendimento mensal dela são **fictícios**. As telas não os
+> **Dados de demonstração.** As empresas (geradas com a biblioteca Faker), os blocos de exemplo, a
+> carteira de cada investidor e o rendimento mensal dela são **fictícios**. As telas não os
 > rotulam; a documentação e a apresentação declaram isso.
+>
+> **Score de risco com dados reais.** O score de cada empresa é o **Score de Reputação Clara, versão perfil público (v0.1.1)**, calculado no BigQuery com dados públicos reais da CVM (Informe Mensal de FIDC, data-base ago/2026). Cada empresa
+> fictícia recebe o perfil de um cedente real do mesmo setor; o nome e o CNPJ exibidos continuam
+> fictícios. É um indicador de perfil, não um rating de crédito.
 
 Para o detalhe — o problema por completo, como cada perfil usa a plataforma,
 a arquitetura escolhida e por quê, e o que falta implementar — ver a

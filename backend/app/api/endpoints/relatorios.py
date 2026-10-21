@@ -34,11 +34,13 @@ from app.api.carteira import carregar_carteira
 from app.api.dependencias import (
     BuscadorDeBloco,
     GeradorDeRelatorio,
+    LeitorDeHistorico,
     LeitorDeScores,
     ListadorDeBlocos,
     exigir_perfil,
     obter_buscador_de_bloco,
     obter_gerador_de_relatorio,
+    obter_leitor_de_historico,
     obter_leitor_de_scores,
     obter_listador_de_blocos,
     obter_repositorio_de_relatorios,
@@ -91,6 +93,7 @@ async def pedir_relatorio(
     listar: Annotated[ListadorDeBlocos, Depends(obter_listador_de_blocos)],
     buscar: Annotated[BuscadorDeBloco, Depends(obter_buscador_de_bloco)],
     ler_scores: Annotated[LeitorDeScores, Depends(obter_leitor_de_scores)],
+    ler_historico: Annotated[LeitorDeHistorico, Depends(obter_leitor_de_historico)],
     repositorio: Annotated[RepositorioDeRelatorios, Depends(obter_repositorio_de_relatorios)],
     gerar: Annotated[GeradorDeRelatorio, Depends(obter_gerador_de_relatorio)],
 ) -> RelatorioStatus:
@@ -98,17 +101,18 @@ async def pedir_relatorio(
     if em_andamento := repositorio.em_andamento(investidor.uid):
         return _status(em_andamento)
 
-    carteira, scores = await asyncio.gather(
-        carregar_carteira(investidor.uid, listar, buscar), asyncio.to_thread(ler_scores)
+    carteira, scores, historico = await asyncio.gather(
+        carregar_carteira(investidor.uid, listar, buscar),
+        asyncio.to_thread(ler_scores),
+        asyncio.to_thread(ler_historico),
     )
     if not carteira:
         raise SemInvestimentosError("Você ainda não tem investimentos para gerar o relatório.")
 
     relatorio = repositorio.criar(investidor.uid)
     nome = investidor.nome or investidor.email
-    tarefa = asyncio.create_task(
-        _gerar(repositorio, gerar, relatorio, nome, aportes_da_carteira(carteira, scores))
-    )
+    aportes = aportes_da_carteira(carteira, scores, historico)
+    tarefa = asyncio.create_task(_gerar(repositorio, gerar, relatorio, nome, aportes))
     _tarefas.add(tarefa)
     tarefa.add_done_callback(_tarefas.discard)
     return _status(relatorio)
