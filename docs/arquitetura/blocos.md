@@ -107,11 +107,15 @@ de hoje (horário de Brasília), do mais antigo para o mais novo: `total_investi
 (investidor, mês), entre 0,60% e 1,60%, então a série não muda entre chamadas nem quando chega o mês
 seguinte; o rendimento em R$ é o total investido vezes a taxa. Sem nada investido, `meses` vem vazio.
 
-## Score de risco (dados de demonstração)
+## Score de risco
 
-Os scores são **fictícios**: foram sorteados (inteiros de 0 a 100, semente fixa) para cada uma das
-490 empresas do cadastro e gravados em `backend/dados/scores_empresas.csv`, com as colunas
-`id_empresa` e `score`. Não há modelo nem tabela por trás.
+O score de cada uma das 490 empresas do cadastro é o **Score de Reputação Clara, versão perfil público (v0.1.1)**, calculado no BigQuery com dados públicos reais da CVM (Informe Mensal de FIDC, data-base ago/2026). Cada empresa fictícia
+recebe o perfil de um cedente real do mesmo setor (o nome e o CNPJ continuam fictícios), e o score
+soma quatro critérios: qualidade dos fundos que compram do cedente (40 pontos), permanência em 12
+meses (25), risco do setor (20) e aceitação em fundos (15), com uma trava que limita a nota quando os
+fundos têm inadimplência muito acima do mercado. O resultado está na tabela
+`dados_fidc.tb_score_empresas` e é exportado para `backend/dados/scores_empresas.csv`, com as colunas
+`id_empresa` e `score`.
 
 - **Leitura:** `storage/scores.py` lê o CSV uma vez por processo (em cache) e ignora linhas
   malformadas ou fora de 0 a 100. Sem o arquivo, as telas mostram "—" em vez de falhar. Depois de
@@ -119,10 +123,12 @@ Os scores são **fictícios**: foram sorteados (inteiros de 0 a 100, semente fix
 - **Cálculo:** `GET /blocos` e `GET /blocos/{id}` devolvem `score` e `nota_risco` do bloco, e o
   detalhe também os de cada empresa. O score do bloco é a média ponderada pelo capital estimado de
   cada empresa (`domain/risco.py`, `score_ponderado`; empresas sem score ficam de fora). A nota vem
-  da escala já existente em `classificar_nota`.
+  de `classificar_nota`: 22 notas, AAA a D, em faixas iguais de cerca de 4,55 pontos. A mesma régua
+  está em `dados_fidc.tb_escala_notas` (o painel da gestora lê dali a nota dos blocos) e no prompt
+  do relatório.
 - **Empacotamento:** o arquivo vai para a imagem do backend pelo `COPY . .` do Dockerfile.
-- **Para trocar por um score real:** basta o CSV (ou uma tabela, mudando só o `storage/scores.py`)
-  trazer o score do modelo; o resto continua igual.
+- **Para atualizar:** rodar de novo os SQLs do score no BigQuery, exportar o CSV e reiniciar o
+  backend. Para ler direto da tabela, basta mudar o `storage/scores.py`; o resto continua igual.
 
 ## Blocos de exemplo
 

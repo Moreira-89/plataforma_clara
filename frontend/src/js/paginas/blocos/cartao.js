@@ -6,8 +6,10 @@ export const SEM_SCORE = '—'
 export const TONS = [1, 0.72, 1.28] // variação de brilho entre empresas da mesma cor
 const SCORE_DE_RISCO = 40 // abaixo disso a nota aparece em vermelho
 
-// Nota e número juntos na ficha (por exemplo, "A · 74"); os cartões mostram só a nota.
-export const rotuloScore = (nota, score) => (score == null ? SEM_SCORE : `${nota} · ${Math.round(score)}`)
+// Nota e número juntos na ficha (por exemplo, "A · 74,2"); os cartões mostram só a nota.
+// Score com 1 casa decimal: com 22 notas, as faixas têm ~4,5 pontos e o arredondamento esconderia o corte (49,9 = BB, 50 = BB+).
+export const rotuloScore = (nota, score) =>
+  score == null ? SEM_SCORE : `${nota} · ${Number(score).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`
 export const codigoCurto = (id) => id.slice(0, 8).toUpperCase()
 export const dataBr = (iso) => iso.split('-').reverse().join('/')
 export const cnpjFormatado = (c) => c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')

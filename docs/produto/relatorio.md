@@ -26,12 +26,13 @@ pelo relatório. Não existe mais a tabela `tb_aporte`.
 
 Para o prompt, `agents/relatorio.py` (`aportes_da_carteira`) transforma a carteira em um registro por
 **bloco e empresa**, com o capital do investidor na empresa (valor investido no bloco vezes a fatia da
-empresa), a data de criação do bloco, o vencimento, o score (0 a 100) e a nota (A+ a C-). O prompt traz
-a tabela exata de notas, para o modelo não inventar faixas.
+empresa), a data de criação do bloco, o vencimento, o score (0 a 100) e a nota (AAA a D). O prompt traz
+a tabela exata das 22 notas com as faixas de score, as mesmas de `domain/risco.py`, para o modelo não
+inventar faixas, e uma seção fixa que explica como o score é formado (sem inventar motivos por empresa).
 
 !!! info "Dados de demonstração"
-    A carteira é a de demonstração (sorteada de forma estável por conta), com empresas e scores
-    fictícios. O relatório herda isso. Os dados também **não têm data de investimento nem histórico de
+    A carteira é a de demonstração (sorteada de forma estável por conta), com empresas fictícias.
+    Os scores vêm de dados públicos reais da CVM (Score de Reputação Clara). O relatório herda isso. Os dados também **não têm data de investimento nem histórico de
     ratings**: o prompt manda o modelo declarar a ausência de movimentações em vez de inventá-las.
 
 ## Como a tela fala com o backend

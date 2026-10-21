@@ -31,7 +31,7 @@ from app.agents.prompt import DESCRICAO_CLIENTE, SYSTEM_TEMPLATE, USER_TEMPLATE
 from app.config.settings import settings
 from app.domain import identidade
 from app.domain.blocos import BlocoDetalhado
-from app.domain.risco import classificar_nota
+from app.domain.risco import classificar_nota, classificar_nota_com_nivel
 
 # -----------------------------------------------------------------------------
 # INICIALIZAÇÃO
@@ -141,43 +141,55 @@ def _compactar_dados_para_prompt(
     """Compacta os dados para caber no limite de tokens sem perder visão de todos os blocos."""
     total_registros = len(dados_bq)
 
-    blocos: dict[str, dict[str, Any]] = defaultdict(
-        lambda: {"qtd_aportes": 0, "valor_total_aportado": 0.0, "score_soma": 0.0}
-    )
+    # Score médio PONDERADO pelo valor (a mesma conta do site, domain/risco.score_ponderado);
+    # aporte sem score fica fora da média em vez de contar como zero.
+    def _novo_grupo() -> dict[str, Any]:
+        return {"qtd_aportes": 0, "valor_total_aportado": 0.0, "score_x_valor": 0.0, "valor_com_score": 0.0}
+
+    def _somar(grupo: dict[str, Any], valor: float, score: float | None) -> None:
+        grupo["qtd_aportes"] += 1
+        grupo["valor_total_aportado"] += valor
+        if score is not None:
+            grupo["score_x_valor"] += score * valor
+            grupo["valor_com_score"] += valor
+
+    def _score_e_nota(grupo: dict[str, Any]) -> tuple[float | None, str | None]:
+        # A nota vai pronta (régua de 22 níveis do risco.py): o modelo só redige, não classifica.
+        if grupo["valor_com_score"] <= 0:
+            return None, None
+        score = round(grupo["score_x_valor"] / grupo["valor_com_score"], 1)
+        return score, classificar_nota_com_nivel(score)
+
+    blocos: dict[str, dict[str, Any]] = defaultdict(_novo_grupo)
     empresas: dict[tuple[str, str], dict[str, Any]] = {}
 
     for row in dados_bq:
         bloco = str(row.get("bloco_liquidez_setorial") or "N/A")
         empresa = str(row.get("empresa_sacada_nome") or "N/A")
         valor = float(row.get("valor_aporte_compra") or 0.0)
-        score = float(row.get("score_risco_interno") or 0.0)
+        bruto = row.get("score_risco_interno")
+        score = None if bruto is None else float(bruto)
 
-        blocos[bloco]["qtd_aportes"] += 1
-        blocos[bloco]["valor_total_aportado"] += valor
-        blocos[bloco]["score_soma"] += score
-
+        _somar(blocos[bloco], valor, score)
         chave = (bloco, empresa)
         if chave not in empresas:
             empresas[chave] = {
                 "bloco_liquidez_setorial": bloco,
                 "empresa_sacada_nome": empresa,
-                "qtd_aportes": 0,
-                "valor_total_aportado": 0.0,
-                "score_soma": 0.0,
+                **_novo_grupo(),
             }
-        empresas[chave]["qtd_aportes"] += 1
-        empresas[chave]["valor_total_aportado"] += valor
-        empresas[chave]["score_soma"] += score
+        _somar(empresas[chave], valor, score)
 
     resumo_blocos = []
     for bloco, item in blocos.items():
-        qtd = int(item["qtd_aportes"])
+        score_bloco, nota_bloco = _score_e_nota(item)
         resumo_blocos.append(
             {
                 "bloco_liquidez_setorial": bloco,
-                "qtd_aportes": qtd,
+                "qtd_aportes": int(item["qtd_aportes"]),
                 "valor_total_aportado": round(float(item["valor_total_aportado"]), 2),
-                "score_medio": round(float(item["score_soma"]) / qtd, 4) if qtd else 0.0,
+                "score_medio_ponderado": score_bloco,
+                "nota_risco": nota_bloco,
             }
         )
 
@@ -193,15 +205,16 @@ def _compactar_dados_para_prompt(
 
     dados_invest_prompt: list[dict[str, Any]] = []
     for g in grupos_empresas:
-        qtd = int(g["qtd_aportes"])
+        score_empresa, nota_empresa = _score_e_nota(g)
         dados_invest_prompt.append(
             {
                 "nome_investidor": "INVESTIDOR_LOGADO",
                 "nome_empresa": g["empresa_sacada_nome"],
                 "bloco_liquidez_setorial": g["bloco_liquidez_setorial"],
-                "score_ml": round(float(g["score_soma"]) / qtd, 4) if qtd else 0.0,
+                "score_ml": score_empresa,
+                "nota_risco": nota_empresa,
                 "valor_investido": round(float(g["valor_total_aportado"]), 2),
-                "quantidade_aportes": qtd,
+                "quantidade_aportes": int(g["qtd_aportes"]),
             }
         )
 

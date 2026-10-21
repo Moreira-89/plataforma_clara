@@ -78,16 +78,16 @@ proporcionalidade e o comportamento são os mesmos em todas.
   `transform`, leve para a GPU); a animação é desligada para quem pede menos movimento no sistema.
 
 **Score de risco.** Cada empresa tem um score de 0 a 100 (maior score, menor risco), traduzido numa
-nota: **A+** a partir de 80, **A** a partir de 70, **A-** a partir de 60, **B+** a partir de 50, **B** a
-partir de 40 e **C-** abaixo disso. O score do bloco é a **média dos scores das empresas, ponderada
+nota de uma escala de 22 notas, de **AAA** a **D**, em faixas iguais de cerca de 4,55 pontos (100 ÷ 22): **AAA** a partir de 95,46, **AA+** a partir de 90,91, e assim por diante até **D** abaixo de 4,54 (tabela completa em `domain/risco.py`). O score do bloco é a **média dos scores das empresas, ponderada
 pelo capital** que cada uma recebe no bloco. Os cartões mostram só a **nota**; o pop-up mostra a nota
-e o número (por exemplo, "A- · 67") do bloco e de cada empresa. O filtro **Maior score** ordena os
+e o número (por exemplo, "BBB+ · 67") do bloco e de cada empresa. O filtro **Maior score** ordena os
 blocos do maior para o menor.
 
-!!! info "Dados de demonstração"
-    Os scores são **fictícios**: foram sorteados de 0 a 100 para cada empresa, sem modelo por trás,
-    e ficam em `backend/dados/scores_empresas.csv`. As empresas (Faker) e os blocos de exemplo também
-    são fictícios. As telas não trazem esse aviso; ele fica aqui, no README e na apresentação.
+!!! info "De onde vem o score"
+    O score é o **Score de Reputação Clara, versão perfil público (v0.1.1)**, calculado no BigQuery com dados públicos reais da CVM (Informe Mensal de FIDC, data-base ago/2026), e fica em `backend/dados/scores_empresas.csv`. Cada empresa
+    do cadastro recebe o perfil de um cedente real do mesmo setor; as empresas (Faker) e os blocos de
+    exemplo continuam fictícios. As telas não trazem esse aviso; ele fica aqui, no README e na
+    apresentação.
 
 **Menu lateral.** Todas as telas de quem está logado (a Gestão de Blocos e os Blocos de
 Liquidez) têm o mesmo menu à esquerda, fixo: o logo no topo, o item da área do perfil

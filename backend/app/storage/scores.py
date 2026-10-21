@@ -1,8 +1,11 @@
 """
 Leitura dos scores de risco das empresas, de `backend/dados/scores_empresas.csv`.
 
-Os scores são dados de demonstração: foram sorteados de 0 a 100 para cada empresa do
-cadastro (que também é fictício). A plataforma só lê o arquivo; não treina nem executa modelo.
+Os scores são o Score de Reputação Clara, versão perfil público (v0.1.1), calculado no BigQuery
+com dados públicos reais da CVM (Informe Mensal de FIDC, data-base ago/2026). Cada empresa do
+cadastro (fictícia) recebe o perfil de um cedente real do mesmo setor; o nome e o CNPJ exibidos
+continuam fictícios. A regra de cálculo está em `dados_fidc.tb_score_empresas` (arquivo SQL 12).
+A plataforma só lê o arquivo; não treina nem executa modelo.
 
 COMO FUNCIONA:
     1. Lê o CSV (`id_empresa`, `score`) uma vez por processo.
