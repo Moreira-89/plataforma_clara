@@ -2,9 +2,10 @@
 Router dos dashboards.
 
 COMO FUNCIONA:
-    1. `GET /dashboard/gestora` e `GET /dashboard/investidor` devolvem KPIs e tabela.
-    2. Os handlers vão só orquestrar: ler o BigQuery e chamar `domain/metricas.py`.
-    3. Cada uma exige o seu perfil; hoje respondem 501 por falta da fonte dos aportes.
+    1. `GET /dashboard/gestora` devolve a visão geral: mercado de FIDCs (CVM), rating, setores e blocos.
+    2. Os dados vêm das views do BigQuery (`storage/painel.py`), lidas em `asyncio.to_thread`.
+    3. `GET /dashboard/investidor` segue respondendo 501 por falta da fonte dos aportes.
+    4. Cada rota exige o seu perfil.
 
 Args:
     Nenhum.
@@ -14,14 +15,30 @@ Returns:
 
 Raises:
     AcessoNegadoError: Perfil errado para a rota (403).
-    HTTPException: 501 depois da checagem de acesso, por enquanto.
+    DadosIndisponiveisError: Views do BigQuery fora do ar (503).
+    HTTPException: 501 no dashboard do investidor, depois da checagem de acesso.
 """
+
+import asyncio
+from dataclasses import asdict
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from app.api.dependencias import exigir_perfil
+from app.api.dependencias import LeitorDoPainel, exigir_perfil, obter_leitor_do_painel
 from app.api.erros import nao_implementado
-from app.api.schemas.dashboard import DashboardGestora, DashboardInvestidor
+from app.api.schemas.dashboard import (
+    BlocoDoPainel,
+    DashboardGestora,
+    DashboardInvestidor,
+    FaixaRating,
+    PontoInadimplencia,
+    ResumoBlocos,
+    ResumoMercado,
+    SetorBenchmark,
+)
+from app.domain.blocos import cor_da_etiqueta
+from app.domain.painel import score_medio_ponderado
 from app.domain.perfis import Perfil
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -32,9 +49,25 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
     response_model=DashboardGestora,
     dependencies=[Depends(exigir_perfil(Perfil.GESTORA))],
 )
-async def dashboard_gestora() -> DashboardGestora:
-    """Visão consolidada da gestora."""
-    raise nao_implementado("fonte dos aportes e Firebase Auth")
+async def dashboard_gestora(
+    ler: Annotated[LeitorDoPainel, Depends(obter_leitor_do_painel)],
+) -> DashboardGestora:
+    """Visão geral da gestora: mercado de FIDCs, rating, setores e blocos com score."""
+    painel = await asyncio.to_thread(ler)
+    return DashboardGestora(
+        mercado=ResumoMercado(**asdict(painel.mercado)) if painel.mercado else None,
+        inadimplencia=[PontoInadimplencia(**asdict(p)) for p in painel.inadimplencia],
+        rating=[FaixaRating(**asdict(f)) for f in painel.rating],
+        setores=[SetorBenchmark(**asdict(s)) for s in painel.setores],
+        resumo_blocos=ResumoBlocos(
+            quantidade=len(painel.blocos),
+            capital_total=sum(b.capital_total for b in painel.blocos),
+            score_medio=score_medio_ponderado(painel.blocos),
+        ),
+        blocos=[
+            BlocoDoPainel(**asdict(b), cor=cor_da_etiqueta(b.etiqueta)) for b in painel.blocos
+        ],
+    )
 
 
 @router.get(

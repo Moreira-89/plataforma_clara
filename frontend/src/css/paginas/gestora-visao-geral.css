@@ -1,0 +1,34 @@
+/* Visão geral da gestora: grade de gráficos, barras horizontais e linha de inadimplência. */
+
+.grade-graficos { margin-top: var(--space-lg); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg); }
+.grade-graficos .painel { margin-top: 0; min-width: 0; }
+.grade-graficos .painel-largo { grid-column: 1 / -1; }
+
+.grafico-preenchimento { fill: var(--primary); opacity: 0.08; }
+.grafico-svg .grafico-linha { stroke: var(--primary); }
+.grafico-svg .grafico-ponto { stroke: var(--primary); }
+.legenda-risco { background: var(--semantic-down); }
+
+/* --- barras horizontais --- */
+.barras { display: grid; gap: var(--space-sm); list-style: none; padding: 0; margin: var(--space-lg) 0 0; }
+.barras-rolagem { max-height: 440px; overflow-y: auto; padding-right: var(--space-xs); }
+.barra { display: grid; grid-template-columns: minmax(96px, 168px) minmax(0, 1fr) auto; gap: var(--space-sm) var(--space-base); align-items: center; }
+.barra-nome { display: grid; min-width: 0; }
+.barra-nome strong { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barra-nome small { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barra .trilha { height: 10px; border-radius: var(--radius-pill); background: var(--surface-strong); overflow: hidden; }
+.barra .trilha i {
+  display: block; height: 100%; width: 100%; border-radius: var(--radius-pill); background: var(--primary);
+  transform-origin: left; transform: scaleX(var(--largura)); animation: cl-grow-x 1.1s var(--ease) both; animation-delay: var(--atraso, 0ms);
+}
+.barra-valor { min-width: 64px; text-align: right; color: var(--ink); font: 500 14px var(--font-mono); }
+
+.barra-dupla { grid-template-columns: minmax(96px, 168px) minmax(0, 1fr); }
+.barra-par { display: grid; grid-template-columns: minmax(0, 1fr) 56px; gap: 6px var(--space-sm); align-items: center; }
+.trilha-valor { text-align: right; color: var(--ink); font: 500 13px var(--font-mono); }
+
+.fonte { margin-top: var(--space-lg); font-size: 13px; color: var(--muted); }
+
+/* Etiquetas claras (ex.: Diamante) precisam de contorno para não sumir na trilha. */
+.barra .trilha i { box-shadow: inset 0 0 0 1px rgba(10, 11, 13, 0.18); }
+.barra-bloco { grid-template-columns: minmax(180px, 250px) minmax(0, 1fr) auto; }
