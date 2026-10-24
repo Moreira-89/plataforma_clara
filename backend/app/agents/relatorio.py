@@ -178,8 +178,6 @@ def _conteudo_para_prompt(
             "qtd_blocos": ind["qtd_blocos"],
             "qtd_empresas": ind["qtd_empresas"],
             "score_ponderado": ind["score_ponderado"],
-            "nota": ind["nota"],
-            "faixa": ind["faixa"],
             # Variação no mês só com as empresas que têm score nos dois meses: "anterior" e "atual"
             # são as médias desse mesmo grupo (cobre pct_capital_comparavel do capital).
             "tendencia_no_mes": ind["tendencia"],

@@ -62,15 +62,17 @@ modelo recebe **só eles**, com a ordem de citá-los como estão. A IA escreve o
 - fontes Inter e JetBrains Mono (em `agents/assets/`, licença OFL, ver `FONTES.md`).
 
 A ordem das seções é fixa:
-1. Cartões: capital, empresas, score ponderado e nota.
+1. Cartões: capital, empresas, score ponderado e % do capital em grau de investimento. A carteira
+   não tem nota própria: as notas são das empresas e dos blocos.
 2. Resumo Executivo da Carteira.
-3. Saúde dos Blocos (tabela).
+3. Análise dos Blocos (tabela).
 4. Distribuição de Capital por Risco (barra grau de investimento × especulativo, legenda e régua do
    score).
 5. Destaques do Mês (tabela de upgrades e downgrades, até 8 em cada sentido).
 6. Principais Empresas da Carteira (tabela).
 7. Conclusão.
-8. Como o Score é Calculado, o aviso, a fonte e a nota de LGPD (texto fixo).
+8. O aviso, a fonte e a nota de LGPD (texto fixo). A explicação do cálculo do score fica na
+   documentação, não no relatório.
 
 Tabelas e gráficos saem do código. O texto de cada seção vem da IA; se ela pular uma seção, entra um
 texto padrão do código. Os blocos aparecem como "Etiqueta · CÓDIGO", como no site, porque há

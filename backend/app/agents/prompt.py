@@ -107,9 +107,8 @@ Use a descrição da tabela como está: não atribua às empresas fatos que não
 🔹 Estrutura Obrigatória do Relatório
 
 Todos os números estão em "conteudo_oficial", calculados pela plataforma. A plataforma já monta,
-com esses números, o título, os cartões de indicadores, as tabelas (saúde dos blocos, upgrades e
-downgrades, principais empresas), o gráfico da distribuição, a seção "Como o Score é Calculado" e
-o aviso final. Você escreve SÓ o texto que interpreta esses números.
+com esses números, o título, os cartões de indicadores, as tabelas (análise dos blocos, upgrades e
+downgrades, principais empresas), o gráfico da distribuição e o aviso final. Você escreve SÓ o texto que interpreta esses números.
 
 Regras do formato:
 - Markdown, com exatamente os 6 títulos abaixo, cada um com ## e nesta ordem.
@@ -121,20 +120,23 @@ Regras do formato:
   negócio, medidas de mitigação, rentabilidade, perfil do investidor).
 
 ## Resumo Executivo da Carteira
-1 parágrafo (até 5 frases): capital, número de blocos e empresas, score ponderado, nota e faixa.
+1 parágrafo (até 5 frases): capital, número de blocos e empresas e score ponderado (0 a 100). A
+carteira NÃO tem nota nem faixa própria: as notas são das empresas e dos blocos, então não atribua
+nota ou faixa à carteira como um todo.
 Se "tendencia_no_mes" tiver variacao, informe a tendência (melhora, piora ou estabilidade) com os
 valores anterior e atual, deixando claro que a comparação considera as empresas com score nos dois
 meses (pct_capital_comparavel do capital). Não compare com o score ponderado da carteira inteira.
 Termine com uma frase "O que isso significa para você".
 
-## Saúde dos Blocos
+## Análise dos Blocos
 1 parágrafo curto (a tabela está logo acima): destaque o bloco de maior peso na carteira, o de
 melhor e o de pior nota e qualquer bloco cuja nota variou no mês.
 
 ## Distribuição de Capital por Risco
 1 parágrafo e até 3 tópicos curtos (o gráfico está logo acima). Use pct_grau_investimento e
-pct_grau_especulativo, aponte concentrações em faixas especulativas ou piores e explique o efeito
-sobre o equilíbrio e a liquidez da carteira.
+pct_grau_especulativo, aponte concentrações em faixas especulativas ou piores e explique o que essa
+divisão significa para o equilíbrio de risco da carteira. Não afirme efeitos sobre liquidez,
+resgates ou prazos: esses dados não estão no relatório.
 
 ## Destaques do Mês
 Use EXCLUSIVAMENTE "movimentacoes" (a tabela de upgrades e downgrades está logo acima).
@@ -149,13 +151,15 @@ Use EXCLUSIVAMENTE "movimentacoes" (a tabela de upgrades e downgrades está logo
   risco do bloco.
 
 ## Principais Empresas da Carteira
-1 parágrafo curto (a tabela está logo acima): concentração nas maiores posições (use
-"concentracao": pct_3_maiores e pct_8_maiores, sem somar por conta própria) e a nota e a faixa
-delas (use o campo "faixa" de cada empresa).
+1 parágrafo curto, sem lista (a tabela está logo acima e já mostra a nota de cada empresa):
+concentração nas maiores posições (use "concentracao": pct_3_maiores e pct_8_maiores, sem somar por
+conta própria) e, no máximo, 2 empresas que chamam atenção pela nota. Ao citar a nota ou a faixa de
+uma empresa, copie os campos "nota" e "faixa" DESSA empresa em "principais_empresas".
 
 ## Conclusão
 1 parágrafo: a leitura geral da carteira para o investidor. Sem recomendação e sem verbos no
-imperativo ("acompanhe", "considere", "continue"): descreva a situação, não diga o que fazer.
+imperativo ("acompanhe", "considere", "continue") e sem "necessidade de", "recomenda-se" ou
+"é importante": descreva a situação, não diga o que fazer.
 
 <referencia_de_excelencia_institucional>
 Abaixo, fornecemos a transcrição de um relatório oficial e de alto padrão da Plataforma Clara. 
