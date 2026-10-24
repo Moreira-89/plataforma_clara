@@ -1,19 +1,16 @@
 """
 Regras de classificação de risco a partir do score interno.
 
-Antes da extração do domínio, esta escada de faixas existia em QUATRO lugares
-diferentes e com formatos de saída distintos: no `CASE WHEN` da query da gestora,
-no `DetalhesBlocoState`, no `ExplorarBlocosState` e no `DashboardState`. Ficando
-em um único módulo, uma mudança de política de risco passa a ser uma edição só.
+A escada de faixas fica em um único módulo: uma mudança de política de risco é uma edição só.
 
-ATENÇÃO — os dois vocabulários de nível DIVERGEM e a divergência é preservada de
-propósito, porque é o que está na tela hoje: um score de 45 aparece como
-"B (Médio Risco)" na página de detalhes do bloco e como "Alto (B)" no KPI do
-dashboard. Unificar isso é decisão de produto, não de refatoração — por isso as
-duas colunas de rótulo ficam explícitas na tabela `_FAIXAS`.
+ESCALA: 22 notas (AAA a D), a régua original do relatório da Plataforma Clara — 22 faixas iguais
+de cerca de 4,55 pontos (100 ÷ 22). Ex.: AAA = 95,46 a 100; BB+ = 50,00 a 54,54; D = 0 a 4,53.
+Os cortes PRECISAM ser iguais em três lugares: aqui, na tabela `dados_fidc.tb_escala_notas` do
+BigQuery (arquivo SQL 12; o painel da gestora lê a nota dos blocos de lá) e no prompt do relatório
+(`agents/prompt.py`).
 
-O `score_risco_interno` chega pronto, calculado por fora — a plataforma não
-treina nem executa nenhum modelo. Estas funções apenas TRADUZEM o número.
+O `score_risco_interno` chega pronto, calculado por fora (Score de Reputação Clara, dados públicos
+da CVM) — a plataforma não treina nem executa nenhum modelo. Estas funções apenas TRADUZEM o número.
 """
 
 from collections.abc import Iterable
@@ -22,26 +19,50 @@ from typing import Final, NamedTuple
 
 
 class _Faixa(NamedTuple):
-    """Uma faixa da escala de risco, com os rótulos de cada formato de exibição."""
+    """Uma nota da escala de risco."""
 
     piso: float
+    nivel: int  # 1 = AAA (melhor), 22 = D (pior)
     nota: str
-    nivel_detalhe: str  # usado em "A+ (Baixo Risco)" — página de detalhes do bloco
-    nivel_kpi: str  # usado em "Baixo (A+)" — KPI de risco médio do dashboard
+    status: str  # faixa analítica do relatório: Excelente, Muito Superior, ..., Inativo
 
 
 # Faixas em ordem decrescente: a primeira cujo piso o score alcança vence.
 # Escala: 0–100, onde MAIOR score significa MENOR risco.
 _FAIXAS: Final[tuple[_Faixa, ...]] = (
-    _Faixa(80.0, "A+", "Baixo", "Baixo"),
-    _Faixa(70.0, "A", "Baixo", "Baixo"),
-    _Faixa(60.0, "A-", "Baixo", "Moderado"),
-    _Faixa(50.0, "B+", "Médio", "Médio"),
-    _Faixa(40.0, "B", "Médio", "Alto"),
+    _Faixa(95.46, 1, "AAA", "Excelente"),
+    _Faixa(90.91, 2, "AA+", "Muito Superior"),
+    _Faixa(86.37, 3, "AA", "Muito Superior"),
+    _Faixa(81.82, 4, "AA-", "Muito Superior"),
+    _Faixa(77.28, 5, "A+", "Superior"),
+    _Faixa(72.73, 6, "A", "Superior"),
+    _Faixa(68.19, 7, "A-", "Superior"),
+    _Faixa(63.64, 8, "BBB+", "Adequado"),
+    _Faixa(59.10, 9, "BBB", "Adequado"),
+    _Faixa(54.55, 10, "BBB-", "Adequado"),
+    _Faixa(50.00, 11, "BB+", "Alerta"),
+    _Faixa(45.46, 12, "BB", "Alerta"),
+    _Faixa(40.91, 13, "BB-", "Alerta"),
+    _Faixa(36.37, 14, "B+", "Especulativo"),
+    _Faixa(31.82, 15, "B", "Especulativo"),
+    _Faixa(27.28, 16, "B-", "Especulativo"),
+    _Faixa(22.73, 17, "CCC+", "Crítico"),
+    _Faixa(18.19, 18, "CCC", "Crítico"),
+    _Faixa(13.64, 19, "CCC-", "Crítico"),
+    _Faixa(9.09, 20, "CC", "Severo"),
+    _Faixa(4.54, 21, "C", "Severo"),
 )
 
 # Aplicada quando o score não alcança nenhum piso acima.
-_FAIXA_PADRAO: Final[_Faixa] = _Faixa(0.0, "C-", "Alto", "Crítico")
+_FAIXA_PADRAO: Final[_Faixa] = _Faixa(0.0, 22, "D", "Inativo")
+
+# Faixas analíticas (Status de Risco do relatório), da melhor para a pior.
+STATUS_EM_ORDEM: Final[tuple[str, ...]] = tuple(
+    dict.fromkeys(f.status for f in (*_FAIXAS, _FAIXA_PADRAO))
+)
+
+# Posição de cada nota na escala, para ordenar listas de notas (1 = melhor).
+_NIVEL_POR_NOTA: Final[dict[str, int]] = {f.nota: f.nivel for f in (*_FAIXAS, _FAIXA_PADRAO)}
 
 # Pisos de adimplência usados na tabela de aportes da gestora.
 _PISO_ADIMPLENTE: Final[float] = 60.0
@@ -61,20 +82,20 @@ def _faixa_de(score: float) -> _Faixa:
 
 def classificar_nota(score: float) -> str:
     """
-    Traduz o score numérico na nota de crédito curta (A+ → C-).
+    Traduz o score numérico na nota de crédito (AAA → D).
 
     Args:
         score (float): Score de risco interno, de 0 a 100.
 
     Returns:
-        str: Nota na escala 'A+', 'A', 'A-', 'B+', 'B' ou 'C-'.
+        str: Nota da escala de 22 níveis — ex: 'BBB+'.
     """
     return _faixa_de(score).nota
 
 
 def classificar_nota_com_nivel(score: float) -> str:
     """
-    Traduz o score na nota acompanhada do nível — ex: 'A+ (Baixo Risco)'.
+    Traduz o score na nota acompanhada da faixa analítica — ex: 'BBB (Adequado)'.
 
     Formato usado no cabeçalho da página de detalhes do bloco.
 
@@ -82,10 +103,37 @@ def classificar_nota_com_nivel(score: float) -> str:
         score (float): Score de risco interno, de 0 a 100.
 
     Returns:
-        str: Nota e nível — ex: 'B+ (Médio Risco)'.
+        str: Nota e faixa — ex: 'BB+ (Alerta)'.
     """
     faixa = _faixa_de(score)
-    return f"{faixa.nota} ({faixa.nivel_detalhe} Risco)"
+    return f"{faixa.nota} ({faixa.status})"
+
+
+def classificar_status(score: float) -> str:
+    """
+    Traduz o score na faixa analítica do relatório — ex: 'Adequado'.
+
+    Args:
+        score (float): Score de risco interno, de 0 a 100.
+
+    Returns:
+        str: Excelente, Muito Superior, Superior, Adequado, Alerta, Especulativo, Crítico,
+            Severo ou Inativo.
+    """
+    return _faixa_de(score).status
+
+
+def ordem_da_nota(nota: str) -> int:
+    """
+    Posição da nota na escala, para ordenar da melhor para a pior.
+
+    Args:
+        nota (str): Nota da escala de 22 níveis — ex: 'AA-'.
+
+    Returns:
+        int: 1 para AAA até 22 para D; 99 para uma nota desconhecida (vai para o fim).
+    """
+    return _NIVEL_POR_NOTA.get(nota, 99)
 
 
 def classificar_adimplencia(score: float) -> str:

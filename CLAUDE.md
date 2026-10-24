@@ -81,7 +81,7 @@ api/ ──▶ agents/ · storage/ ──▶ domain/
 | LLM | ChatGroq via Langchain |
 | PDF | `markdown-pdf` |
 | Dados | pandas |
-| ML | Nenhum modelo no repositório — os scores são de demonstração, sorteados e lidos de `backend/dados/scores_empresas.csv` |
+| Score | Nenhum modelo de ML no repositório — o score é o Score de Reputação Clara (perfil público), calculado no BigQuery com dados públicos da CVM (`dados_fidc.tb_score_empresas`) e lido de `backend/dados/scores_empresas.csv` |
 
 ## Estrutura de Diretórios
 
@@ -92,7 +92,7 @@ backend/
   requirements.txt
   .env.example
   app/
-    agents/                #   IA: relatorio.py, prompt.py (todos os prompts) e os assets do PDF
+    agents/                #   IA: relatorio.py, prompt.py (todos os prompts), analise_carteira.py (números do relatório), layout_pdf.py (design do PDF) e assets (fontes, logo)
     api/lifespan.py        #   ciclo de vida da aplicação
     api/endpoints/         #   saude, auth, dashboard, blocos, empresas, investimentos, relatorios
     api/dependencias.py    #   usuário do token e controle de acesso por perfil
@@ -102,7 +102,7 @@ backend/
     domain/                #   risco, metricas, painel, formatacao, identidade, blocos, investimentos, relatorios, erros
     jobs/                  #   criar_gestora.py e criar_tabelas_blocos.py (CLIs)
     storage/               #   bigquery, empresas, blocos, painel, scores, firebase (token + Firestore), usuarios, credenciais
-  dados/                   # scores_empresas.csv (scores de demonstração, lidos por storage/scores.py)
+  dados/                   # scores_empresas.csv e scores_empresas_historico.csv (Score de Reputação Clara e o histórico mensal, exportados do BigQuery, lidos por storage/scores.py)
 frontend/
   Dockerfile               # build Node → nginx
   vite.config.js           # proxy /api em dev; lista as páginas do build
@@ -147,11 +147,12 @@ Instruções do dono do projeto. Valem sobre qualquer padrão default.
 
 - Nunca commitar `.env` ou credenciais de service account. Não manter arquivo de credencial na raiz do repositório — o `COPY . .` do Docker o levaria para dentro da imagem.
 - Nunca reintroduzir número inventado como se fosse dado real. A evolução do AUM, o rendimento projetado e a rentabilidade por bloco eram fatores fixos e um hash do nome do bloco, exibidos ao lado de números reais sem rótulo. Foram removidos. Fora dos dados de demonstração, ou vêm de dado real, ou vão rotulados como estimativa.
-- **Exceção, por decisão do dono do projeto:** os dados de demonstração (empresas geradas com Faker, blocos de exemplo, scores sorteados em `backend/dados/scores_empresas.csv` a carteira de investimentos de cada investidor e o rendimento mensal dos últimos 12 meses dela, ambos sorteados de forma estável em `domain/investimentos.py`) são fictícios e o front-end **não** os rotula (nenhuma tela traz aviso de dado fictício). A documentação, o README e a apresentação declaram que são fictícios. Nenhum outro número inventado pode aparecer nas telas.
+- **Exceção, por decisão do dono do projeto:** os dados de demonstração (empresas geradas com Faker, blocos de exemplo, a carteira de investimentos de cada investidor e o rendimento mensal dos últimos 12 meses dela, ambos sorteados de forma estável em `domain/investimentos.py`) são fictícios e o front-end **não** os rotula (nenhuma tela traz aviso de dado fictício). A documentação, o README e a apresentação declaram que são fictícios. Nenhum outro número inventado pode aparecer nas telas.
+- A régua de 22 notas (AAA a D, faixas iguais de ~4,55 pontos) existe em três lugares e precisa ficar idêntica: `domain/risco.py`, a tabela `dados_fidc.tb_escala_notas` no BigQuery (o painel da gestora lê a nota dos blocos de lá) e a tabela do `agents/prompt.py`. Mudou um, muda os três.
 - Nunca implementar autenticação própria: quem cuida de identidade e senha é o Firebase. O backend verifica o token e lê as claims.
-- Nunca chamar a API do Groq fora de `agents/relatorio.py` — é o único lugar com o retry progressivo (5 tentativas com cortes crescentes na amostra de aportes, nos grupos de empresa e no texto de referência) tratado para `APIStatusError` 413.
+- Nunca chamar a API do Groq fora de `agents/relatorio.py` — é o único lugar com o retry progressivo (4 tentativas com cortes crescentes no texto de referência, nas movimentações e nas empresas enviadas à IA) tratado para `APIStatusError` 413. O modelo recebe só `conteudo_oficial` (números calculados por `agents/analise_carteira.py`); o limite do Groq gratuito é 8.000 tokens por minuto.
 - Nunca importar camada de entrega dentro de `domain/`. É essa regra que faz trocar de stack ser uma troca, e não uma reescrita.
-- Nunca assumir que existe modelo de ML no projeto: o score de risco é um dado de entrada (hoje, o CSV de demonstração), não um cálculo da plataforma. O modelo real (Random Forest de 0 a 100) é uma ideia do grupo, ainda sem código.
+- Nunca assumir que existe modelo de ML no projeto: o score de risco é um dado de entrada (hoje, o CSV exportado do BigQuery), não um cálculo da plataforma. O modelo real (Random Forest de 0 a 100) é uma ideia do grupo, ainda sem código.
 
 ## Variáveis de Ambiente
 
@@ -179,7 +180,7 @@ Não invente que existe. Nesta ordem:
 2. **Investimento real.** O botão "Alocar dinheiro" só mostra uma confirmação e não grava nada; os "Blocos Investidos" vêm de uma carteira de demonstração. Como o investidor aporta de verdade não foi definido.
 3. **Endpoints do produto** — funcionam `GET /health`, `/auth/*`, `/blocos` (etiquetas, criar, listar e detalhar), `GET /empresas` e `GET /investimentos`, `/investimentos/resumo`, `/investimentos/empresas` e `/investimentos/rendimento` (carteira e rendimento de demonstração) e `/relatorios` (pedir, consultar o estado e baixar o PDF); a busca de empresas lê `dados_fidc.tb_empresas_fidc`. O relatório por IA usa a carteira de demonstração do investidor (a mesma fonte do cubo e do ranking da visão geral), e os PDFs ficam só em memória do processo. `GET /dashboard/gestora` devolve a visão geral da gestora (views da CVM e `vw_blocos_score`, no BigQuery); `/dashboard/investidor` exige o perfil certo, mas responde 501 até ter fonte de dados.
 4. **Redis** — declarado no compose, sem cliente na aplicação.
-5. **Score de risco real.** Hoje os scores são de demonstração (CSV sorteado). O modelo de machine learning que o grupo imagina não existe, nem o histórico de aportes que ele usaria.
+5. **Score de risco.** O score vem do Score de Reputação Clara, versão perfil público (v0.1.1), calculado com dados públicos da CVM: cada empresa fictícia recebe o perfil de um cedente real do mesmo setor. Falta o grupo validar os pesos (40/25/20/15) e a trava de risco, e versionar no repositório os SQLs que geram o score. O modelo de machine learning que o grupo imagina não existe, nem o histórico de aportes que ele usaria.
 6. **Agregações do dashboard** — `domain/metricas.py` tem as regras de consolidação, mas nada as alimenta. Depende do item 1.
 7. **Chatbot.** A interface do "Assistente Clara" existe na Visão geral, sem LLM e sem endpoint (o ponto de ligação é `responder` em `frontend/src/js/paginas/investidor/chat.js`).
 8. **Persistência dos relatórios.** Os PDFs ficam só em memória do processo (`storage/relatorios.py`) e somem ao reiniciar; falta guardá-los em storage.

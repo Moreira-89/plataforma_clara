@@ -46,13 +46,15 @@ versão diferente dos mesmos dados.
 ## O que o score de risco é — e o que não é
 
 O score de risco de cada empresa vai de 0 a 100, e **maior score significa menor risco**. A
-plataforma traduz esse número numa nota (A+ a C-) e num status de adimplência, mas **não calcula**
+plataforma traduz esse número numa nota (AAA a D) e num status de adimplência, mas **não calcula**
 o score. A ideia do grupo é que ele venha de um modelo de machine learning (um Random Forest que
 analisa o histórico da empresa: valor de aporte, prazo, taxa de retorno, bloco setorial, categoria
 técnica). Esse modelo ainda não existe.
 
-**Hoje, os scores são de demonstração**: foram sorteados de 0 a 100 para cada empresa e ficam em
-`backend/dados/scores_empresas.csv`. Ver [Dados de demonstração](#regra-de-produto-dado-inventado-so-como-demonstracao-declarada).
+**Hoje, o score é o Score de Reputação Clara, versão perfil público (v0.1.1), calculado no BigQuery com dados públicos reais da CVM (Informe Mensal de FIDC, data-base ago/2026)**: cada
+empresa do cadastro recebe o perfil de um cedente real do mesmo setor, e o resultado fica em
+`backend/dados/scores_empresas.csv`. É um indicador de perfil, não um rating de crédito. Ver
+[Dados de demonstração](#regra-de-produto-dado-inventado-so-como-demonstracao-declarada).
 
 ## Regra de produto: dado inventado só como demonstração declarada
 
@@ -65,6 +67,7 @@ rotulado como estimativa.
 
 **Exceção declarada, os dados de demonstração.** Enquanto o projeto é acadêmico e não tem dados
 reais, os dados da plataforma são **fictícios**: as empresas (geradas com a biblioteca Faker, do
-Python), os blocos de exemplo e os scores de risco (sorteados de 0 a 100). Por decisão do grupo, o
+Python) e os blocos de exemplo; os scores de risco vêm de dados públicos reais da CVM, aplicados a
+essas empresas fictícias. Por decisão do grupo, o
 front-end **não** os rotula, mas esta documentação, o README e a apresentação declaram, de forma
 explícita, que são fictícios. Nenhum outro número inventado pode aparecer nas telas.

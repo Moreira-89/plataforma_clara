@@ -22,6 +22,8 @@ Raises:
 from dataclasses import dataclass, field
 from datetime import date
 
+from app.domain import risco
+
 # Ordem da escala SCR, da melhor nota para a pior.
 NOTAS_SCR = ("AA", "A", "B", "C", "D", "E", "F", "G", "H")
 
@@ -187,13 +189,8 @@ def capital_por_nota(blocos: list[BlocoDoPainel]) -> list[CapitalPorNota]:
             continue
         quantidade, capital = somas.setdefault(bloco.nota, [0, 0.0])
         somas[bloco.nota] = [quantidade + 1, capital + bloco.capital_total]
-    ordem = sorted(somas, key=lambda n: (-_peso_da_nota(n), n))
+    ordem = sorted(somas, key=lambda n: (risco.ordem_da_nota(n), n))
     return [CapitalPorNota(n, int(somas[n][0]), somas[n][1]) for n in ordem]
-
-
-def _peso_da_nota(nota: str) -> int:
-    """Ordem da nota: letra mais perto de A vale mais; '+' sobe e '-' desce um ponto."""
-    return (100 - ord(nota[0])) * 3 + (1 if nota.endswith("+") else -1 if nota.endswith("-") else 0)
 
 
 def montar_exposicao(

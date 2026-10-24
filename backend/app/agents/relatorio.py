@@ -11,11 +11,9 @@ Fluxo principal:
 
 import json
 import logging
-import os
 import re
 import shutil
 import tempfile
-from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from decimal import Decimal
 from pathlib import Path
@@ -25,8 +23,8 @@ import PyPDF2
 from groq import APIStatusError
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
-from markdown_pdf import MarkdownPdf, Section
 
+from app.agents import analise_carteira, layout_pdf
 from app.agents.prompt import DESCRICAO_CLIENTE, SYSTEM_TEMPLATE, USER_TEMPLATE
 from app.config.settings import settings
 from app.domain import identidade
@@ -42,8 +40,9 @@ logger = logging.getLogger(__name__)
 _ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 _PDF_REFERENCIA_PATH = _ASSETS_DIR / "Relatório de Insights Financeiros FIDC - Google Gemini.pdf"
 _MAX_REF_CHARS = 5000
-_MAX_AMOSTRA_APORTES = 60
-_MAX_GRUPOS_EMPRESA = 100
+# Mês dos dados públicos da CVM usados no score (backend/dados/scores_empresas.csv).
+# Atualizar junto com o CSV.
+_DATA_BASE_SCORE = "ago/2026"
 
 # Alias mantido: a normalização é a mesma do resto da plataforma, agora em
 # domain/identidade.py. O nome curto continua porque é usado em vários pontos daqui.
@@ -71,7 +70,9 @@ def _nome_para_exibicao(documento: str, nome_investidor: str | None) -> str:
 
 
 def aportes_da_carteira(
-    carteira: Iterable[tuple[Decimal, BlocoDetalhado]], scores: Mapping[str, float]
+    carteira: Iterable[tuple[Decimal, BlocoDetalhado]],
+    scores: Mapping[str, float],
+    historico: Mapping[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """
     Transforma a carteira do investidor nos registros que o prompt espera (um por bloco e empresa).
@@ -81,15 +82,23 @@ def aportes_da_carteira(
     Args:
         carteira (Iterable[tuple[Decimal, BlocoDetalhado]]): Pares (valor investido, bloco detalhado).
         scores (Mapping[str, float]): Score de risco (0 a 100) de cada empresa.
+        historico (Mapping[str, Any] | None): Os dois meses mais recentes do histórico do score
+            (`storage.scores.carregar_historico_recente`), para a tendência e os upgrades e
+            downgrades.
 
     Returns:
-        list[dict[str, Any]]: Registros com bloco, empresa, valor, datas, score e nota.
+        list[dict[str, Any]]: Registros com bloco, empresa, ramo, valor, datas, score e nota, e em
+            "historico" o score e os pontos do mês anterior (quando houver).
     """
+    historico = historico or {}
+    atual_h, anterior_h = historico.get("atual") or {}, historico.get("anterior") or {}
     aportes: list[dict[str, Any]] = []
     for valor, detalhado in carteira:
         bloco = detalhado.bloco
         for empresa in detalhado.empresas:
             score = scores.get(empresa.id_empresa)
+            ant = anterior_h.get(empresa.id_empresa) or {}
+            agora = atual_h.get(empresa.id_empresa) or {}
             capital = (valor * empresa.percentual_liquidez / 100).quantize(Decimal("0.01"))
             aportes.append(
                 {
@@ -101,25 +110,21 @@ def aportes_da_carteira(
                     "status_prazo_vencimento": f"vence em {bloco.data_vencimento.isoformat()}",
                     "score_risco_interno": score,
                     "nota_risco": None if score is None else classificar_nota(score),
+                    "id_empresa": empresa.id_empresa,
+                    "ramo_atividade": empresa.ramo_atividade,
+                    # Uso interno (tendência e motivos); não vai para a amostra do prompt.
+                    "historico": {
+                        "mes_atual": historico.get("mes_atual"),
+                        "mes_anterior": historico.get("mes_anterior"),
+                        "score_anterior": ant.get("score"),
+                        "pontos_atual": agora.get("pontos"),
+                        "pontos_anterior": ant.get("pontos"),
+                        "trava_atual": agora.get("trava"),
+                        "trava_anterior": ant.get("trava"),
+                    },
                 }
             )
     return aportes
-
-
-def _montar_dados_investimentos(
-    nome_investidor: str, dados_bq: list[dict[str, Any]]
-) -> list[dict[str, Any]]:
-    dados: list[dict[str, Any]] = []
-    for row in dados_bq:
-        dados.append(
-            {
-                "nome_investidor": nome_investidor,
-                "nome_empresa": row.get("empresa_sacada_nome", "N/A"),
-                "score_ml": row.get("score_risco_interno", 0.0),
-                "valor_investido": row.get("valor_aporte_compra", 0.0),
-            }
-        )
-    return dados
 
 
 def _to_json_compacto(dado: Any) -> str:
@@ -132,102 +137,96 @@ def _estimar_tokens_aprox(*textos: str) -> int:
     return int(total_chars / 3.6)
 
 
+def conteudo_oficial(aportes: list[dict[str, Any]]) -> dict[str, Any]:
+    """Todos os números do relatório, calculados pelo código (os mesmos no texto e no PDF)."""
+    mes_atual = next(
+        (
+            r["historico"].get("mes_atual")
+            for r in aportes
+            if (r.get("historico") or {}).get("mes_atual")
+        ),
+        None,
+    )
+    return {
+        "data_base": analise_carteira.mes_curto(mes_atual) or _DATA_BASE_SCORE,
+        "indicadores": analise_carteira.indicadores(aportes),
+        "blocos": analise_carteira.saude_dos_blocos(aportes),
+        "movimentacoes": analise_carteira.movimentacoes(aportes, mes_atual),
+        "principais_empresas": analise_carteira.principais_empresas(aportes),
+    }
+
+
+def _conteudo_para_prompt(
+    conteudo: dict[str, Any], *, limite_movimentacoes: int, limite_empresas: int
+) -> dict[str, Any]:
+    """O conteúdo oficial sem os textos de exibição do PDF e sem campos repetidos (economiza tokens).
+
+    Os limites cortam só o que vai ao modelo; o PDF continua com as tabelas completas.
+    """
+    ind = conteudo["indicadores"]
+    mov = conteudo["movimentacoes"]
+
+    def _mov_curta(m: dict[str, Any]) -> dict[str, Any]:
+        # score_anterior sai: score_atual + variacao_score já dizem o mesmo.
+        return {k: v for k, v in m.items() if k != "score_anterior"}
+
+    empresas = conteudo["principais_empresas"]
+    return {
+        "data_base": conteudo["data_base"],
+        "indicadores": {
+            "capital_total": ind["capital_total"],
+            "qtd_blocos": ind["qtd_blocos"],
+            "qtd_empresas": ind["qtd_empresas"],
+            "score_ponderado": ind["score_ponderado"],
+            # Variação no mês só com as empresas que têm score nos dois meses: "anterior" e "atual"
+            # são as médias desse mesmo grupo (cobre pct_capital_comparavel do capital).
+            "tendencia_no_mes": ind["tendencia"],
+            "distribuicao_capital_por_faixa_pct": {f: p for f, p, _ in ind["distribuicao"]},
+            "pct_grau_investimento": ind["pct_grau_investimento"],
+            "pct_grau_especulativo": ind["pct_grau_especulativo"],
+        },
+        "blocos": conteudo["blocos"],
+        "movimentacoes": {
+            **{k: v for k, v in mov.items() if k not in ("upgrades", "downgrades")},
+            # Os maiores pelo capital (a lista já vem ordenada assim).
+            "upgrades": [_mov_curta(m) for m in mov.get("upgrades", [])[:limite_movimentacoes]],
+            "downgrades": [_mov_curta(m) for m in mov.get("downgrades", [])[:limite_movimentacoes]],
+        },
+        "principais_empresas": empresas[:limite_empresas],
+        # Calculada sobre as 8 maiores, mesmo quando a lista enviada é menor.
+        "concentracao": {
+            "pct_3_maiores": round(sum(e["pct_carteira"] for e in empresas[:3]), 1),
+            "pct_8_maiores": round(sum(e["pct_carteira"] for e in empresas[:8]), 1),
+        },
+    }
+
+
 def _compactar_dados_para_prompt(
     dados_bq: list[dict[str, Any]],
     *,
-    limite_amostra: int,
+    limite_movimentacoes: int,
     limite_empresas: int,
-) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
-    """Compacta os dados para caber no limite de tokens sem perder visão de todos os blocos."""
-    total_registros = len(dados_bq)
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Monta o que vai ao modelo: só os números oficiais, que já cobrem todos os blocos.
 
-    blocos: dict[str, dict[str, Any]] = defaultdict(
-        lambda: {"qtd_aportes": 0, "valor_total_aportado": 0.0, "score_soma": 0.0}
-    )
-    empresas: dict[tuple[str, str], dict[str, Any]] = {}
-
-    for row in dados_bq:
-        bloco = str(row.get("bloco_liquidez_setorial") or "N/A")
-        empresa = str(row.get("empresa_sacada_nome") or "N/A")
-        valor = float(row.get("valor_aporte_compra") or 0.0)
-        score = float(row.get("score_risco_interno") or 0.0)
-
-        blocos[bloco]["qtd_aportes"] += 1
-        blocos[bloco]["valor_total_aportado"] += valor
-        blocos[bloco]["score_soma"] += score
-
-        chave = (bloco, empresa)
-        if chave not in empresas:
-            empresas[chave] = {
-                "bloco_liquidez_setorial": bloco,
-                "empresa_sacada_nome": empresa,
-                "qtd_aportes": 0,
-                "valor_total_aportado": 0.0,
-                "score_soma": 0.0,
-            }
-        empresas[chave]["qtd_aportes"] += 1
-        empresas[chave]["valor_total_aportado"] += valor
-        empresas[chave]["score_soma"] += score
-
-    resumo_blocos = []
-    for bloco, item in blocos.items():
-        qtd = int(item["qtd_aportes"])
-        resumo_blocos.append(
-            {
-                "bloco_liquidez_setorial": bloco,
-                "qtd_aportes": qtd,
-                "valor_total_aportado": round(float(item["valor_total_aportado"]), 2),
-                "score_medio": round(float(item["score_soma"]) / qtd, 4) if qtd else 0.0,
-            }
-        )
-
-    grupos_empresas = list(empresas.values())
-    grupos_empresas.sort(
-        key=lambda x: (
-            x["bloco_liquidez_setorial"],
-            -float(x["valor_total_aportado"]),
-            x["empresa_sacada_nome"],
-        )
-    )
-    grupos_empresas = grupos_empresas[:limite_empresas]
-
-    dados_invest_prompt: list[dict[str, Any]] = []
-    for g in grupos_empresas:
-        qtd = int(g["qtd_aportes"])
-        dados_invest_prompt.append(
-            {
-                "nome_investidor": "INVESTIDOR_LOGADO",
-                "nome_empresa": g["empresa_sacada_nome"],
-                "bloco_liquidez_setorial": g["bloco_liquidez_setorial"],
-                "score_ml": round(float(g["score_soma"]) / qtd, 4) if qtd else 0.0,
-                "valor_investido": round(float(g["valor_total_aportado"]), 2),
-                "quantidade_aportes": qtd,
-            }
-        )
-
-    amostra_aportes = dados_bq[:limite_amostra]
+    A amostra de aportes e as listas por empresa saíram: repetiam o que "conteudo_oficial" já
+    traz e estouravam o limite de tokens por minuto do Groq (8.000 no plano gratuito).
+    """
     dados_bq_prompt: dict[str, Any] = {
-        "meta": {
-            "qtd_registros_total": total_registros,
-            "qtd_blocos_total": len(resumo_blocos),
-            "qtd_grupos_empresa_enviados": len(dados_invest_prompt),
-            "qtd_aportes_amostra_enviada": len(amostra_aportes),
-            "observacao": (
-                "Dados foram compactados para caber no limite de tokens do provedor, "
-                "mantendo visão de todos os blocos e empresas agrupadas."
-            ),
-        },
-        "resumo_blocos": resumo_blocos,
-        "amostra_aportes": amostra_aportes,
+        # Números oficiais calculados pelo código (agents/analise_carteira.py): o PDF já os mostra
+        # em cartões, tabelas e no gráfico; o texto deve usar exatamente estes valores.
+        "conteudo_oficial": _conteudo_para_prompt(
+            conteudo_oficial(dados_bq),
+            limite_movimentacoes=limite_movimentacoes,
+            limite_empresas=limite_empresas,
+        ),
     }
-
     meta = {
-        "qtd_registros_total": total_registros,
-        "qtd_blocos_total": len(resumo_blocos),
-        "qtd_grupos_empresa_enviados": len(dados_invest_prompt),
-        "qtd_aportes_amostra_enviada": len(amostra_aportes),
+        "qtd_registros_total": len(dados_bq),
+        "limite_movimentacoes": limite_movimentacoes,
+        "limite_empresas": limite_empresas,
     }
-    return dados_bq_prompt, dados_invest_prompt, meta
+    return dados_bq_prompt, meta
 
 
 def _ler_pdf_referencia(max_chars: int = _MAX_REF_CHARS) -> str:
@@ -285,7 +284,6 @@ def _gerar_markdown_chatgroq(
     nome_cliente: str,
     descricao_cliente: str,
     dados_bq: list[dict[str, Any]],
-    dados_invest: list[dict[str, Any]],
 ) -> str:
     llm = _criar_llm()
 
@@ -293,46 +291,36 @@ def _gerar_markdown_chatgroq(
         [("system", SYSTEM_TEMPLATE), ("user", USER_TEMPLATE)]
     )
 
+    # Cada tentativa corta mais um pouco do que vai ao modelo (o PDF não muda).
     tentativas = [
-        {
-            "limite_amostra": _MAX_AMOSTRA_APORTES,
-            "limite_empresas": _MAX_GRUPOS_EMPRESA,
-            "max_ref": 2500,
-        },
-        {"limite_amostra": 30, "limite_empresas": 50, "max_ref": 800},
-        {"limite_amostra": 15, "limite_empresas": 25, "max_ref": 0},
-        {"limite_amostra": 8, "limite_empresas": 12, "max_ref": 0},
-        {"limite_amostra": 4, "limite_empresas": 6, "max_ref": 0},
+        {"limite_movimentacoes": 8, "limite_empresas": 8, "max_ref": 1500},
+        {"limite_movimentacoes": 8, "limite_empresas": 8, "max_ref": 0},
+        {"limite_movimentacoes": 5, "limite_empresas": 5, "max_ref": 0},
+        {"limite_movimentacoes": 3, "limite_empresas": 3, "max_ref": 0},
     ]
 
     ultimo_erro: Exception | None = None
     for idx, cfg in enumerate(tentativas, start=1):
-        dados_bq_prompt, dados_invest_prompt, meta_prompt = _compactar_dados_para_prompt(
+        dados_bq_prompt, meta_prompt = _compactar_dados_para_prompt(
             dados_bq,
-            limite_amostra=cfg["limite_amostra"],
+            limite_movimentacoes=cfg["limite_movimentacoes"],
             limite_empresas=cfg["limite_empresas"],
         )
-        for item in dados_invest_prompt:
-            item["nome_investidor"] = nome_cliente
-
         dados_bq_serializado = _to_json_compacto(dados_bq_prompt)
-        dados_invest_serializado = _to_json_compacto(dados_invest_prompt)
         texto_referencia = _ler_pdf_referencia(cfg["max_ref"])
         estimativa_tokens = _estimar_tokens_aprox(
             SYSTEM_TEMPLATE,
             USER_TEMPLATE,
             dados_bq_serializado,
-            dados_invest_serializado,
             texto_referencia,
             nome_cliente,
             descricao_cliente,
         )
         logger.info(
-            "Tentativa %d: payload prompt (blocos=%d, grupos_empresas=%d, amostra=%d, ref_chars=%d, tok_aprox=%d).",
+            "Tentativa %d: payload prompt (movimentacoes<=%d, empresas<=%d, ref_chars=%d, tok_aprox=%d).",
             idx,
-            meta_prompt["qtd_blocos_total"],
-            meta_prompt["qtd_grupos_empresa_enviados"],
-            meta_prompt["qtd_aportes_amostra_enviada"],
+            meta_prompt["limite_movimentacoes"],
+            meta_prompt["limite_empresas"],
             len(texto_referencia),
             estimativa_tokens,
         )
@@ -341,7 +329,6 @@ def _gerar_markdown_chatgroq(
             nome_cliente=nome_cliente,
             descricao_cliente=descricao_cliente,
             dados_bq=dados_bq_serializado,
-            dados_invest=dados_invest_serializado,
             texto_do_pdf_referencia=texto_referencia,
         )
 
@@ -368,98 +355,25 @@ def _gerar_markdown_chatgroq(
     raise RuntimeError("Falha inesperada ao gerar relatório com ChatGroq.")
 
 
-def _garantir_titulo_principal(markdown: str, nome_investidor: str) -> str:
-    """
-    Garante que o primeiro título do Markdown seja `#` (nível 1).
-
-    O markdown_pdf monta o índice do PDF a partir dos títulos e exige que o
-    primeiro seja nível 1. O gpt-oss costuma começar direto com `##`.
-    """
-    primeiro_titulo = re.search(r"^(#{1,2})\s", markdown, flags=re.MULTILINE)
-    if primeiro_titulo and primeiro_titulo.group(1) == "#":
-        return markdown
-    return f"# Relatório Consolidado de Investimentos — {nome_investidor}\n\n{markdown}"
-
-
-def _gerar_pdf_e_ler_bytes(nome_investidor: str, markdown: str) -> tuple[bytes, str]:
+def _gerar_pdf_e_ler_bytes(
+    nome_investidor: str, markdown: str, conteudo: dict[str, Any] | None
+) -> tuple[bytes, str]:
     nome_limpo = re.sub(r"[^a-zA-Z0-9_-]+", "_", nome_investidor).strip("_") or "investidor"
     nome_arquivo = f"Relatorio_Consolidado_{nome_limpo}.pdf"
     # O PDF é escrito em disco só porque markdown_pdf não expõe saída em memória;
-    # ele é lido e apagado logo abaixo. Um diretório temporário do sistema serve
-    # melhor que o diretório de uploads do Reflex, que era o destino antes: nada
-    # aqui depende do framework, e o arquivo não fica visível pela rota de upload.
+    # ele é lido e apagado logo abaixo.
     diretorio_temporario = tempfile.mkdtemp(prefix="relatorio_clara_")
-    caminho_arquivo = os.path.join(diretorio_temporario, nome_arquivo)
-
-    caminho_logo = _ASSETS_DIR / "logo_para_usar_fundo_claro.png"
-    # Adicionando a logo no topo do relatório
-    markdown = _garantir_titulo_principal(markdown, nome_investidor)
-    markdown_com_logo = (
-        f'<img src="file://{caminho_logo.absolute()}" class="logo-relatorio" />\n\n' + markdown
-    )
-
-    css_estilo = """
-    .logo-relatorio {
-        max-height: 80px;
-        margin-bottom: 20px;
-    }
-
-    @page {
-        size: A4 landscape;
-        margin: 1.5cm;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        table-layout: fixed;      /* força colunas a respeitar a largura da página */
-        font-size: 9pt;            /* reduz fonte para caber mais conteúdo */
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-    }
-
-    th, td {
-        border: 1px solid black;
-        padding: 4px 6px;
-        text-align: left;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        word-break: break-word;
-    }
-
-    th {
-        background-color: #f2f2f2;
-        font-size: 8pt;
-    }
-
-    /* Evita que uma linha da tabela seja cortada entre páginas */
-    tr {
-        page-break-inside: avoid;
-    }
-
-    /* Permite que a tabela quebre entre páginas, mas sem cortar linhas */
-    table {
-        page-break-inside: auto;
-    }
-
-    thead {
-        display: table-header-group;  /* repete o cabeçalho em cada página */
-    }
-    """
-
-    pdf = MarkdownPdf(toc_level=2)
-    pdf.add_section(Section(markdown_com_logo), user_css=css_estilo)
-    pdf.save(caminho_arquivo)
+    caminho_arquivo = Path(diretorio_temporario) / nome_arquivo
 
     try:
-        with open(caminho_arquivo, "rb") as arquivo_pdf:
-            conteudo_bytes = arquivo_pdf.read()
+        # Layout da Clara (agents/layout_pdf.py): moldura com logo e ondas; cartões, tabelas e
+        # gráfico com os números do código; e o texto da IA em cada seção.
+        layout_pdf.gerar_pdf(markdown, nome_investidor, caminho_arquivo, conteudo)
+        conteudo_bytes = caminho_arquivo.read_bytes()
     finally:
-        if os.path.exists(caminho_arquivo):
-            os.remove(caminho_arquivo)
-        # rmtree em vez de rmdir: se o markdown_pdf deixar qualquer arquivo extra no
-        # diretório, o rmdir levantaria OSError DENTRO do finally e mascararia a
-        # exceção original da geração do PDF. Limpeza não pode virar a causa raiz.
+        # rmtree em vez de rmdir: se sobrar qualquer arquivo extra no diretório, o rmdir
+        # levantaria OSError DENTRO do finally e mascararia a exceção original da geração do
+        # PDF. Limpeza não pode virar a causa raiz.
         shutil.rmtree(diretorio_temporario, ignore_errors=True)
 
     return conteudo_bytes, nome_arquivo
@@ -482,8 +396,10 @@ def gerar_relatorio_consolidado_investidor(
            registros de `aportes_da_carteira` (a carteira do investidor).
         3. Geração do Markdown — Chama o ChatGroq com prompt institucional e retry
            progressivo para lidar com limites de token (status 413).
-        4. Conversão para PDF — Converte o Markdown em PDF via markdown_pdf,
-           incluindo logo e CSS de paginação. O arquivo temporário é removido após leitura.
+        4. Conversão para PDF — Monta o PDF no layout da Clara (agents/layout_pdf.py): moldura
+           com a logo; cartões, tabelas e gráfico com os números calculados pelo código
+           (`conteudo_oficial`); e o texto da IA em cada seção. O arquivo temporário é removido
+           após leitura.
 
     Args:
         nome_investidor (str | None): Nome para exibir no relatório, vindo de quem
@@ -502,7 +418,6 @@ def gerar_relatorio_consolidado_investidor(
         raise ValueError("Nenhum investimento encontrado para esse investidor.")
 
     nome_investidor = _nome_para_exibicao("", nome_investidor)
-    dados_invest = _montar_dados_investimentos(nome_investidor, aportes)
 
     logger.info(
         "Gerando relatório IA com prompt institucional para %s (%d registros).",
@@ -513,6 +428,5 @@ def gerar_relatorio_consolidado_investidor(
         nome_cliente=nome_investidor,
         descricao_cliente=DESCRICAO_CLIENTE,
         dados_bq=aportes,
-        dados_invest=dados_invest,
     )
-    return _gerar_pdf_e_ler_bytes(nome_investidor, markdown)
+    return _gerar_pdf_e_ler_bytes(nome_investidor, markdown, conteudo_oficial(aportes))
