@@ -42,7 +42,7 @@ class EmpresaBusca(BaseModel):
     score: float | None = Field(
         default=None, description="Score de risco da empresa; vazio sem score"
     )
-    nota_risco: str | None = Field(default=None, description="Nota de A+ a C-; vazia sem score")
+    nota_risco: str | None = Field(default=None, description="Nota AAA a D; vazia sem score")
 
 
 class EmpresaDoBlocoEntrada(BaseModel):
@@ -100,7 +100,7 @@ class BlocoListagem(BaseModel):
         description="Fatia de cada empresa no capital do bloco, em %, da maior para a menor"
     )
     score: float | None = Field(description="Média dos scores das empresas, ponderada pelo capital")
-    nota_risco: str | None = Field(description="Nota de A+ a C- do score; vazia sem score")
+    nota_risco: str | None = Field(description="Nota AAA a D; vazia sem score")
 
 
 class EmpresaDoBlocoDetalhe(BaseModel):

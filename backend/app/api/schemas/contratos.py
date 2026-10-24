@@ -69,7 +69,7 @@ class LinhaTabelaGestora(BaseModel):
     empresa: str
     cnpj: str = Field(description="Já mascarado: XX.XXX.XXX/XXXX-XX")
     valor: str = Field(description="Já formatado: R$ 1.234,56")
-    risco: str = Field(description="Nota de crédito — A+ a C-")
+    risco: str = Field(description="Nota de crédito — AAA a D (escala de 22 níveis)")
     status: str = Field(description="Adimplente, Atenção ou Inadimplente")
 
 

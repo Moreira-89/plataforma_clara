@@ -177,7 +177,7 @@ _LEITURA_DA_FAIXA = {
 # título); tabelas, gráfico e números vêm do código.
 _SECOES = (
     ("resumo", "Resumo Executivo da Carteira", r"resumo|sum[aá]rio"),
-    ("blocos", "Saúde dos Blocos", r"sa[uú]de|blocos"),
+    ("blocos", "Análise dos Blocos", r"an[aá]lise|sa[uú]de|blocos"),
     ("distribuicao", "Distribuição de Capital por Risco", r"distribui"),
     ("destaques", "Destaques do Mês", r"destaque|upgrade|downgrade|movimenta"),
     ("empresas", "Principais Empresas da Carteira", r"principa|empresas|matriz"),
@@ -185,17 +185,6 @@ _SECOES = (
 )
 # Seções que o código escreve sozinho: se a IA as escrever, o texto dela é ignorado.
 _SECOES_DO_CODIGO = r"transpar|aviso|metodolog|fonte|como o score"
-
-_TEXTO_METODOLOGIA = (
-    "O Score de Reputação Clara (perfil público) vai de 0 a 100 e é calculado com dados públicos "
-    "reais da CVM (Informe Mensal de FIDC). Ele soma quatro critérios: a qualidade dos fundos que "
-    "compram recebíveis da empresa (até 40 pontos), a permanência dela nesses fundos ao longo de 12 "
-    "meses (até 25), o risco do setor comparado ao mercado (até 20) e a aceitação, isto é, em "
-    "quantos fundos ela aparece (até 15). Quando os fundos que compram da empresa têm inadimplência "
-    "muito acima do mercado, a nota é limitada. A nota segue a escala de 22 níveis (AAA a D), em "
-    "faixas iguais de cerca de 4,5 pontos. É um indicador de perfil, não um rating de crédito."
-)
-
 
 _TITULO_NO_DESENHO = 34  # o título da seção é desenhado junto, para nunca ficar sozinho no pé
 
@@ -357,8 +346,7 @@ def _textos_padrao(conteudo: dict[str, Any]) -> dict[str, str]:
     resumo = (
         f"Sua carteira soma {_moeda(ind['capital_total'])} em {ind['qtd_blocos']} bloco(s) e "
         f"{ind['qtd_empresas']} empresa(s). O score médio, ponderado pelo capital, é "
-        f"{_num(ind['score_ponderado'])}, o que corresponde à nota {ind['nota'] or '—'} "
-        f"(faixa {ind['faixa'] or '—'})."
+        f"{_num(ind['score_ponderado'])}, de 0 a 100 (quanto maior, menor o risco)."
     )
     tend = ind.get("tendencia") or {}
     if tend.get("variacao") is not None:
@@ -475,7 +463,6 @@ def _montar_documento(markdown: str, nome_investidor: str, conteudo: dict[str, A
             partes.append(corpo)
         else:
             partes.append(f"## {titulo}\n\n{corpo}")
-    partes.append(f"## Como o Score é Calculado\n\n{_TEXTO_METODOLOGIA}")
     partes.append(
         '<p class="aviso">Este relatório é exclusivamente informativo e não constitui recomendação '
         "de investimento. Fonte do score: CVM, Informe Mensal de FIDC (dados públicos), "
@@ -505,7 +492,8 @@ def _desenhar_cartoes(pagina, r: pymupdf.Rect, ind: dict[str, Any], fontes: dict
         ("CAPITAL INVESTIDO", ind["capital"], f"{blocos} bloco" + ("s" if blocos != 1 else "")),
         ("EMPRESAS", str(ind["empresas"]), "na carteira"),
         ("SCORE PONDERADO", ind["score"], "pelo capital, 0 a 100"),
-        ("NOTA DA CARTEIRA", ind["nota"] or "—", ind["faixa"] or "sem score"),
+        # A carteira não tem nota própria: as notas são das empresas e dos blocos.
+        ("GRAU DE INVESTIMENTO", _pct(ind["pct_grau_investimento"]), "do capital, AAA a BBB-"),
     ]
     for k, (rotulo, valor, detalhe) in enumerate(cartoes):
         cx = r.x0 + k * (largura + vao)
@@ -646,7 +634,7 @@ def _desenhar_distribuicao(pagina, r: pymupdf.Rect, ind: dict[str, Any], fontes:
     if score is not None:
         xs = pos(score)
         pagina.draw_circle((xs, yr + 2), 4.5, color=_COR["canvas"], fill=_COR["ink"], width=1.5)
-        rot = f"Carteira · {_pct(score)[:-1]} · {ind.get('nota') or ''}"
+        rot = f"Score da carteira · {_pct(score)[:-1]}"
         tw = fontes["medio"].text_length(rot, fontsize=7.5)
         lx = min(max(xs - tw / 2, x0), x1 - tw)
         _escrever(pagina, (lx, yr - 8), rot, fontes["medio"], 7.5, ink)
